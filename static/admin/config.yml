@@ -1,6 +1,7 @@
 backend:
-  name: git-gateway
-  branch: master
+  name: github
+  repo: wicksipedia/wicksipedia.com
+  branch: main
 
 publish_mode: editorial_workflow
 
@@ -12,7 +13,7 @@ collections:
     label: "Blog"
     folder: "src/pages/blog"
     create: true
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    slug: "{{year}}/{{month}}/{{day}}/{{slug}}"
     fields:
       - {
           label: "Content Type",
