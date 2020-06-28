@@ -1,9 +1,9 @@
 module.exports = {
   siteMetadata: {
-    title: 'Gatsby Starter Blog',
-    author: 'konsumer',
-    authorLink: 'https://github.com/konsumer',
-    disqus: 'gatsby-starter-blog'// put your disqus ID here
+    title: 'The Free Wicksipedia',
+    author: 'Matt Wicks',
+    authorLink: 'https://github.com/wicksipedia',
+    disqus: ''// put your disqus ID here
   },
   plugins: [
     {
@@ -14,18 +14,23 @@ module.exports = {
       }
     },
     {
-      resolve: 'gatsby-source-filesystem',
-      options: {
-        path: `${__dirname}/src/examples`,
-        name: 'examples'
-      }
-    },
-    {
       resolve: 'gatsby-transformer-remark',
       options: {
+        excerpt_separator: '<!-- /excerpt end -->',
         plugins: [
           'gatsby-remark-prismjs',
-          'gatsby-remark-copy-linked-files'
+          'gatsby-remark-copy-linked-files',
+          {
+            resolve: `gatsby-remark-embedder`,
+            options: {
+              customTransformers: [
+                // Your custom transformers
+              ],
+              services: {
+                // The service-specific options by the name of the service
+              },
+            },
+          },
         ]
       }
     },
@@ -37,6 +42,7 @@ module.exports = {
         includePaths: [`${__dirname}/node_modules`, `${__dirname}/src/`],
         precision: 8
       }
-    }
+    },
+    'gatsby-plugin-twitter'
   ]
 }

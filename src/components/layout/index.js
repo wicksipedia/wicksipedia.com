@@ -13,10 +13,11 @@ import 'prismjs/themes/prism-twilight.css'
 import './index.scss'
 
 const TemplateWrapper = ({ children, data }) => {
-  let user
+  let user;
   if (typeof window !== 'undefined') {
-    user = window.netlifyIdentity && window.netlifyIdentity.currentUser()
+    user = window.netlifyIdentity && window.netlifyIdentity.currentUser();
   }
+
   return (
     <StaticQuery query={pageQuery} render={data => (
       <div className='App'>
@@ -41,7 +42,7 @@ const TemplateWrapper = ({ children, data }) => {
         <div className='pageContent'>{children}</div>
       </div>
     )} />
-  )
+  );
 }
 
 TemplateWrapper.propTypes = {
