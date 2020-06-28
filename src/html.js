@@ -11,8 +11,6 @@ export default class HTML extends React.Component {
             name='viewport'
             content='width=device-width, initial-scale=1, shrink-to-fit=no'
           />
-          <script src='https://identity.netlify.com/v1/netlify-identity-widget.js' />
-          <script src='/admin/netlify_redirect.js' />
           {this.props.headComponents}
         </head>
         <body {...this.props.bodyAttributes}>
