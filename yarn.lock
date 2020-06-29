@@ -5869,6 +5869,13 @@ gatsby-source-filesystem@^2.0.10:
     valid-url "^1.0.9"
     xstate "^4.10.0"
 
+gatsby-source-local-git@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/gatsby-source-local-git/-/gatsby-source-local-git-1.0.0.tgz#a285eb60d92b2d8021ed33ea1e62ca6e1f6c152d"
+  integrity sha512-QsX5vjs/Zsh7vAkPzcnsDm085qAaMX+NSZrhscwjQrk0os61lVbFiXbpkiwvBPuCxXGl2QITTWejPqvcps7y8A==
+  dependencies:
+    simple-git "^1.128.0"
+
 gatsby-telemetry@^1.3.14:
   version "1.3.14"
   resolved "https://registry.yarnpkg.com/gatsby-telemetry/-/gatsby-telemetry-1.3.14.tgz#4c53deccbac753e19052ddd50dff818ebaac8575"
@@ -11670,6 +11677,13 @@ simple-git@2.10.0:
   dependencies:
     "@kwsites/file-exists" "^1.1.1"
     debug "^4.1.1"
+
+simple-git@^1.128.0:
+  version "1.132.0"
+  resolved "https://registry.yarnpkg.com/simple-git/-/simple-git-1.132.0.tgz#53ac4c5ec9e74e37c2fd461e23309f22fcdf09b1"
+  integrity sha512-xauHm1YqCTom1sC9eOjfq3/9RKiUA9iPnxBbrY2DdL8l4ADMu0jjM5l5lphQP5YWNqAL2aXC/OeuQ76vHtW5fg==
+  dependencies:
+    debug "^4.0.1"
 
 simple-swizzle@^0.2.2:
   version "0.2.2"

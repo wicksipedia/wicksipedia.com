@@ -6,6 +6,7 @@ module.exports = {
     disqus: ''// put your disqus ID here
   },
   plugins: [
+		'gatsby-source-local-git',
     {
       resolve: 'gatsby-source-filesystem',
       options: {
@@ -43,6 +44,6 @@ module.exports = {
         precision: 8
       }
     },
-    'gatsby-plugin-twitter'
+    'gatsby-plugin-twitter',
   ]
 }
