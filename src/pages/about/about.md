@@ -1,5 +1,5 @@
 ---
-contentType: about
+contentType: page
 path: /about
 title: About Me
 ---

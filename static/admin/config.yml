@@ -25,43 +25,19 @@ collections:
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Publish Date", name: "date", widget: "datetime" }
       - { label: "Body", name: "body", widget: "markdown" }
-      - {
-          label: "Attachment",
-          name: "attachments",
-          required: false,
-          widget: "list",
-          fields: [{ name: "filename", label: "Filename", widget: "file" }],
-        }
-      - {
-          label: "Related Post",
-          name: "related",
-          required: false,
-          widget: "list",
-          fields:
-            [
-              {
-                name: "post",
-                label: "Post",
-                widget: "relation",
-                collection: "blog",
-                searchFields: [name, path, title],
-                valueField: path,
-              },
-            ],
-        }
 
-  - name: "about"
-    label: "About"
-    folder: "src/pages/about"
-    create: false
+  - name: "page"
+    label: "Page"
+    folder: "src/pages"
+    create: true
     slug: "{{slug}}"
     fields:
       - {
           label: "Content Type",
           name: "contentType",
           widget: "hidden",
-          default: "about",
+          default: "page",
         }
-      - { label: "Path", name: "path", widget: "hidden", default: "/about" }
+      - { label: "Path", name: "path", widget: "string" }
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Body", name: "body", widget: "markdown" }
