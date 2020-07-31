@@ -1,26 +1,126 @@
 module.exports = {
   siteMetadata: {
-    title: 'The Free Wicksipedia',
-    author: 'Matt Wicks',
-    authorLink: 'https://github.com/wicksipedia',
-    disqus: ''// put your disqus ID here
+    title: `Wicksipedia`,
+    siteUrl: `https://wicksipedia.com`,
+    description: `The Free Wicksipedia for %TOPICS%`,
+    topics: ['Azure', '.NET', 'Development', 'DevOps', 'Scrum'],
+    menu: [
+      {
+        name: 'Home',
+        path: '/'
+      },
+      {
+        name: 'Guides',
+        path: '/guides'
+      },
+      {
+        name: 'About',
+        path: '/about'
+      },
+    ],
+    footerMenu: [
+      {
+        name: 'RSS',
+        path: '/rss.xml'
+      },
+      {
+        name: 'Sitemap',
+        path: '/sitemap.xml'
+      },
+    ],
+    search: true,
+    author: {
+      name: `Matt`,
+      description: `Hi 👋 I'm <strong>Matt</strong>`,
+      social: {
+        facebook: ``,
+        twitter: `https://twitter.com/matteightyate`,
+        linkedin: `https://www.linkedin.com/in/matt-wicks/`,
+        instagram: `https://www.instagram.com/wicksipedia/`,
+        youtube: ``,
+        github: `https://github.com/wicksipedia`,
+        twitch: ``
+      }
+    }
   },
   plugins: [
-		'gatsby-source-local-git',
+    `gatsby-plugin-typescript`,
+    'gatsby-plugin-twitter',
+    `gatsby-transformer-sharp`,
+    `gatsby-plugin-react-helmet`,
+    `gatsby-plugin-styled-components`,
+    `gatsby-plugin-sitemap`,
+    `gatsby-plugin-sharp`,
     {
-      resolve: 'gatsby-source-filesystem',
+      resolve: `gatsby-plugin-manifest`,
       options: {
-        path: `${__dirname}/src/pages`,
-        name: 'pages'
+        name: `nehalem - A Gatsby theme`,
+        short_name: `nehalem`,
+        start_url: `/`,
+        background_color: `#a4cbb8`,
+        theme_color: `#a4cbb8`,
+        display: `minimal-ui`,
+        icon: `${__dirname}/assets/icon.png`
       }
     },
     {
-      resolve: 'gatsby-transformer-remark',
+      resolve: `gatsby-source-filesystem`,
       options: {
-        excerpt_separator: '<!-- /excerpt end -->',
+        name: `assets`,
+        path: `content/assets`
+      }
+    },
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: 'content',
+        path: 'content'
+      }
+    },
+    {
+      resolve: `gatsby-transformer-yaml`,
+      options: {
+        typeName: `Tags`
+      }
+    },
+    {
+      resolve: `gatsby-plugin-lunr`,
+      options: {
+        languages: [
+          {
+            name: 'en'
+          }
+        ],
+        fields: [
+          { name: 'title', store: true, attributes: { boost: 20 } },
+          { name: 'content', store: true },
+          { name: 'tags', store: true },
+          { name: 'excerpt', store: true },
+          { name: 'path', store: true }
+        ],
+        resolvers: {
+          MarkdownRemark: {
+            title: node => node.frontmatter.title,
+            content: node => node.html,
+            tags: node => node.frontmatter.tags,
+            excerpt: node => node.frontmatter.excerpt,
+            path: node => node.frontmatter.path
+          }
+        }
+      }
+    },
+    {
+      resolve: `gatsby-transformer-remark`,
+      options: {
         plugins: [
-          'gatsby-remark-prismjs',
-          'gatsby-remark-copy-linked-files',
+          `gatsby-remark-autolink-headers`,
+          `gatsby-remark-vscode`,
+          {
+            resolve: `gatsby-remark-images`,
+            options: {
+              maxWidth: 1200
+            }
+          },
           {
             resolve: `gatsby-remark-embedder`,
             options: {
@@ -35,15 +135,65 @@ module.exports = {
         ]
       }
     },
-    'gatsby-plugin-offline',
-    'gatsby-plugin-react-helmet',
     {
-      resolve: 'gatsby-plugin-sass',
+      resolve: `gatsby-plugin-page-creator`,
       options: {
-        includePaths: [`${__dirname}/node_modules`, `${__dirname}/src/`],
-        precision: 8
+        path: `${__dirname}/src/pages`
       }
     },
-    'gatsby-plugin-twitter',
+    {
+      resolve: `gatsby-plugin-feed`,
+      options: {
+        query: `
+          {
+            site {
+              siteMetadata {
+                title
+                description
+                siteUrl
+                site_url: siteUrl
+              }
+            }
+          }
+        `,
+        feeds: [
+          {
+            serialize: ({ query: { site, allMarkdownRemark } }) => {
+              return allMarkdownRemark.edges.map(edge => {
+                return Object.assign({}, edge.node.frontmatter, {
+                  description: edge.node.frontmatter.excerpt,
+                  date: edge.node.frontmatter.created,
+                  url: site.siteMetadata.siteUrl + edge.node.frontmatter.path,
+                  guid: site.siteMetadata.siteUrl + edge.node.frontmatter.path,
+                  custom_elements: [{ "content:encoded": edge.node.html }],
+                })
+              })
+            },
+            query: `
+            {
+              allMarkdownRemark(
+                sort: { order: DESC, fields: [frontmatter___created] },
+                filter: { fileAbsolutePath: { regex: "/(posts)/.*\\\\.md$/" } }
+              ) {
+                edges {
+                  node {
+                    html
+                    frontmatter {
+                      title
+                      excerpt
+                      path
+                      created
+                    }
+                  }
+                }
+              }
+            }
+            `,
+            output: `/rss.xml`,
+            title: `RSS Feed`
+          }
+        ]
+      }
+    }
   ]
-}
+};
