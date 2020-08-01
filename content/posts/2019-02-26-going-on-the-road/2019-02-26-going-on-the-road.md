@@ -2,6 +2,7 @@
 title: Going on the road!
 path: /going-on-the-road
 tags: ["Presentations"]
+featuredImage: "./cover.jpg"
 excerpt: I’m going on tour, presenting on Logic Apps - Gateway to a serverless future! Excitement!
 created: 2019-02-26
 ---

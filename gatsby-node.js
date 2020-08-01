@@ -6,19 +6,17 @@ const slugify = require('slugify');
 /**
  * Before booting up Gatsby make sure the content path directory exists.
  */
-exports.onPreBootstrap = ({ store }, themeOptions) => {
+exports.onPreBootstrap = ({ store }) => {
   const { program } = store.getState();
-
-  const contentPath = themeOptions.contentPath || 'content';
-  const dir         = path.join(program.directory, contentPath);
+  const dir = path.join(program.directory, 'content');
 
   if (!fs.existsSync(dir)) {
     mkdirp(dir);
   }
 };
 
-exports.createPages = async ({ graphql, actions, reporter }, themeOptions) => {
-  const postsPerPage = themeOptions.postsPerPage ? themeOptions.postsPerPage : 5;
+exports.createPages = async ({ graphql, actions, reporter }) => {
+  const postsPerPage = 5;
 
   const result = await graphql(`
     query {
@@ -135,6 +133,35 @@ exports.createPages = async ({ graphql, actions, reporter }, themeOptions) => {
     context: {
       posts,
       postsPerPage
+    }
+  });
+
+  // the about page
+  const readmeResult = await graphql(`
+    query {
+      readme: file(sourceInstanceName: {eq: "personal"}, relativePath: {eq: "readme.md"}) {
+        childMarkdownRemark {
+          html
+        }
+      }
+    }
+  `);
+
+  if (readmeResult.errors) {
+    reporter.panic(result.errors);
+  }
+  
+  actions.createPage({
+    path: '/about',
+    component: require.resolve(`./src/templates/page.tsx`),
+    context: {
+      page : {
+        html: readmeResult.data.readme.childMarkdownRemark.html,
+        frontmatter: {
+          title: 'About me',
+          excerpt: 'All about me'
+        }
+      }
     }
   });
 };

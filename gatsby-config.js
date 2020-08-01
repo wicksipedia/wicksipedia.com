@@ -1,48 +1,50 @@
-module.exports = {
-  siteMetadata: {
-    title: `Wicksipedia`,
-    siteUrl: `https://wicksipedia.com`,
-    description: `The Free Wicksipedia for %TOPICS%`,
-    topics: ['Azure', '.NET', 'Development', 'DevOps', 'Scrum'],
-    menu: [
-      {
-        name: 'Home',
-        path: '/'
-      },
-      {
-        name: 'Guides',
-        path: '/guides'
-      },
-      {
-        name: 'About',
-        path: '/about'
-      },
-    ],
-    footerMenu: [
-      {
-        name: 'RSS',
-        path: '/rss.xml'
-      },
-      {
-        name: 'Sitemap',
-        path: '/sitemap.xml'
-      },
-    ],
-    search: true,
-    author: {
-      name: `Matt`,
-      description: `Hi 👋 I'm <strong>Matt</strong>`,
-      social: {
-        facebook: ``,
-        twitter: `https://twitter.com/matteightyate`,
-        linkedin: `https://www.linkedin.com/in/matt-wicks/`,
-        instagram: `https://www.instagram.com/wicksipedia/`,
-        youtube: ``,
-        github: `https://github.com/wicksipedia`,
-        twitch: ``
-      }
+const siteMetadata = {
+  title: `Wicksipedia`,
+  siteUrl: `https://wicksipedia.com`,
+  description: `The Free Wicksipedia for %TOPICS%`,
+  topics: ['Azure', '.NET', 'Development', 'DevOps', 'Scrum'],
+  menu: [
+    {
+      name: 'Home',
+      path: '/'
+    },
+    {
+      name: 'Guides',
+      path: '/guides'
+    },
+    {
+      name: 'About',
+      path: '/about'
+    },
+  ],
+  footerMenu: [
+    {
+      name: 'RSS',
+      path: '/rss.xml'
+    },
+    {
+      name: 'Sitemap',
+      path: '/sitemap.xml'
+    },
+  ],
+  search: true,
+  author: {
+    name: `Matt`,
+    description: `Hi 👋 I'm <strong>Matt</strong>`,
+    social: {
+      facebook: ``,
+      twitter: `https://twitter.com/matteightyate`,
+      linkedin: `https://www.linkedin.com/in/matt-wicks/`,
+      instagram: `https://www.instagram.com/wicksipedia/`,
+      youtube: ``,
+      github: `https://github.com/wicksipedia`,
+      twitch: ``
     }
-  },
+  }
+};
+
+module.exports = {
+  siteMetadata: siteMetadata,
   plugins: [
     `gatsby-plugin-typescript`,
     'gatsby-plugin-twitter',
@@ -60,7 +62,7 @@ module.exports = {
         background_color: `#a4cbb8`,
         theme_color: `#a4cbb8`,
         display: `minimal-ui`,
-        icon: `${__dirname}/assets/icon.png`
+        icon: `${__dirname}/content/assets/images/icon.png`
       }
     },
     {
@@ -75,6 +77,15 @@ module.exports = {
       options: {
         name: 'content',
         path: 'content'
+      }
+    },
+    {
+      resolve: `gatsby-source-git`,
+      options: {
+        name: `personal`,
+        remote: `https://github.com/wicksipedia/wicksipedia.git`,
+        branch: `master`,
+        patterns: `readme.md`
       }
     },
     {

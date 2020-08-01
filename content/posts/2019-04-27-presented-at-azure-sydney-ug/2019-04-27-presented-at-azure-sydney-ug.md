@@ -2,6 +2,7 @@
 title: Presented at Azure Sydney UG
 path: /presented-at-azure-sydney-ug
 tags: ["Presentations"]
+featuredImage: "./cover.jpg"
 excerpt: I was privileged to present about Logic Apps at the Azure Sydney User Group
 created: 2019-04-27
 ---
