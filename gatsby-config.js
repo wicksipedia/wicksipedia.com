@@ -81,15 +81,6 @@ module.exports = {
       }
     },
     {
-      resolve: `gatsby-source-git`,
-      options: {
-        name: `personal`,
-        remote: `https://github.com/wicksipedia/wicksipedia.git`,
-        branch: `master`,
-        patterns: `readme.md`
-      }
-    },
-    {
       resolve: `gatsby-transformer-yaml`,
       options: {
         typeName: `Tags`

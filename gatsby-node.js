@@ -82,9 +82,9 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
     reporter.panic(result.errors);
   }
 
-  const tags          = [];
-  const posts         = result.data.posts.edges.map(node => node.node);
-  const pages         = result.data.pages.edges.map(node => node.node);
+  const tags = [];
+  const posts = result.data.posts.edges.map(node => node.node);
+  const pages = result.data.pages.edges.map(node => node.node);
   const availableTags = result.data.tags.edges.map(node => node.node).map(t => t.name) || [];
 
   // Create a route for every single post (located in `content/posts`)
@@ -133,35 +133,6 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
     context: {
       posts,
       postsPerPage
-    }
-  });
-
-  // the about page
-  const readmeResult = await graphql(`
-    query {
-      readme: file(sourceInstanceName: {eq: "personal"}, relativePath: {eq: "readme.md"}) {
-        childMarkdownRemark {
-          html
-        }
-      }
-    }
-  `);
-
-  if (readmeResult.errors) {
-    reporter.panic(result.errors);
-  }
-  
-  actions.createPage({
-    path: '/about',
-    component: require.resolve(`./src/templates/page.tsx`),
-    context: {
-      page : {
-        html: readmeResult.data.readme.childMarkdownRemark.html,
-        frontmatter: {
-          title: 'About me',
-          excerpt: 'All about me'
-        }
-      }
     }
   });
 };
