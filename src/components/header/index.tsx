@@ -18,8 +18,8 @@ const Header: FunctionComponent<HeaderProps> = ({title, description, menu, topic
       return (
         <StyledTopics
           strings={topics}
-          typeSpeed={50}
-          backSpeed={60}
+          typeSpeed={70}
+          backSpeed={90}
           shuffle={true}
           backDelay={1500}
           loop={true}
