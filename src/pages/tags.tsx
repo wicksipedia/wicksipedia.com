@@ -6,8 +6,8 @@ import {Tag} from "../utils/models";
 import {Card} from "../components/card";
 import slugify from "slugify";
 import {Grid} from "../components/common";
-import Img from "gatsby-image";
-import styled from "styled-components";
+import Img from "gatsby-image"; 
+import styled from '@emotion/styled';
 import SEO from "../components/seo";
 
 interface TagsPageProps {

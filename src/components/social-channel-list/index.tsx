@@ -1,6 +1,6 @@
 import React, {FunctionComponent} from "react";
 import {SocialChannels} from "../../utils/models";
-import styled from "styled-components";
+import styled from '@emotion/styled';
 import {
   FaFacebook,
   FaGithub,

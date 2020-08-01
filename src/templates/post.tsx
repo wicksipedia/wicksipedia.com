@@ -2,10 +2,9 @@ import React, {createRef, FunctionComponent, useState} from "react";
 import Layout from "../components/layout";
 import {Post, Tag} from "../utils/models";
 import {Container} from "../components/common";
-import styled from "styled-components";
+import styled from '@emotion/styled';
 import Toc from "../components/toc";
 import Img from "gatsby-image";
-import ReadingProgress from "../components/reading-progress";
 import Theme from "../styles/theme";
 import {graphql, Link} from "gatsby";
 import slugify from "slugify";
@@ -223,10 +222,9 @@ const ToggleTocButton = styled.button`
 
 const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) => {
   const [showToc, setShowToc] = useState<boolean>(false);
-  const post                  = data.post;
-  const readingProgressRef    = createRef<HTMLElement>();
-  const primaryTag            = data.primaryTag;
-  const toggleToc             = () => setShowToc(!showToc);
+  const post = data.post;
+  const primaryTag = data.primaryTag;
+  const toggleToc = () => setShowToc(!showToc);
 
   return (
     <Layout bigHeader={false}>
@@ -237,9 +235,8 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
         updatedAt={post.frontmatter.updated}
         tags={post.frontmatter.tags}
         description={post.frontmatter.excerpt}
-        image={post.frontmatter.featuredImage ? post.frontmatter.featuredImage.childImageSharp.sizes.src : null}
+        image={post.frontmatter.featuredImage ? post.frontmatter.featuredImage.childImageSharp.fluid.src : null}
       />
-      <ReadingProgress target={readingProgressRef} color={primaryTag ? primaryTag.color : undefined}/>
       <PostContainer>
         {post.headings.find(h => h.depth > 1) &&
         <>
@@ -258,7 +255,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
         </>
         }
         <PostContent>
-          <article className={`post`} ref={readingProgressRef}>
+          <article className={`post`}>
             <PostHeader>
               <PostMeta>
                 {post.frontmatter.tags.length > 0 &&
@@ -269,7 +266,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
               <PostTitle>{post.frontmatter.title}</PostTitle>
             </PostHeader>
             {post.frontmatter.featuredImage &&
-            <FeaturedImage sizes={post.frontmatter.featuredImage.childImageSharp.sizes}/>
+            <FeaturedImage fluid={post.frontmatter.featuredImage.childImageSharp.fluid}/>
             }
             <StyledPost dangerouslySetInnerHTML={{__html: post.html}} className={`post`}/>
             <PostFooter>
@@ -287,7 +284,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
                 ))}
                 &nbsp;on <time dateTime={post.frontmatter.created}>{post.frontmatter.createdPretty}</time>.
               </p>
-              {post.frontmatter.updated && post.frontmatter.updated !== post.frontmatter.created &&
+              {post.frontmatter.updated && post.frontmatter.updated > post.frontmatter.created &&
               <p>Last updated on <time dateTime={post.frontmatter.updated}>{post.frontmatter.updatedPretty}</time>.</p>
               }
             </PostFooter>
@@ -328,8 +325,12 @@ export const query = graphql`
         updatedPretty: updated(formatString: "DD MMMM, YYYY")
         featuredImage {
           childImageSharp {
-            sizes(maxWidth: 800, quality: 75) {
-              ...GatsbyImageSharpSizes
+            fluid(maxWidth: 800, quality: 75) {
+              base64
+              aspectRatio
+              src
+              srcSet
+              sizes
             }
           }
         }

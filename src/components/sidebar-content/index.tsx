@@ -1,6 +1,6 @@
 import React, {FunctionComponent} from "react";
 import Bio from "../bio";
-import styled from "styled-components";
+import styled from '@emotion/styled';
 
 const StickySidebarContent = styled.div`
   position: sticky;

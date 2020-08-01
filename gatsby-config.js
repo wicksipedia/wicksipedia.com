@@ -1,17 +1,17 @@
 const siteMetadata = {
   title: `Wicksipedia`,
   siteUrl: `https://wicksipedia.com`,
-  description: `The Free Wicksipedia for %TOPICS%`,
-  topics: ['Azure', '.NET', 'Development', 'DevOps', 'Scrum'],
+  description: `My place for %TOPICS%`,
+  topics: ['Azure', '.NET', 'development', 'DevOps', 'Scrum', 'geeking out'],
   menu: [
     {
       name: 'Home',
       path: '/'
     },
-    {
-      name: 'Guides',
-      path: '/guides'
-    },
+    // {
+    //   name: 'Guides',
+    //   path: '/guides'
+    // },
     {
       name: 'About',
       path: '/about'
@@ -50,21 +50,22 @@ module.exports = {
     'gatsby-plugin-twitter',
     `gatsby-transformer-sharp`,
     `gatsby-plugin-react-helmet`,
-    `gatsby-plugin-styled-components`,
+    `gatsby-plugin-emotion`,
+    `gatsby-plugin-postcss`,
     `gatsby-plugin-sitemap`,
     `gatsby-plugin-sharp`,
-    {
-      resolve: `gatsby-plugin-manifest`,
-      options: {
-        name: `nehalem - A Gatsby theme`,
-        short_name: `nehalem`,
-        start_url: `/`,
-        background_color: `#a4cbb8`,
-        theme_color: `#a4cbb8`,
-        display: `minimal-ui`,
-        icon: `${__dirname}/content/assets/images/icon.png`
-      }
-    },
+    // {
+    //   resolve: `gatsby-plugin-manifest`,
+    //   options: {
+    //     name: `nehalem - A Gatsby theme`,
+    //     short_name: `nehalem`,
+    //     start_url: `/`,
+    //     background_color: `#a4cbb8`,
+    //     theme_color: `#a4cbb8`,
+    //     display: `minimal-ui`,
+    //     icon: `${__dirname}/content/assets/images/icon.png`
+    //   }
+    // },
     {
       resolve: `gatsby-source-filesystem`,
       options: {

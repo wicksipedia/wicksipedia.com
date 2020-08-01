@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled from '@emotion/styled';
 import Theme from "../../styles/theme";
 import Typed from 'react-typed';
 
@@ -11,22 +11,6 @@ export const StyledHeader = styled.header`
 
   @media (max-width: ${Theme.breakpoints.sm}) {
     height: 30vh;
-  }
-`;
-
-export const TitleWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  flex-direction: column;
-
-  @media (max-width: ${Theme.breakpoints.sm}) {
-    margin-top: -50px;
-    font-size: .75em;
-    margin-left: 10px;
-    margin-right: 10px;
-    text-align: center;
   }
 `;
 

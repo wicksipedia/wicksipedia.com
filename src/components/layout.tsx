@@ -1,5 +1,4 @@
 import React, {FunctionComponent, ReactNode} from "react";
-import GlobalStyle from "../styles/global-style";
 import {graphql, useStaticQuery} from "gatsby";
 import Header from "./header";
 import {SiteMetadata} from "../utils/models";
@@ -35,7 +34,6 @@ const Layout: FunctionComponent<LayoutProps> = ({children, bigHeader = true}) =>
 
   return (
     <>
-      <GlobalStyle />
       {bigHeader ? (
         <Header
           title={data.site.siteMetadata.title}

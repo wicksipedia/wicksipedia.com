@@ -5,6 +5,7 @@ tags: ["Presentations"]
 featuredImage: "./cover.jpg"
 excerpt: I’m going on tour, presenting on Logic Apps - Gateway to a serverless future! Excitement!
 created: 2019-02-26
+updated: 2019-02-26
 ---
 
 I’m going on tour, presenting on Logic Apps - Gateway to a serverless future! Excitement!

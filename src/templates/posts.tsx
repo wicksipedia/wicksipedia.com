@@ -3,7 +3,7 @@ import Layout from "../components/layout";
 import {Container, Grid} from "../components/common";
 import {Post} from "../utils/models";
 import {Card} from "../components/card";
-import styled from "styled-components";
+import styled from '@emotion/styled';
 import TagList from "../components/tag-list";
 import {Link} from "gatsby";
 import SidebarContent from "../components/sidebar-content";

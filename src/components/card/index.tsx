@@ -18,24 +18,24 @@ export interface CardProps {
 }
 
 export const Card: FunctionComponent<CardProps> = ({
-                                                     title,
-                                                     meta,
-                                                     path,
-                                                     featuredImage,
-                                                     content,
-                                                     halfImage = false,
-                                                     compact = false,
-                                                     style,
-                                                     children,
-                                                   }) => (
+  title,
+  meta,
+  path,
+  featuredImage,
+  content,
+  halfImage = false,
+  compact = false,
+  style,
+  children,
+}) => (
   <StyledArticle style={style}>
     <StyledCard to={path}>
       {/* TODO: Oh boy... */}
       {(featuredImage && featuredImage.fixed) &&
       <FeaturedImage fixed={featuredImage.fixed} halfImage={halfImage}/>
       }
-      {(featuredImage && featuredImage.sizes) &&
-      <FeaturedImage sizes={featuredImage.sizes} halfImage={halfImage}/>
+      {(featuredImage && featuredImage.fluid) &&
+      <FeaturedImage fluid={featuredImage.fluid} halfImage={halfImage}/>
       }
       <CardContent compact={compact}>
         {children}

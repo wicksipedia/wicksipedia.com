@@ -5,6 +5,7 @@ tags: ["Presentations"]
 featuredImage: "./cover.jpg"
 excerpt: I was privileged to present about Logic Apps at the Azure Sydney User Group
 created: 2019-04-27
+updated: 2019-04-27
 ---
 
 I was privileged to present about Logic Apps at the [Azure Sydney User Group](https://www.meetup.com/en-AU/Azure-Sydney-User-Group/events/259970627/).

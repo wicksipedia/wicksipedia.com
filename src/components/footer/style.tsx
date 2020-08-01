@@ -1,4 +1,4 @@
-import styled, {css} from "styled-components";
+import styled from '@emotion/styled'
 import {Container} from "../common";
 import {Link} from "gatsby";
 
@@ -56,15 +56,12 @@ export const StyledNav = styled.nav`
   }
 `;
 
-const LinkStyle = css`
+export const FooterMenuItem = styled.a`
   color: #000;
   text-decoration: none;
 `;
 
-export const FooterMenuItem = styled.a`
-  ${LinkStyle}
-`;
-
 export const FooterMenuLink = styled(Link)`
-  ${LinkStyle}
+  color: #000;
+  text-decoration: none;
 `;

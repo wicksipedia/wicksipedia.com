@@ -1,7 +1,7 @@
 import React, {FunctionComponent} from "react";
 import Layout from "../components/layout";
 import {Link} from "gatsby";
-import styled from "styled-components";
+import styled from '@emotion/styled';
 import Theme from "../styles/theme";
 import SEO from "../components/seo";
 

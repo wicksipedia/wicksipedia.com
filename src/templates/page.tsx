@@ -4,7 +4,7 @@ import Subheader from "../components/subheader";
 import {Page} from "../utils/models";
 import Theme from "../styles/theme";
 import {Container} from "../components/common";
-import styled from "styled-components";
+import styled from '@emotion/styled';
 import PageSidebarContent from "../components/page-sidebar-content";
 import SEO from "../components/seo";
 
