@@ -66,6 +66,7 @@ module.exports = {
         icon: `${__dirname}/content/assets/images/icon.png`
       }
     },
+    `gatsby-plugin-offline`,
     {
       resolve: `gatsby-source-filesystem`,
       options: {
