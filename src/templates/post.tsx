@@ -287,7 +287,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
                 ))}
                 &nbsp;on <time dateTime={post.frontmatter.created}>{post.frontmatter.createdPretty}</time>.
               </p>
-              {post.frontmatter.updated !== post.frontmatter.created &&
+              {post.frontmatter.updated && post.frontmatter.updated !== post.frontmatter.created &&
               <p>Last updated on <time dateTime={post.frontmatter.updated}>{post.frontmatter.updatedPretty}</time>.</p>
               }
             </PostFooter>
