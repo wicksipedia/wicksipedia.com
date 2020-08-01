@@ -12,5 +12,4 @@ path: /about
 - 🌱 I’m learning some SwiftUI in my spare time
 - 👯 I’m looking to collaborate on anywhere I can
 - 📫 How to reach me: 🐤 @matteightyate
-- 
 - ⚡ Fun fact: used to tenpin bowl 🎳 (high game 299)
