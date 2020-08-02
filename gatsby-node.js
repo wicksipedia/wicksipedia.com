@@ -1,7 +1,8 @@
-const fs      = require('fs');
-const mkdirp  = require('mkdirp');
-const path    = require('path');
+const fs = require('fs');
+const mkdirp = require('mkdirp');
+const path = require('path');
 const slugify = require('slugify');
+const pathUtils = require('./src/utils/path');
 
 /**
  * Before booting up Gatsby make sure the content path directory exists.
@@ -94,7 +95,7 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
     }
     const primaryTag = post.frontmatter.tags.length > 0 ? post.frontmatter.tags[0] : null;
     actions.createPage({
-      path: post.frontmatter.path,
+      path: pathUtils.pathToPost(post.frontmatter),
       component: require.resolve(`./src/templates/post.tsx`),
       context: {
         postId: post.id,

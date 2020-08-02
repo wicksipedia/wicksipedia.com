@@ -1,3 +1,5 @@
+const pathUtils = require('./src/utils/path');
+
 const siteMetadata = {
   title: `Wicksipedia`,
   siteUrl: `https://wicksipedia.com`,
@@ -108,7 +110,7 @@ module.exports = {
             content: node => node.html,
             tags: node => node.frontmatter.tags,
             excerpt: node => node.frontmatter.excerpt,
-            path: node => node.frontmatter.path
+            path: node => pathUtils.pathToPost(node.frontmatter)
           }
         }
       }
@@ -167,8 +169,8 @@ module.exports = {
                 return Object.assign({}, edge.node.frontmatter, {
                   description: edge.node.frontmatter.excerpt,
                   date: edge.node.frontmatter.created,
-                  url: site.siteMetadata.siteUrl + edge.node.frontmatter.path,
-                  guid: site.siteMetadata.siteUrl + edge.node.frontmatter.path,
+                  url: site.siteMetadata.siteUrl + pathUtils.pathToPost(edge.node.frontmatter),
+                  guid: site.siteMetadata.siteUrl + pathUtils.pathToPost(edge.node.frontmatter),
                   custom_elements: [{ "content:encoded": edge.node.html }],
                 })
               })

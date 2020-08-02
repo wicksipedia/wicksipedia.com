@@ -1,4 +1,5 @@
 import React, {FunctionComponent} from "react";
+import pathUtil from "../../utils/path";
 import {Post} from "../../utils/models";
 import {Grid} from "../common";
 import {Card} from "../card";
@@ -12,7 +13,7 @@ const PostGrid: FunctionComponent<PostGridProps> = ({posts}) => (
     {posts.map((post, index) => (
       <Card
         title={post.frontmatter.title}
-        path={post.frontmatter.path}
+        path={pathUtil.pathToPost(post.frontmatter)}
         featuredImage={post.frontmatter.featuredImage ? post.frontmatter.featuredImage.childImageSharp : null}
         content={post.frontmatter.excerpt}
         key={index}

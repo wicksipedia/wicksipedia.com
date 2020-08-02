@@ -9,6 +9,7 @@ import {Link} from "gatsby";
 import SidebarContent from "../components/sidebar-content";
 import SEO from "../components/seo";
 import Theme from "../styles/theme";
+import pathUtil from "../utils/path";
 
 interface PostsPageProps {
   pathContext: {
@@ -87,7 +88,7 @@ const PostsPage: FunctionComponent<PostsPageProps> = ({ pathContext, location })
           {posts.map((post, index) => (
             <Card
               title={post.frontmatter.title}
-              path={post.frontmatter.path}
+              path={pathUtil.pathToPost(post.frontmatter)}
               featuredImage={post.frontmatter.featuredImage ? post.frontmatter.featuredImage.childImageSharp : null}
               content={post.frontmatter.excerpt}
               key={index}

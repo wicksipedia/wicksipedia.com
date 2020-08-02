@@ -3,6 +3,7 @@ import {graphql, useStaticQuery} from "gatsby";
 import {Card} from "../card";
 import styled from '@emotion/styled';
 import Theme from "../../styles/theme";
+import pathUtil from "../../utils/path";
 
 const LatestPosts = styled.div`
   display: grid;
@@ -60,7 +61,7 @@ const PageSidebarContent: FunctionComponent = () => {
           <Card
             title={post.frontmatter.title}
             featuredImage={post.frontmatter.featuredImage.childImageSharp}
-            path={post.frontmatter.path}
+            path={pathUtil.pathToPost(post.frontmatter)}
             key={index}
             compact={true}
             meta={
