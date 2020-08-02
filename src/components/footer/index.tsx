@@ -29,7 +29,7 @@ const Footer: FunctionComponent<FooterProps> = ({menu, owner}) => (
           <strong>{owner}</strong>&nbsp;&copy; {new Date().getFullYear()}
         </p>
         <p className="m-0 opacity-75 text-xs">
-          Deployed {process.env.HEAD}@{process.env.COMMIT_REF}
+          Deployed {process.env.HEAD}@{process.env.COMMIT_REF?.substring(0, 7)}
         </p>
       </div>
     </FooterContainer>
