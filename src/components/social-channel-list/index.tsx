@@ -11,6 +11,7 @@ import {
   FaTwitter,
   FaYoutube,
 } from "react-icons/fa";
+import { OutboundLink } from "gatsby-plugin-google-analytics";
 
 interface SocialChannelListProps {
   channels: SocialChannels;
@@ -60,14 +61,14 @@ const SocialChannelList: FunctionComponent<SocialChannelListProps> = ({channels}
   <StyledSocialChannels>
     {(Object.keys(channels)).filter(c => channels[c] !== '').map((channel, index) => (
       <StyledSocialChannel key={index}>
-        <a
+        <OutboundLink
           href={channels[channel]}
           target={`_blank`}
           rel={`noopener`}
           aria-label={channel}
         >
           {createSocialIcon(channel as keyof SocialChannels)}
-        </a>
+        </OutboundLink>
       </StyledSocialChannel>
     ))}
   </StyledSocialChannels>

@@ -1,5 +1,11 @@
 const pathUtils = require('./src/utils/path');
 
+const activeEnv = process.env.GATSBY_ACTIVE_ENV || process.env.NODE_ENV || "development"
+console.log(`Using environment config: '${activeEnv}'`);
+require("dotenv").config({
+  path: `.env.${activeEnv}`,
+})
+
 const siteMetadata = {
   title: `Wicksipedia`,
   siteUrl: `https://wicksipedia.com`,
@@ -56,6 +62,15 @@ module.exports = {
     `gatsby-plugin-postcss`,
     `gatsby-plugin-sitemap`,
     `gatsby-plugin-sharp`,
+    {
+      resolve: `gatsby-plugin-google-analytics`,
+      options: {
+        trackingId: process.env.GA_TRACKING_ID,
+        head: false,
+        respectDNT: true,
+        pageTransitionDelay: 0,
+      },
+    },
     {
       resolve: `gatsby-plugin-manifest`,
       options: {

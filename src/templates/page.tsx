@@ -23,7 +23,7 @@ const PageContainer = styled(Container)`
     display: block;
   }
 
-  p:first-child {
+  p:first-of-type {
     margin-top: 0;
   }
 
