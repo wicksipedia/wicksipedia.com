@@ -26,20 +26,6 @@ const PageContainer = styled(Container)`
   p:first-of-type {
     margin-top: 0;
   }
-
-  li > a,
-  p > a {
-    color: ${Theme.layout.linkColor};
-    border-bottom: 2px ${Theme.layout.linkColor} solid;
-  }
-`;
-
-const PageSidebar = styled.aside`
-  margin-left: 50px;
-
-  @media (max-width: ${Theme.breakpoints.md}) {
-    margin-left: 0;
-  }
 `;
 
 const PageTemplate: FunctionComponent<PageTemplateProps> = ({pathContext, location}) => {
@@ -54,10 +40,10 @@ const PageTemplate: FunctionComponent<PageTemplateProps> = ({pathContext, locati
       />
       <Subheader title={page.frontmatter.title} backgroundColor={Theme.layout.primaryColor}/>
       <PageContainer>
-        <section dangerouslySetInnerHTML={{__html: page.html}}/>
-        <PageSidebar>
+        <section className="prose" dangerouslySetInnerHTML={{__html: page.html}}/>
+        <aside className="ml-8 md:ml-0">
           <PageSidebarContent />
-        </PageSidebar>
+        </aside>
       </PageContainer>
     </Layout>
   );

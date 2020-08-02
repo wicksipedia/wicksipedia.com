@@ -138,14 +138,6 @@ const FeaturedImage = styled(Img)`
   }
 `;
 
-const StyledPost = styled.section`
-  padding: 40px;
-
-  @media (max-width: ${Theme.breakpoints.sm}) {
-    padding: 20px;
-  }
-`;
-
 const PostMeta = styled.section`
   display: flex;
   justify-content: space-between;
@@ -268,7 +260,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
             {post.frontmatter.featuredImage &&
             <FeaturedImage fluid={post.frontmatter.featuredImage.childImageSharp.fluid}/>
             }
-            <StyledPost dangerouslySetInnerHTML={{__html: post.html}} className={`post`}/>
+            <section className="prose p-8 sm:p-4" dangerouslySetInnerHTML={{__html: post.html}} />
             <PostFooter>
               <p>
                 Published under&nbsp;
