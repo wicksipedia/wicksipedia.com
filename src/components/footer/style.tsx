@@ -19,26 +19,6 @@ export const FooterContainer = styled(Container)`
   align-items: center;
 `;
 
-export const Copyright = styled.p`
-  margin: 0;
-`;
-
-export const DesignBy = styled.p`
-  margin: 0;
-  opacity: .8;
-  font-size: .8em;
-
-  a {
-    font-weight: bold;
-    text-decoration: none;
-    color: #000;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
-
 export const StyledNav = styled.nav`
   ul {
     list-style-type: none;

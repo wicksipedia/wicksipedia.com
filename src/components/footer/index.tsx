@@ -1,6 +1,6 @@
 import React, {FunctionComponent} from "react";
 import {MenuItem} from "../../utils/models";
-import {Copyright, DesignBy, FooterContainer, FooterMenuItem, FooterMenuLink, StyledFooter, StyledNav} from "./style";
+import {FooterContainer, FooterMenuItem, FooterMenuLink, StyledFooter, StyledNav} from "./style";
 
 interface FooterProps {
   menu: MenuItem[];
@@ -25,12 +25,12 @@ const Footer: FunctionComponent<FooterProps> = ({menu, owner}) => (
         </ul>
       </StyledNav>
       <div>
-        <Copyright>
+        <p className='m-0'>
           <strong>{owner}</strong>&nbsp;&copy; {new Date().getFullYear()}
-        </Copyright>
-        <DesignBy>
-          Theme by <a href={`https://nehalist.io`} target={`_blank`} rel={`noopener`}>nehalist.io</a>
-        </DesignBy>
+        </p>
+        <p className="m-0 opacity-75 text-xs">
+          Deployed {process.env.HEAD}@{process.env.COMMIT_REF}
+        </p>
       </div>
     </FooterContainer>
   </StyledFooter>
