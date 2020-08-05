@@ -76,19 +76,6 @@ module.exports = {
       },
     },
     {
-      resolve: `gatsby-plugin-manifest`,
-      options: {
-        name: `Wicksipedia`,
-        short_name: `Wicksipedia`,
-        start_url: `/`,
-        background_color: `#a4cbb8`,
-        theme_color: `#a4cbb8`,
-        display: `minimal-ui`,
-        icon: `${__dirname}/content/assets/images/icon.png`
-      }
-    },
-    `gatsby-plugin-offline`,
-    {
       resolve: `gatsby-source-filesystem`,
       options: {
         name: `assets`,
@@ -139,6 +126,7 @@ module.exports = {
       options: {
         plugins: [
           `gatsby-remark-autolink-headers`,
+          `gatsby-remark-external-links`,
           `gatsby-remark-vscode`,
           {
             resolve: `gatsby-remark-images`,
