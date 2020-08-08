@@ -1,6 +1,6 @@
 import React, {FunctionComponent} from "react";
 import styled from '@emotion/styled';
-import {Container} from "../common";
+import {Container} from "../components/common";
 
 interface SubheaderProps {
   title: string;
@@ -34,7 +34,7 @@ const SubheaderSubtitle = styled.small`
 
 const Subheader: FunctionComponent<SubheaderProps> = ({title, subtitle, backgroundColor, textColor}) => (
   <StyledSubheader backgroundColor={backgroundColor} textColor={textColor}>
-    <Container>
+    <Container className="p-2">
       <SubheaderTitle>
         {title}
         <SubheaderSubtitle>{subtitle}</SubheaderSubtitle>

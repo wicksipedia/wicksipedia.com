@@ -12,6 +12,7 @@ import {
   FaYoutube,
 } from "react-icons/fa";
 import { OutboundLink } from "gatsby-plugin-google-analytics";
+import tw from "twin.macro";
 
 interface SocialChannelListProps {
   channels: SocialChannels;
@@ -39,23 +40,13 @@ const createSocialIcon = (channel: keyof SocialChannels) => {
   return <FaQuestionCircle/>;
 };
 
-const StyledSocialChannels = styled.ul`
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-`;
+const StyledSocialChannels = styled.ul([
+  tw`list-none m-0`
+]);
 
-const StyledSocialChannel = styled.li`
-  display: inline-block;
-  margin: 0 10px;
-  font-size: 1.6em;
-  opacity: .7;
-  transition: opacity .5s;
-
-  &:hover {
-    opacity: 1;
-  }
-`;
+const StyledSocialChannel = styled.li([
+  tw`inline-block my-0 mx-4 text-xl opacity-75`
+]);
 
 const SocialChannelList: FunctionComponent<SocialChannelListProps> = ({channels}) => (
   <StyledSocialChannels>

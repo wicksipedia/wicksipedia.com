@@ -1,24 +1,7 @@
 import React, {FunctionComponent} from "react";
 import {graphql, useStaticQuery} from "gatsby";
-import {Card} from "../card";
-import styled from '@emotion/styled';
-import Theme from "../../styles/theme";
-import pathUtil from "../../utils/path";
-
-const LatestPosts = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-gap: 30px;
-  width: 310px;
-
-  @media (max-width: ${Theme.breakpoints.md}) {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  @media (max-width: 700px) {
-    grid-template-columns: 1fr;
-  }
-`;
+import {Card} from "./card";
+import pathUtil from "../utils/path";
 
 const PageSidebarContent: FunctionComponent = () => {
   const latestPosts = useStaticQuery(graphql`
@@ -56,24 +39,22 @@ const PageSidebarContent: FunctionComponent = () => {
   return (
     <>
       <h3>Latest posts</h3>
-      <LatestPosts>
-        {posts.map((post, index) => (
-          <Card
-            title={post.frontmatter.title}
-            featuredImage={post.frontmatter.featuredImage.childImageSharp}
-            path={pathUtil.pathToPost(post.frontmatter)}
-            key={index}
-            compact={true}
-            meta={
-              {
-                time: post.frontmatter.created,
-                timePretty: post.frontmatter.createdPretty,
-                tag: post.frontmatter.tags.length > 0 ? post.frontmatter.tags[0] : null,
-              }
+      {posts.map((post, index) => (
+        <Card
+          title={post.frontmatter.title}
+          featuredImage={post.frontmatter.featuredImage.childImageSharp}
+          path={pathUtil.pathToPost(post.frontmatter)}
+          key={index}
+          compact={true}
+          meta={
+            {
+              time: post.frontmatter.created,
+              timePretty: post.frontmatter.createdPretty,
+              tag: post.frontmatter.tags.length > 0 ? post.frontmatter.tags[0] : null,
             }
-          />
-        ))}
-      </LatestPosts>
+          }
+        />
+      ))}
     </>
   );
 };

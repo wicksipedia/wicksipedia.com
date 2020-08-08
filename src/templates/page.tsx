@@ -1,12 +1,12 @@
 import React, {FunctionComponent} from "react";
-import Layout from "../components/layout";
-import Subheader from "../components/subheader";
+import Layout from "../layout/layout";
+import Subheader from "../layout/subheader";
 import {Page} from "../utils/models";
-import Theme from "../styles/theme";
 import {Container} from "../components/common";
 import styled from '@emotion/styled';
 import PageSidebarContent from "../components/page-sidebar-content";
 import SEO from "../components/seo";
+import tw from "twin.macro";
 
 interface PageTemplateProps {
   pathContext: {
@@ -16,17 +16,17 @@ interface PageTemplateProps {
 }
 
 const PageContainer = styled(Container)`
-  display: flex;
-  justify-content: space-between;
-
-  @media (max-width: ${Theme.breakpoints.md}) {
-    display: block;
-  }
-
-  p:first-of-type {
-    margin-top: 0;
-  }
+  ${tw`flex flex-wrap`}
 `;
+
+const PageContent = styled.section([
+  `prose`,
+  tw`max-w-none w-full p-2 md:w-7/12`
+]);
+
+const Sidebar = styled.section([
+  tw`w-10/12 mx-auto pt-4 md:pt-0 md:w-4/12 md:ml-auto md:mr-0`
+]);
 
 const PageTemplate: FunctionComponent<PageTemplateProps> = ({pathContext, location}) => {
   const page = pathContext.page;
@@ -38,12 +38,12 @@ const PageTemplate: FunctionComponent<PageTemplateProps> = ({pathContext, locati
         description={page.frontmatter.excerpt}
         location={location}
       />
-      <Subheader title={page.frontmatter.title} backgroundColor={Theme.layout.primaryColor}/>
+      <Subheader title={page.frontmatter.title} />
       <PageContainer>
-        <section className="prose" dangerouslySetInnerHTML={{__html: page.html}}/>
-        <aside className="ml-8 md:ml-0">
+        <PageContent dangerouslySetInnerHTML={{__html: page.html}}/>
+        <Sidebar>
           <PageSidebarContent />
-        </aside>
+        </Sidebar>
       </PageContainer>
     </Layout>
   );

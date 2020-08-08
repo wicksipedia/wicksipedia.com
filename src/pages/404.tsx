@@ -1,5 +1,5 @@
 import React, {FunctionComponent} from "react";
-import Layout from "../components/layout";
+import Layout from "../layout/layout";
 import {Link} from "gatsby";
 import styled from '@emotion/styled';
 import Theme from "../styles/theme";
@@ -34,14 +34,6 @@ const ErrorDescription = styled.h2`
   margin-bottom: 15px;
 `;
 
-const BackLink = styled(Link)`
-  color: ${Theme.layout.primaryColor};
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
 const NotFoundPage: FunctionComponent<ErrorProps> = ({location}) => (
   <Layout bigHeader={false}>
     <SEO
@@ -51,7 +43,7 @@ const NotFoundPage: FunctionComponent<ErrorProps> = ({location}) => (
     <Error>
       <ErrorTitle>404</ErrorTitle>
       <ErrorDescription>Page not found</ErrorDescription>
-      <BackLink to={`/`}>{/* Country roads... */} Take me home!</BackLink>
+      <Link to={`/`}>♫ Country roads...♫ Take me home!</Link>
     </Error>
   </Layout>
 );

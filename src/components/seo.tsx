@@ -18,18 +18,18 @@ interface SEOProps {
 }
 
 const SEO: FunctionComponent<SEOProps> = ({
-                                            title,
-                                            description,
-                                            lang = 'en',
-                                            location,
-                                            publishedAt,
-                                            updatedAt,
-                                            isArticle = false,
-                                            tags = [],
-                                            type = `Article`,
-                                            image,
-                                          }) => {
-  const {site}          = useStaticQuery<SiteMetadata>(graphql`
+  title,
+  description,
+  lang = 'en',
+  location,
+  publishedAt,
+  updatedAt,
+  isArticle = false,
+  tags = [],
+  type = `Article`,
+  image,
+}) => {
+  const {site} = useStaticQuery<SiteMetadata>(graphql`
     query {
       site {
         siteMetadata {
@@ -49,13 +49,13 @@ const SEO: FunctionComponent<SEOProps> = ({
       }
     }
   `);
-  const metadata        = site.siteMetadata;
-  const siteTitle       = title ? `${title} - ${metadata.title}` : metadata.title;
+  const metadata = site.siteMetadata;
+  const siteTitle = title ? `${title} - ${metadata.title}` : metadata.title;
   const metaDescription = description
     ? description
     : metadata.description.replace("%TOPICS%", metadata.topics.join(", "));
-  const metaImage       = image ? `${metadata.siteUrl}${image}` : null;
-  const canonical       = url.resolve(metadata.siteUrl, location.pathname);
+  const metaImage = image ? `${metadata.siteUrl}${image}` : null;
+  const canonical = url.resolve(metadata.siteUrl, location.pathname);
 
   return (
     <Helmet

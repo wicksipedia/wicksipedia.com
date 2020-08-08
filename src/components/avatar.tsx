@@ -2,20 +2,16 @@ import React, {CSSProperties, FunctionComponent} from "react";
 import styled from '@emotion/styled';
 import {graphql, useStaticQuery} from "gatsby";
 import Img from "gatsby-image";
+import tw from "twin.macro";
 
 interface AvatarProps {
   alt: string;
   style?: CSSProperties;
 }
 
-const StyledAvatar = styled(Img)<AvatarProps>`
-  max-width: 55px;
-  border-radius: 100%;
+const AvatarImage = styled(Img)`
 `;
 
-/**
- * Placeholder component which shows your avatar.
- */
 const Avatar: FunctionComponent<AvatarProps> = ({alt, style}) => {
   const logo = useStaticQuery(graphql`
     query {
@@ -29,7 +25,10 @@ const Avatar: FunctionComponent<AvatarProps> = ({alt, style}) => {
     }
   `);
 
-  return <StyledAvatar fixed={logo.file.childImageSharp.fixed} alt={alt} style={style} />;
+  return <AvatarImage
+    fixed={logo.file.childImageSharp.fixed}
+    alt={alt}
+    style={style} />;
 };
 
 export default Avatar;

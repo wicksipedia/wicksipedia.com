@@ -66,6 +66,12 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
               }
             }
             html
+            timeToRead
+            file: parent {
+              ... on File {
+                contentPath: relativePath
+              }
+            }
           }
         }
       }

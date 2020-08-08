@@ -1,8 +1,8 @@
 import React, {FunctionComponent} from "react";
-import Layout from "../components/layout";
+import Layout from "../layout/layout";
 import {graphql} from "gatsby";
 import {Post} from "../utils/models";
-import Subheader from "../components/subheader";
+import Subheader from "../layout/subheader";
 import SEO from "../components/seo";
 import PostGrid from "../components/post-grid";
 

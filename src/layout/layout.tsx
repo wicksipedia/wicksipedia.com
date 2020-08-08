@@ -2,7 +2,7 @@ import React, {FunctionComponent, ReactNode} from "react";
 import {graphql, useStaticQuery} from "gatsby";
 import Header from "./header";
 import {SiteMetadata} from "../utils/models";
-import Navigation from "./navigation";
+import Navigation from "./header/navigation";
 import Footer from "./footer";
 
 interface LayoutProps {

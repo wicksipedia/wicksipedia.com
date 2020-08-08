@@ -10,10 +10,10 @@ const siteMetadata = {
       name: 'Home',
       path: '/'
     },
-    // {
-    //   name: 'Guides',
-    //   path: '/guides'
-    // },
+    {
+      name: 'Tags',
+      path: '/tags'
+    },
     {
       name: 'About',
       path: '/about'

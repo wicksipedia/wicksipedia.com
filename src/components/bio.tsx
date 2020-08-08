@@ -2,8 +2,9 @@ import React, {CSSProperties, FunctionComponent} from "react";
 import styled from '@emotion/styled';
 import {graphql, useStaticQuery} from "gatsby";
 import {SiteMetadata} from "../../utils/models";
-import SocialChannelList from "../social-channel-list";
-import Avatar from "../avatar";
+import SocialChannelList from "./social-channel-list";
+import Avatar from "./avatar";
+import tw from "twin.macro";
 
 interface BioProps {
   textAlign: 'left' | 'center' | 'right' | 'justify';
@@ -17,18 +18,9 @@ const StyledBio = styled.section<Pick<BioProps, 'textAlign'>>`
   width: 100%;
 `;
 
-const AuthorDescription = styled.p`
-  margin: 10px 0 13px;
-
-  a {
-    color: #000;
-    text-decoration: underline;
-  }
-`;
-
-const AuthorName = styled.h3`
-  margin: 10px;
-`;
+const AuthorDescription = styled.p([
+  tw`my-4`
+]);
 
 const Bio: FunctionComponent<BioProps> = ({textAlign = 'center', avatarStyle, showName = false}) => {
   const metadata = useStaticQuery<SiteMetadata>(graphql`
@@ -58,7 +50,6 @@ const Bio: FunctionComponent<BioProps> = ({textAlign = 'center', avatarStyle, sh
   return (
     <StyledBio textAlign={textAlign}>
       <Avatar alt={author.name} style={avatarStyle} />
-      {showName && <AuthorName>{author.name}</AuthorName>}
       <AuthorDescription dangerouslySetInnerHTML={{__html: author.description}}/>
       <SocialChannelList channels={author.social}/>
     </StyledBio>

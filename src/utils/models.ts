@@ -49,7 +49,11 @@ export interface Post {
     featuredImage?: any;
   };
   html: string;
+  timeToRead: number;
   headings: Array<{ depth: number }>;
+  file: {
+    contentPath: string;
+  }
 }
 
 export interface Page {

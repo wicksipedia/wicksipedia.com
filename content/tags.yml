@@ -1,5 +1,5 @@
 
 - name: Presentations
-  color: "#007acc"
+  color: ''
   icon: ./assets/images/logo.png
   featured: true

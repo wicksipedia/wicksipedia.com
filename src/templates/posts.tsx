@@ -1,15 +1,13 @@
 import React, {FunctionComponent} from "react";
-import Layout from "../components/layout";
-import {Container, Grid} from "../components/common";
+import Layout from "../layout/layout";
+import {Container} from "../components/common";
 import {Post} from "../utils/models";
-import {Card} from "../components/card";
 import styled from '@emotion/styled';
 import TagList from "../components/tag-list";
 import {Link} from "gatsby";
-import SidebarContent from "../components/sidebar-content";
 import SEO from "../components/seo";
-import Theme from "../styles/theme";
-import pathUtil from "../utils/path";
+import tw from "twin.macro";
+import PostGrid from "../components/post-grid";
 
 interface PostsPageProps {
   pathContext: {
@@ -18,47 +16,6 @@ interface PostsPageProps {
   };
   location: Location;
 }
-
-const HomeContainer = styled(Container)`
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) .25fr;
-  grid-column-gap: 30px;
-
-  @media (max-width: ${Theme.breakpoints.xl}) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const PostsContainer = styled(Grid)`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-areas: "latest latest" ". .";
-  width: 100%;
-  margin-left: 0;
-  margin-right: 0;
-  margin-top: -30px;
-
-  @media (max-width: ${Theme.breakpoints.sm}) {
-    display: block;
-    padding: 0;
-
-    article {
-      margin-bottom: 30px;
-    }
-  }
-`;
-
-const Sidebar = styled.aside`
-  width: 315px;
-  padding-top: 30px;
-
-  @media (max-width: ${Theme.breakpoints.xl}) {
-    margin: 30px auto;
-    border-top: 2px #e5eff5 solid;
-    padding: 20px;
-    width: 100%;
-  }
-`;
 
 const ArchiveLinkWrapper = styled.div`
   grid-column: 1 / -1;
@@ -77,40 +34,28 @@ const ArchiveLink = styled(Link)`
   }
 `;
 
+const Grid = styled.div`
+  ${tw`p-4 grid gap-4 grid-flow-row grid-cols-1 md:grid-cols-3`}
+  
+  > *:first-child {
+    ${tw`md:col-span-3`}
+  }
+`;
+
 const PostsPage: FunctionComponent<PostsPageProps> = ({ pathContext, location }) => {
   const posts = pathContext.posts.slice(0, pathContext.postsPerPage);
 
   return (
     <Layout>
       <SEO location={location} type={`WebSite`} />
-      <HomeContainer>
-        <PostsContainer>
-          {posts.map((post, index) => (
-            <Card
-              title={post.frontmatter.title}
-              path={pathUtil.pathToPost(post.frontmatter)}
-              featuredImage={post.frontmatter.featuredImage ? post.frontmatter.featuredImage.childImageSharp : null}
-              content={post.frontmatter.excerpt}
-              key={index}
-              meta={
-                {
-                  time: post.frontmatter.created,
-                  timePretty: post.frontmatter.createdPretty,
-                  tag: post.frontmatter.tags.length > 0 ? post.frontmatter.tags[0] : null,
-                }
-              }
-              style={{gridArea: index === 0 ? 'latest' : undefined}}
-              halfImage={index === 0}
-            />
-          ))}
-          <ArchiveLinkWrapper>
-            <ArchiveLink to={`/archive`}>More posts</ArchiveLink>
-          </ArchiveLinkWrapper>
-        </PostsContainer>
-        <Sidebar>
-          <SidebarContent />
-        </Sidebar>
-      </HomeContainer>
+      <Container>
+        <Grid>
+          <PostGrid posts={posts} />
+        </Grid>
+        <ArchiveLinkWrapper>
+          <ArchiveLink to={`/archive`}>More posts</ArchiveLink>
+        </ArchiveLinkWrapper>
+      </Container>
       <TagList />
     </Layout>
   );

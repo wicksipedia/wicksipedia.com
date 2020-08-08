@@ -1,11 +1,13 @@
 import React, {FunctionComponent} from "react";
-import Layout from "../components/layout";
+import Layout from "../layout/layout";
 import {graphql} from "gatsby";
 import {Post, Tag} from "../utils/models";
-import Subheader from "../components/subheader";
+import Subheader from "../layout/subheader";
 import SEO from "../components/seo";
-import Theme from "../styles/theme";
 import PostGrid from "../components/post-grid";
+import { Container } from "../components/common";
+import styled from "@emotion/styled";
+import tw from "twin.macro";
 
 interface TagTemplateProps {
   data: {
@@ -17,14 +19,18 @@ interface TagTemplateProps {
   location: Location;
 }
 
+const Grid = styled.div([
+  tw`p-4 grid gap-4 grid-flow-row grid-cols-1 md:grid-cols-3`
+]);
+
 const TagTemplate: FunctionComponent<TagTemplateProps> = ({data, location}) => {
-  let tag     = data.tag;
+  let tag = data.tag;
   const posts = data.posts.edges.map(node => node.node);
 
-  if (! tag && posts.length > 0) {
+  if (!tag && posts.length > 0) {
     tag = {
       name: posts[0].frontmatter.tags[0],
-      color: Theme.layout.primaryColor,
+      color: null,
       icon: null,
       featured: false,
     };
@@ -38,7 +44,11 @@ const TagTemplate: FunctionComponent<TagTemplateProps> = ({data, location}) => {
         type={`Series`}
       />
       <Subheader title={tag.name} subtitle={`${posts.length} posts`} backgroundColor={tag.color}/>
-      <PostGrid posts={posts} />
+      <Container>
+        <Grid>
+          <PostGrid posts={posts} />
+        </Grid>
+      </Container>
     </Layout>
   );
 };
@@ -70,7 +80,7 @@ export const query = graphql`
             createdPretty: created(formatString: "DD MMMM, YYYY")
             featuredImage {
               childImageSharp {
-                sizes(maxWidth: 800, quality: 100) {
+                fluid(maxWidth: 800, quality: 75) {
                   base64
                   aspectRatio
                   src
@@ -80,6 +90,7 @@ export const query = graphql`
               }
             }
           }
+          timeToRead
         }
       }
     }
