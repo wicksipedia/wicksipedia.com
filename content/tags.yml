@@ -1,5 +1,12 @@
 
+- name: Git
+  icon: ./assets/images/logos/git.png
+  featured: false
+
+- name: GitHub
+  icon: ./assets/images/logos/github.png
+  featured: true
+
 - name: Presentations
-  color: ''
-  icon: ./assets/images/logo.png
+  icon: ./assets/images/logos/presentations.png
   featured: true

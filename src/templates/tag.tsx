@@ -30,7 +30,6 @@ const TagTemplate: FunctionComponent<TagTemplateProps> = ({data, location}) => {
   if (!tag && posts.length > 0) {
     tag = {
       name: posts[0].frontmatter.tags[0],
-      color: null,
       icon: null,
       featured: false,
     };
@@ -59,7 +58,6 @@ export const query = graphql`
   query($tag: String!) {
     tag: tags(name: { eq: $tag }) {
       name
-      color
     }
     posts: allMarkdownRemark(
       filter: {

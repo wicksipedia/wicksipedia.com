@@ -60,20 +60,11 @@ const TagList: FunctionComponent = () => {
       allTags(filter: {featured: { eq: true }}) {
         nodes {
           name
-          icon {
-            childImageSharp {
-              fixed(height: 55) {
-                ...GatsbyImageSharpFixed
-              }
-            }
-            extension
-            publicURL
-          }
         }
       }
     }
   `);
-  const tags      = tagsQuery.allTags.nodes;
+  const tags = tagsQuery.allTags.nodes;
 
   return (
     <TagContainer>
@@ -85,10 +76,10 @@ const TagList: FunctionComponent = () => {
             <StyledTag key={index}>
               <Link to={`/tag/${slugify(tag.name, {lower: true})}`}>
                 {/* gatsby-image doesn't handle SVGs, hence we need to take care of it */}
-                {icon.extension !== 'svg'
+                {/* {icon.extension !== 'svg'
                   ? <Img fixed={tag.icon.childImageSharp.fixed}/>
                   : <TagIcon src={icon.publicURL} alt={tag.name}/>
-                }
+                } */}
                 <TagName>{tag.name}</TagName>
               </Link>
             </StyledTag>

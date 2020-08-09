@@ -15,7 +15,6 @@ import { OutboundLink } from "gatsby-plugin-google-analytics";
 
 interface PostTemplateProps {
   data: {
-    primaryTag: Tag | null;
     post: Post;
   };
   location: Location;
@@ -124,7 +123,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
 export default PostTemplate;
 
 export const query = graphql`
-  query PrimaryTag($postId: String!, $primaryTag: String!) {
+  query PrimaryTag($postId: String!) {
     post: markdownRemark(
       id: { eq: $postId }
     ) {
@@ -162,10 +161,6 @@ export const query = graphql`
           contentPath: relativePath
         }
       }
-    }
-    primaryTag: tags(name: { eq: $primaryTag }) {
-      name
-      color
     }
   }
 `;

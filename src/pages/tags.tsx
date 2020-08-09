@@ -53,10 +53,10 @@ const TagsPage: FunctionComponent<TagsPageProps> = ({data, location}) => {
               style={{textAlign: 'center'}}
             >
               {/* gatsby-image doesn't handle SVGs, hence we need to take care of it */}
-              {tag.icon.extension !== 'svg'
+              {/* {tag.icon.extension !== 'svg'
                 ? <Img fixed={tag.icon.childImageSharp.fixed}/>
                 : <TagSvgIcon src={tag.icon.publicURL} alt={tag.name}/>
-              }
+              } */}
               <TagName>
                 {tag.name}
               </TagName>
@@ -76,15 +76,6 @@ export const query = graphql`
       edges {
         node {
           name
-          icon {
-            childImageSharp {
-              fixed(height: 55) {
-                ...GatsbyImageSharpFixed
-              }
-            }
-            extension
-            publicURL
-          }
         }
       }
     }
