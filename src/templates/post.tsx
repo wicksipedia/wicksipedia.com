@@ -1,4 +1,4 @@
-import React, {FunctionComponent, useState} from "react";
+import React, {FunctionComponent} from "react";
 import Layout from "../layout/layout";
 import {Post, Tag} from "../utils/models";
 import {Container} from "../components/common";
@@ -53,10 +53,7 @@ const BioWrapper = styled.div([
 ]);
 
 const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) => {
-  const [showToc, setShowToc] = useState<boolean>(false);
   const post = data.post;
-  const primaryTag = data.primaryTag;
-  const toggleToc = () => setShowToc(!showToc);
 
   return (
     <Layout bigHeader={false}>
