@@ -1,10 +1,9 @@
-import React, {createRef, FunctionComponent, useState} from "react";
+import React, {FunctionComponent, useState} from "react";
 import Layout from "../layout/layout";
 import {Post, Tag} from "../utils/models";
 import {Container} from "../components/common";
 import styled from '@emotion/styled';
 import Img from "gatsby-image";
-import Theme from "../styles/theme";
 import {graphql, Link} from "gatsby";
 import slugify from "slugify";
 import Bio from "../components/bio";
@@ -38,7 +37,6 @@ const PostFooter = styled.footer([
 ]);
 
 const FooterTagLink = styled(Link)`
-  no-underline
 `;
 
 const PostAddition = styled.section([
