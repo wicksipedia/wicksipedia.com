@@ -16,7 +16,6 @@ export interface SiteMetadata {
 export interface Tag {
   name: string;
   icon: any;
-  featured: boolean;
 }
 
 export interface SocialChannels {

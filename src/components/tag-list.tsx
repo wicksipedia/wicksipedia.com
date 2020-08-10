@@ -1,9 +1,10 @@
 import React, {FunctionComponent} from "react";
 import {graphql, Link, useStaticQuery} from "gatsby";
-import {Tag} from "../utils/models";
 import Img from "gatsby-image";
+import {Tag} from "../utils/models";
 import slugify from "slugify";
 import styled from '@emotion/styled';
+import _ from "lodash";
 
 export const TagContainer = styled.section`
   background-color: #fff;
@@ -55,32 +56,61 @@ export const TagArchiveLink = styled(Link)`
 
 
 const TagList: FunctionComponent = () => {
-  const tagsQuery = useStaticQuery<{ allTags: { nodes: Tag[] } }>(graphql`
+  const tagsQuery = useStaticQuery<{
+    posts: {
+      edges: Array<{
+        node: {
+          frontmatter: {
+            tags: Array<string>;
+          };
+        };
+      }>;
+    }
+    allTags: { edges: Array<{node: Tag}> }
+  }>(graphql`
     query Tags {
-      allTags(filter: {featured: { eq: true }}) {
-        nodes {
-          name
+      posts: allMarkdownRemark(
+        filter: { fileAbsolutePath: { regex: "/(posts)/.*\\\\.md$/" } }
+      ) {
+        edges {
+          node {
+            frontmatter {
+              tags
+            }
+          }
+        }
+      }
+      allTags: allFile(filter: {sourceInstanceName: {eq: "tag-logos"}}) {
+        edges {
+          node {
+            name
+            icon: childImageSharp {
+              fixed(height: 55) {
+                ...GatsbyImageSharpFixed
+              }
+            }
+          }
         }
       }
     }
   `);
-  const tags = tagsQuery.allTags.nodes;
+
+  const allTags = [].concat(...tagsQuery?.posts.edges.map(e => e.node.frontmatter.tags));
+  const tags = _.chain(allTags).countBy().toPairs().sortBy(1).reverse().map(0).value();
+
+  const tagLogos = tagsQuery.allTags.edges.map(e => e.node);
 
   return (
     <TagContainer>
       <TagListTitle>Featured Tags</TagListTitle>
       <StyledTagList>
-        {tags.map((tag, index) => {
-          const icon = tag.icon;
+        {_.take(tags, 6).map((tag, index) => {
+          const tagLogo = tagLogos.find(l => l.name.toUpperCase() === tag.toUpperCase());
           return (
             <StyledTag key={index}>
-              <Link to={`/tag/${slugify(tag.name, {lower: true})}`}>
-                {/* gatsby-image doesn't handle SVGs, hence we need to take care of it */}
-                {/* {icon.extension !== 'svg'
-                  ? <Img fixed={tag.icon.childImageSharp.fixed}/>
-                  : <TagIcon src={icon.publicURL} alt={tag.name}/>
-                } */}
-                <TagName>{tag.name}</TagName>
+              <Link to={`/tag/${slugify(tag, {lower: true})}`}>
+                {(tagLogo && <Img fixed={tagLogo.icon.fixed}/>)}
+                <TagName>{tag}</TagName>
               </Link>
             </StyledTag>
           );

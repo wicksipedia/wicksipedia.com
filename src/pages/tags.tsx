@@ -10,9 +10,19 @@ import styled from '@emotion/styled';
 import SEO from "../components/seo";
 import tw from "twin.macro";
 import { Container } from "../components/common";
+import _ from "lodash";
 
 interface TagsPageProps {
   data: {
+    posts: {
+      edges: Array<{
+        node: {
+          frontmatter: {
+            tags: Array<string>;
+          };
+        };
+      }>;
+    };
     allTags: {
       edges: Array<{ node: Tag }>;
     };
@@ -33,7 +43,9 @@ const Grid = styled.div([
 ]);
 
 const TagsPage: FunctionComponent<TagsPageProps> = ({data, location}) => {
-  const tags = data.allTags.edges.map(node => node.node);
+  
+  const tags = _.uniq(_.flatten(data?.posts.edges.map(e => e.node.frontmatter.tags)));
+  const tagLogos = data?.allTags.edges.map(node => node.node);
 
   return (
     <Layout bigHeader={false}>
@@ -45,23 +57,22 @@ const TagsPage: FunctionComponent<TagsPageProps> = ({data, location}) => {
       <Subheader title={`Tags`} subtitle={`${tags.length} tags`}/>
       <Container>
         <Grid>
-          {tags.map((tag, index) => (
-            <Card
-              key={index}
-              path={`/tag/${slugify(tag.name, {lower: true})}`}
-              compact={true}
-              style={{textAlign: 'center'}}
-            >
-              {/* gatsby-image doesn't handle SVGs, hence we need to take care of it */}
-              {/* {tag.icon.extension !== 'svg'
-                ? <Img fixed={tag.icon.childImageSharp.fixed}/>
-                : <TagSvgIcon src={tag.icon.publicURL} alt={tag.name}/>
-              } */}
-              <TagName>
-                {tag.name}
-              </TagName>
-            </Card>
-          ))}
+          {_.sortBy(tags).map((tag, index) => {
+            const tagLogo = tagLogos.find(l => l.name.toUpperCase() === tag.toUpperCase());
+            return (
+              <Card
+                key={index}
+                path={`/tag/${slugify(tag, {lower: true})}`}
+                compact={true}
+                style={{textAlign: 'center'}}
+              >
+                { tagLogo?.icon && <Img fixed={tagLogo.icon.fixed}/> }
+                <TagName>
+                  {tag}
+                </TagName>
+              </Card>
+            );
+          })}
         </Grid>
       </Container>
     </Layout>
@@ -72,10 +83,28 @@ export default TagsPage;
 
 export const query = graphql`
   query {
-    allTags {
+    posts: allMarkdownRemark(
+      filter: { fileAbsolutePath: { regex: "/(posts)/.*\\\\.md$/" } }
+    ) {
+      edges {
+        node {
+          frontmatter {
+            tags
+          }
+        }
+      }
+    }
+    allTags: allFile(
+      filter: { sourceInstanceName: { eq: "tag-logos" } }
+    ) {
       edges {
         node {
           name
+          icon: childImageSharp {
+            fixed(height: 55) {
+              ...GatsbyImageSharpFixed
+            }
+          }
         }
       }
     }

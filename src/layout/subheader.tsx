@@ -1,45 +1,44 @@
 import React, {FunctionComponent} from "react";
+import Img from "gatsby-image";
 import styled from '@emotion/styled';
 import {Container} from "../components/common";
+import tw from "twin.macro";
 
 interface SubheaderProps {
   title: string;
   subtitle?: string;
-  backgroundColor?: string;
-  textColor?: string;
+  image?: any;
 }
 
-const StyledSubheader = styled.div<Pick<SubheaderProps, 'backgroundColor' | 'textColor'>>`
-  background-color: ${props => props.backgroundColor ? props.backgroundColor : '#000'};
-  color: ${props => props.textColor ? props.textColor : '#fff'};
-  display: flex;
-  align-items: center;
-  height: 90px;
-  margin-bottom: 30px;
+const StyledSubheader = styled.div`
+  ${tw`bg-black bg-opacity-50 mb-4`}
+`;
+
+const StyledContainer = styled(Container)`
+  ${tw`flex flex-wrap py-4`}
+`;
+
+const SubheaderImage = styled(Img)`
+  ${tw`mr-4`}
 `;
 
 const SubheaderTitle = styled.h1`
-  font-size: 1.2em;
-  font-weight: bold;
-  color: #fff;
-  margin: 0;
-  line-height: 1em;
+  ${tw`text-white font-bold text-xl my-auto mx-0`}
 `;
 
 const SubheaderSubtitle = styled.small`
-  font-weight: normal;
-  display: block;
-  opacity: .9;
+  ${tw`block text-opacity-75`}
 `;
 
-const Subheader: FunctionComponent<SubheaderProps> = ({title, subtitle, backgroundColor, textColor}) => (
-  <StyledSubheader backgroundColor={backgroundColor} textColor={textColor}>
-    <Container className="p-2">
+const Subheader: FunctionComponent<SubheaderProps> = ({title, subtitle, image}) => (
+  <StyledSubheader>
+    <StyledContainer>
+      {image && <SubheaderImage fixed={image.fixed}/>}
       <SubheaderTitle>
         {title}
         <SubheaderSubtitle>{subtitle}</SubheaderSubtitle>
       </SubheaderTitle>
-    </Container>
+    </StyledContainer>
   </StyledSubheader>
 );
 

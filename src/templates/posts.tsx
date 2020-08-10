@@ -37,7 +37,7 @@ const ArchiveLink = styled(Link)`
 const Grid = styled.div`
   ${tw`p-4 grid gap-4 grid-flow-row grid-cols-1 md:grid-cols-3`}
   
-  > *:first-child {
+  > *:first-of-type {
     ${tw`md:col-span-3`}
   }
 `;

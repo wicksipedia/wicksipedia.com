@@ -4,11 +4,16 @@ import Header from "./header";
 import {SiteMetadata} from "../utils/models";
 import Navigation from "./header/navigation";
 import Footer from "./footer";
+import styled from '@emotion/styled';
 
 interface LayoutProps {
   children: ReactNode;
   bigHeader?: boolean;
 }
+
+const Main = styled.main`
+  min-height: 80vh;
+`;
 
 const Layout: FunctionComponent<LayoutProps> = ({children, bigHeader = true}) => {
   const data = useStaticQuery<SiteMetadata>(graphql`
@@ -50,9 +55,9 @@ const Layout: FunctionComponent<LayoutProps> = ({children, bigHeader = true}) =>
           dark={true}
         />
       )}
-      <main>
+      <Main>
         {children}
-      </main>
+      </Main>
       <Footer menu={data.site.siteMetadata.footerMenu} owner={data.site.siteMetadata.title}/>
     </>
   );

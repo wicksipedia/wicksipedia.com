@@ -11,38 +11,35 @@ import tw from "twin.macro";
 
 interface TagTemplateProps {
   data: {
-    tag: Tag;
+    allTags: {
+      edges: Array<{ node: Tag }>;
+    }
     posts: {
       edges: Array<{ node: Post }>;
     }
   };
   location: Location;
+  tag: string;
 }
 
 const Grid = styled.div([
   tw`p-4 grid gap-4 grid-flow-row grid-cols-1 md:grid-cols-3`
 ]);
 
-const TagTemplate: FunctionComponent<TagTemplateProps> = ({data, location}) => {
-  let tag = data.tag;
-  const posts = data.posts.edges.map(node => node.node);
-
-  if (!tag && posts.length > 0) {
-    tag = {
-      name: posts[0].frontmatter.tags[0],
-      icon: null,
-      featured: false,
-    };
-  }
+const TagTemplate: FunctionComponent<TagTemplateProps> = ({data, location, pathContext: { tag }}) => {
+  const posts = data.posts.edges.map(e => e.node);
+  const tagIcon = data.allTags.edges.map(e => e.node)
+    .find(t => t.name.toUpperCase() === tag.toUpperCase())
+    ?.icon;
 
   return (
     <Layout bigHeader={false}>
       <SEO
-        title={tag.name}
+        title={tag}
         location={location}
         type={`Series`}
       />
-      <Subheader title={tag.name} subtitle={`${posts.length} posts`} backgroundColor={tag.color}/>
+      <Subheader title={tag} image={tagIcon} subtitle={`${posts.length} posts`}/>
       <Container>
         <Grid>
           <PostGrid posts={posts} />
@@ -56,8 +53,19 @@ export default TagTemplate;
 
 export const query = graphql`
   query($tag: String!) {
-    tag: tags(name: { eq: $tag }) {
-      name
+    allTags: allFile(
+      filter: { sourceInstanceName: { eq: "tag-logos" } }
+    ) {
+      edges {
+        node {
+          name
+          icon: childImageSharp {
+            fixed(height: 55) {
+              ...GatsbyImageSharpFixed
+            }
+          }
+        }
+      }
     }
     posts: allMarkdownRemark(
       filter: {

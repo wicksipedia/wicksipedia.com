@@ -1,7 +1,9 @@
 import React, {FunctionComponent} from "react";
-import {MenuItem} from "../../utils/models";import styled from '@emotion/styled'
-import {Container} from "../../components/common";
+import {MenuItem} from "../utils/models";
+import styled from '@emotion/styled'
+import {Container} from "../components/common";
 import {Link} from "gatsby";
+import { OutboundLink } from "gatsby-plugin-google-analytics";
 
 const StyledFooter = styled.footer`
   max-width: 100%;
@@ -74,7 +76,7 @@ const Footer: FunctionComponent<FooterProps> = ({menu, owner}) => (
           <strong>{owner}</strong>&nbsp;&copy; {new Date().getFullYear()}
         </p>
         <p className="m-0 opacity-75 text-xs">
-          Deployed {process.env.HEAD}@{process.env.COMMIT_REF?.substring(0, 7)}
+          Deployed <OutboundLink href={`https://github.com/wicksipedia/wicksipedia.com/commit/${process.env.COMMIT_REF?.substring(0, 7)}`}>{process.env.HEAD}@{process.env.COMMIT_REF?.substring(0, 7)}</OutboundLink>
         </p>
       </div>
     </FooterContainer>

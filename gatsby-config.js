@@ -78,6 +78,13 @@ module.exports = {
     {
       resolve: `gatsby-source-filesystem`,
       options: {
+        name: 'tag-logos',
+        path: 'content/assets/tags'
+      }
+    },
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
         name: `assets`,
         path: `content/assets`
       }

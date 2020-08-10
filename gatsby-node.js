@@ -3,6 +3,7 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 const slugify = require('slugify');
 const pathUtils = require('./src/utils/path');
+const array = require('lodash/array');
 
 /**
  * Before booting up Gatsby make sure the content path directory exists.
@@ -75,13 +76,6 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
           }
         }
       }
-      tags: allTags {
-        edges {
-          node {
-            name
-          }
-        }
-      }
     }
   `);
 
@@ -92,7 +86,6 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   const tags = [];
   const posts = result.data.posts.edges.map(node => node.node);
   const pages = result.data.pages.edges.map(node => node.node);
-  const availableTags = result.data.tags.edges.map(node => node.node).map(t => t.name) || [];
 
   // Create a route for every single post (located in `content/posts`)
   posts.forEach(post => {
@@ -120,7 +113,7 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   });
 
   // Create a route for every single route (from `content/tags.yml` and the tags found in posts)
-  [...new Set(tags)].concat(availableTags).forEach(tag => {
+  array.uniq(tags).forEach(tag => {
     const slugified = slugify(tag, { lower: true });
     actions.createPage({
       path: `/tag/${slugified}`,
