@@ -1,5 +1,5 @@
 import React, {FunctionComponent} from "react";
-import Bio from "../bio";
+import Bio from "./bio";
 import styled from '@emotion/styled';
 
 const StickySidebarContent = styled.div`

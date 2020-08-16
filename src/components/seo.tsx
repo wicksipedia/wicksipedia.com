@@ -1,7 +1,7 @@
 import React, {FunctionComponent} from "react";
 import Helmet from 'react-helmet';
 import {graphql, useStaticQuery} from "gatsby";
-import {SiteMetadata} from "../../utils/models";
+import {SiteMetadata} from "../utils/models";
 import url from "url";
 
 interface SEOProps {
