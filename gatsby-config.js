@@ -134,7 +134,14 @@ module.exports = {
         plugins: [
           `gatsby-remark-autolink-headers`,
           `gatsby-remark-external-links`,
-          `gatsby-remark-vscode`,
+          {
+            resolve: `gatsby-remark-vscode`,
+            options: {
+              inlineCode: {
+                marker: '•'
+              }
+            }
+          },
           {
             resolve: `gatsby-remark-images`,
             options: {
