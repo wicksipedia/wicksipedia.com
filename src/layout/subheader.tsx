@@ -15,7 +15,7 @@ const StyledSubheader = styled.div`
 `;
 
 const StyledContainer = styled(Container)`
-  ${tw`flex flex-wrap py-4`}
+  ${tw`flex flex-wrap py-4 px-2 md:px-0`}
 `;
 
 const SubheaderImage = styled(Img)`

@@ -20,13 +20,15 @@ const PageContainer = styled(Container)`
 `;
 
 const PageContent = styled.section([
-  `prose`,
-  tw`max-w-none w-full p-2 md:w-7/12`
+  tw`prose p-2 w-full md:min-w-3/4`
 ]);
 
-const Sidebar = styled.section([
-  tw`w-10/12 mx-auto pt-4 md:pt-0 md:w-4/12 md:ml-auto md:mr-0`
-]);
+const Sidebar = styled.section`
+  ${tw`p-2 w-full md:w-1/4 md:ml-auto`}
+  > article {
+    ${tw`py-2`}
+  }
+`;
 
 const PageTemplate: FunctionComponent<PageTemplateProps> = ({pathContext, location}) => {
   const page = pathContext.page;

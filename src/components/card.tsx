@@ -24,6 +24,7 @@ export const StyledArticle = styled.article`
 `;
 
 export const FeaturedImage = styled(Img)`
+  ${tw`w-full!`}
 `;
 
 export const CardContent = styled.section<{ compact: boolean }>`
