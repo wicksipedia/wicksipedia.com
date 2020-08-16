@@ -20,14 +20,16 @@ const ReadingProgress: FunctionComponent<ReadingProgressProps> = ({target}) => {
     const element = target.current;
     const startOfScroll = element.offsetTop - window.innerHeight;
     const windowScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    const relativeScrollPosition = windowScrollTop - window.innerHeight;
-    const totalHeight = element.clientHeight;
+    const endOfScroll = element.offsetTop - window.innerHeight + element.clientHeight;
 
     if (windowScrollTop < startOfScroll) {
       return setReadingProgress(0);
     }
 
-    setReadingProgress((relativeScrollPosition / totalHeight) * 100);
+    const scrollLength = endOfScroll - startOfScroll;
+    const relativeScroll = windowScrollTop - startOfScroll;
+
+    setReadingProgress((relativeScroll / scrollLength) * 100);
   };
 
   useEffect(() => {
