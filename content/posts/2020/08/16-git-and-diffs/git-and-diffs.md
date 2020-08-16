@@ -8,6 +8,8 @@ created: 2020-08-16
 updated: 2020-08-16
 ---
 
+Cover image by Ross Findon (@rossf) on [unsplash](https://unsplash.com/photos/mG28olYFgHI)
+
 A while back one of my colleagues was investigating an issue on a project he had just re-joined. There had been a lot of work done on various facets of the solution (from memory there were React and Xamarin front ends and a .NET Core API).
 
 ## The Problem
