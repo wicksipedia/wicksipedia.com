@@ -85,3 +85,5 @@ The [GitHub docs](https://docs.github.com/en/github/authenticating-to-github/sig
     ```
 
 9. You're done! Commit and push your signed commits!
+
+Hope this helps! Let me know how it goes!
