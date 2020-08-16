@@ -4,8 +4,8 @@ path: /verifying-your-github-commits
 tags: ["GitHub","Git"]
 featuredImage: "./cover.png"
 excerpt: Do you know how to sign your commits and let others know it was *actually* you who did them?
-created: 2019-08-09
-updated: 2019-08-09
+created: 2020-08-09
+updated: 2020-08-09
 ---
 
 Have you ever looked a PR in GitHub and noticed that some commits have a *Verified* chip and some don't? And that it's usually the PR merges that do? What gives?
