@@ -35,6 +35,8 @@ He wanted to see all the changes from when he last worked on the Xamarin project
     If we break this command down, it looks like: `sh•git diff <start commitish> <end commitish> -- <folder/file filter>` (the -- is there to separate the commits and the path)
     ![This will produce a diff with all the interim changes squashed down](./git-diff.png)
 
+After he ran this command, he was able to scroll through and see what had changed on the project - which helped him track down the issue (and when it was introduced).
+
 The advantage of the terminal solution was that:
 
 - it can work for both folders and files (even wih file globs)
