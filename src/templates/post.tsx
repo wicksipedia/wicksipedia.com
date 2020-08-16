@@ -1,4 +1,4 @@
-import React, {FunctionComponent} from "react";
+import React, {FunctionComponent, createRef} from "react";
 import Layout from "../layout/layout";
 import {Post, Tag} from "../utils/models";
 import {Container} from "../components/common";
@@ -12,6 +12,7 @@ import SEO from "../components/seo";
 import {FaGithub} from "react-icons/fa";
 import tw from "twin.macro";
 import { OutboundLink } from "gatsby-plugin-google-analytics";
+import ReadingProgress from "../components/reading-progress";
 
 interface PostTemplateProps {
   data: {
@@ -30,6 +31,10 @@ const PostContent = styled.div([
 const PostMeta = styled.section([
   tw`flex justify-between opacity-75 text-sm`
 ]);
+
+const MarkdownContent = styled.section`
+  ${tw`p-8 sm:p-4`}
+`
 
 const PostFooter = styled.footer([
   tw`bg-gray-100 text-gray-600 text-sm p-4`
@@ -53,6 +58,7 @@ const BioWrapper = styled.div([
 
 const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) => {
   const post = data.post;
+  const readingProgressRef = createRef<HTMLElement>();
 
   return (
     <Layout bigHeader={false}>
@@ -65,6 +71,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
         description={post.frontmatter.excerpt}
         image={post.frontmatter.featuredImage ? post.frontmatter.featuredImage.childImageSharp.fluid.src : null}
       />
+      <ReadingProgress target={readingProgressRef} />
       <PostContainer>
         <PostContent>
           <article className={`post`}>
@@ -87,7 +94,7 @@ const PostTemplate: FunctionComponent<PostTemplateProps> = ({data, location}) =>
               <h1 className="py-4 mb-0">{post.frontmatter.title}</h1>
             </div>
             {post.frontmatter.featuredImage && <Img fluid={post.frontmatter.featuredImage.childImageSharp.fluid}/>}
-            <section className="p-8 sm:p-4" dangerouslySetInnerHTML={{__html: post.html}} />
+            <MarkdownContent dangerouslySetInnerHTML={{__html: post.html}} ref={readingProgressRef} />
             <PostFooter>
               <p>
                 Published under&nbsp;
