@@ -1,0 +1,34 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "new post",
+            "type": "shell",
+            "command": "./new_post.sh",
+            "args": [
+                "${input:postTitle}"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "build:develop (gatsby)",
+            "type": "shell",
+            "command": ["gatsby"],
+            "args": [
+                "develop"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+        },
+    ],
+    "inputs": [
+        {
+            "id": "postTitle",
+            "description": "Title of a new post",
+            "type": "promptString",
+            "default": ""
+        }
+    ]
+}
