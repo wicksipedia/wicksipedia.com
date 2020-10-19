@@ -6,7 +6,7 @@
         {
             "label": "new post",
             "type": "shell",
-            "command": "./new_post.sh",
+            "command": "./scripts/new_post.sh",
             "args": [
                 "${input:postTitle}"
             ],
