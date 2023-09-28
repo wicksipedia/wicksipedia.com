@@ -1,0 +1,58 @@
+---
+date: 2023-09-27
+draft: false
+title: 'The downfalls of environment branching patterns'
+summary: 'Explore the pitfalls of using environment-specific branches in CI/CD pipelines and discover how trunk-based branching and binary promotion can streamline your DevOps process. Optimize your CI/CD workflow for efficiency and consistency.'
+tags: ['CI/CD', 'DevOps', 'Branching']
+---
+
+In the dynamic world of software consultancy, I often traverse through various client setups and branching strategies. A recent engagement introduced me to a client following an environment branch pattern, a path I'd usually not tread. Here's a journey from discovery to transformation that not only reshaped their deployment workflow but also underlined the essence of a well-structured branching strategy.
+
+For starters, when I opened the repo, I noticed that there was a main branch as well. The first question that naturally came to mind was "where does development happen?". The response from the client was a bit of a curveball.
+
+Them: "Oh, we don’t use main, at the moment we are currently working on test since we need to add some features there."
+
+With a sense of curiosity, I continued to delve into the repository to understand their workflow better.
+
+> Me: [Inspecting the repository] But the changes aren't on the dev branch. Where are they?
+
+The client’s casual response unveiled a workflow that, while unconventional, seemed to work for them on the surface.
+
+> Them: Oh, we merge it up afterwards, it works for us.
+
+This conversation was just the tip of the iceberg, revealing a process that seemed to circumvent the typical flow of code from development to testing and then to production. It was a convoluted journey where code took a detour, starting its life in the test branch, bypassing dev, and then somehow finding its way up the branch ladder post testing.
+
+As I delved deeper, the complexities of managing such a branching strategy started to unfold. Each environment appeared to have its own set of rules, its own quirks, and the process of merging changes upstream post-testing seemed more like a game of chance than a structured, predictable workflow.
+
+After the revelation, I felt it was prudent to flag the potential issues in their process:
+
+- **Individual Environment Builds:** Each environment (Dev, Test, Prod) has its own distinct build of the code, leading to inconsistencies; what's tested in Test may differ from what gets deployed to Prod.
+- **Ambiguity Due to Merge Commits:** The utilization of merge commits muddles the clarity on the presence of specific features in different environments, making it hard to track feature deployment and status.
+- **Pipelines as Code with a Twist:** While employing pipelines as code is a commendable practice for automation and consistency, the setup allowed each branch to have its own version of the pipeline, opening doors for potential deviations in the deployment process across environments.
+
+Having navigated through the maze of the client's unconventional branching strategy, it was time to roll up my sleeves and dive into the actual task at hand—tweaking their deployment pipeline as initially requested. I plunged into the code, made the necessary alterations, and got the Pull Requests (PRs) merged into the respective branches. It felt like a well-earned victory, albeit a small one in the grand scheme of things.
+
+Fast forward a few weeks, my phone buzzed with a call from the client. The news wasn't good. The changes I had made were reportedly causing hiccups in their deployment process. With a mixture of surprise and curiosity, I revisited the code repository, only to discover that my changes had been mysteriously reverted! It was like the repository had developed a mind of its own, undoing the efforts I had put in. But of course, it wasn’t the repository, but a manual intervention that rolled back the changes.
+
+This incident, though frustrating, served as a catalyst. It was a glaring indication that the existing branching strategy was not only convoluted but prone to human errors and inconsistencies. It was the nudge that helped me steer the conversation towards adopting a more streamlined, less error-prone approach - trunk based development.
+
+Trunk Based Development (TBD) is a source-control branching model that emphasizes merging all developers' work to one shared "trunk" or mainline, frequently and in small, manageable increments. It’s a model that eliminates the complexities associated with managing numerous branches, thereby minimizing the chances of manual reversion mishaps like the one we had just encountered.
+
+While Gitflow and GitHub flow were contenders, the simplicity and efficiency of TBD resonated more with the client's objective to streamline their workflow.
+
+With a gentle nudge and armed with the proof of concept from the recent incident, I was able to convince the client to give trunk based development a shot. It was an easy sell, especially given the recent incident and the promise of a more structured, manageable, and error-minimizing workflow was enticing.
+
+The incident was a stark reminder of the critical role that a structured, well-thought-out branching strategy plays in software development and deployment lifecycle. It's not just about managing code; it's about creating a workflow that’s predictable, manageable, and less prone to human-induced inconsistencies. And sometimes, it takes a minor hiccup to propel a significant leap towards better practices.
+
+The transition to Trunk Based Development (TBD) brought a slew of benefits for the client, painting a stark contrast to their previous branching strategy. Here are the key takeaways they experienced:
+
+- **Reduced Complexity:** By minimizing branch management, the overall complexity of the development process was significantly reduced, making it easier for the team to collaborate and integrate their work.
+- **Early Error Detection:** Continuous integration in TBD allowed for early detection and rectification of errors, ensuring higher code quality and reducing the time spent on fixing bugs at later stages.
+- **Streamlined Workflow:** The workflow became more streamlined and predictable, eradicating the uncertainties associated with managing and merging changes across multiple branches.
+- **Consistent Deployment Process:** A consistent deployment process emerged, making it straightforward to track, manage, and deploy code across different environments, with fewer inconsistencies.
+- **Enhanced Productivity:** With less time spent on managing branches and resolving merge conflicts, the team’s productivity saw a noticeable boost, allowing them to focus more on coding and less on administrative tasks.
+- **Faster Release Cycles:** The client enjoyed faster release cycles, thanks to the continuous integration and the elimination of long-lived branches which previously delayed integrations.
+- **Improved Traceability:** Traceability of features and bug fixes improved significantly, making it easier to manage releases and ensure that only the intended changes were deployed to production.
+- **Increased Team Collaboration:** The emphasis on frequent commits and merging fostered a culture of collaboration and collective ownership of the codebase, enhancing the overall team dynamics.
+
+The journey towards adopting Trunk Based Development was indeed a learning curve, but the palpable improvements in workflow efficiency, code quality, and team collaboration made it a worthwhile endeavor. Through this transformation, the client not only rectified the issues that plagued their deployment process but also positioned themselves for a more robust, efficient, and scalable development lifecycle.
