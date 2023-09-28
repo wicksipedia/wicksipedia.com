@@ -39,6 +39,11 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
       <article>
         <div className="xl:divide-y xl:divide-gray-200 xl:dark:divide-gray-700">
           <header className="pt-6 xl:pb-6">
+            {content.cover && (
+              <div className="w-100 pb-4">
+              <img className="mx-auto" src={content.cover} alt={content.coverAlt} />
+              </div>
+            )}
             <div className="space-y-1 text-center">
               <dl className="space-y-10">
                 <div>
