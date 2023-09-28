@@ -1,0 +1,173 @@
+---
+date: 2022-03-13
+title: GitHub settings as code
+summary: How/why you should apply code policies to your GitHub repo's settings
+tags:
+  - GitHub
+---
+
+Working on a repository one of the common requirements is to have things like branch protection. This is really easy to setup but requires an admin to configure it. This gets cumbersome when you want to restrict who has this access (especially useful to avoid making mistakes as an admin). On some other projects, for example for a company's open source repositories needed to be spruced up by improving the description, tags etc.
+
+Usually to make that happen, we give out admin rights and then resind them. 🤮. I'm not a fan of this strategy since:
+
+- if you are forking repositories and merging - not everything makes it back
+- it's hard to keep track of what changed
+- forgetting to remove admin rights is a big risk
+
+Thankfully Probot has a better solution to this dilemma. We update a file stored in the repo (`.github/settings.yml`). After committing and pushing the file, the [Probot Settings app](https://probot.github.io/apps/settings/) kicks in and makes sure that the repository settings match what the file says.
+
+This has a few benefits:
+
+- it's easy to configure things like branch protection
+- it's easy to see all the settings in one place
+- settings changes are stored as commits making it easy to trace
+- we don't need to hand out admin access - not maintainers can make these changes (delegated through Probot)
+  
+## Steps to get it running
+
+1. Install the [Probot Settings app](https://probot.github.io/apps/settings/)
+2. Create a `.github/settings.yml` file in your repository
+
+    ``` yaml
+    repository:
+    # See https://developer.github.com/v3/repos/#edit for all available settings.
+
+    # The name of the repository. Changing this will rename the repository
+    name: repo-name
+
+    # A short description of the repository that will show up on GitHub
+    description: description of repo
+
+    # A URL with more information about the repository
+    homepage: https://example.github.io/
+
+    # Either `true` to make the repository private, or `false` to make it public.
+    private: false
+
+    # Either `true` to enable issues for this repository, `false` to disable them.
+    has_issues: true
+
+    # Either `true` to enable the wiki for this repository, `false` to disable it.
+    has_wiki: true
+
+    # Either `true` to enable downloads for this repository, `false` to disable them.
+    has_downloads: true
+
+    # Updates the default branch for this repository.
+    default_branch: main
+
+    # Either `true` to allow squash-merging pull requests, or `false` to prevent
+    # squash-merging.
+    allow_squash_merge: true
+
+    # Either `true` to allow merging pull requests with a merge commit, or `false`
+    # to prevent merging pull requests with merge commits.
+    allow_merge_commit: true
+
+    # Either `true` to allow rebase-merging pull requests, or `false` to prevent
+    # rebase-merging.
+    allow_rebase_merge: true
+
+    # Labels: define labels for Issues and Pull Requests
+    labels:
+      - name: bug
+        color: CC0000
+      - name: feature
+        color: 336699
+      - name: first-timers-only
+        # include the old name to rename and existing label
+        oldname: Help Wanted
+
+    # Collaborators: give specific users access to this repository.
+    collaborators:
+      - username: bkeepers
+        # Note: Only valid on organization-owned repositories.
+        # The permission to grant the collaborator. Can be one of:
+        # * `pull` - can pull, but not push to or administer this repository.
+        # * `push` - can pull and push, but not administer this repository.
+        # * `admin` - can pull, push and administer this repository.
+        permission: push
+
+      - username: hubot
+        permission: pull
+
+      - username:
+        permission: pull
+    ```
+
+## Wait a minute
+
+... did I say maintainers can change settings that only Admins have access to? Yes.
+
+Is this an issue? Depending on your circumstances this may or may not be an issue - the consultant answer applies here.
+
+> It depends.
+>
+> <cite>Every consultant ever</cite>
+
+OK, let's assume that this is a a hole that needs to be plugged.
+
+Thankfully we can use the [`CODEOWNERS`](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) file to automatically request specific reviewers when people open pull requests that make changes to files. In this case, we could put in a pattern that like:
+
+``` text
+.github/settings.yml @org/team-leads
+```
+
+That way when someone modifies the settings file and opens a PR, the 'team-leads' team will be marked as a reviewer. This should help prevent unwanted changes being made to the repository. Although it does involve setting up [branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/about-protected-branches) properly.
+
+So we'll go back to the settings yaml and put a little snippet in there to complete the loop.
+
+``` yaml
+branches:
+  - name: main
+    # https://docs.github.com/en/rest/reference/repos#update-branch-protection
+    # Branch Protection settings. Set to null to disable
+    protection:
+      # Required. Require at least one approving review on a pull request, before merging. Set to null to disable.
+      required_pull_request_reviews:
+        # The number of approvals required. (1-6)
+        required_approving_review_count: 1
+        # Dismiss approved reviews automatically when a new commit is pushed.
+        dismiss_stale_reviews: true
+        # Blocks merge until code owners have reviewed.
+        require_code_owner_reviews: true
+        # Specify which users and teams can dismiss pull request reviews. Pass an empty dismissal_restrictions object to disable. User and team dismissal_restrictions are only available for organization-owned repositories. Omit this parameter for personal repositories.
+        dismissal_restrictions:
+          users: []
+          teams: []
+      # Required. Require status checks to pass before merging. Set to null to disable
+      required_status_checks:
+        # Required. Require branches to be up to date before merging.
+        strict: true
+        # Required. The list of status checks to require in order to merge into this branch
+        contexts: []
+      # Required. Enforce all configured restrictions for administrators. Set to true to enforce required status checks for repository administrators. Set to null to disable.
+      enforce_admins: true
+      # Prevent merge commits from being pushed to matching branches
+      required_linear_history: true
+```
+
+Branch protection as code is awesome. Given the scenario where I've just added a new pipeline, I can modify the branch protection as well so that future PRs will require that workflow to pass. To me this takes the power of pipelines as code that little step further. 🎉
+
+OK, so now we have a setup where:
+
+- Settings for the repo are stored as code inside the repo
+- Since files get committed to the repo, we can easily look back at the history to see when/what changed
+- You don't need to be an admin to look or modify the settings (at most the right person needs to review a PR)
+
+## BONUS 1: YAML is hard
+
+There's a lot of YAML being covered off here, so what happens when someone (me) makes a mistake and commits/merges invalid yaml (bad spacing).
+
+Well we can add another workflow to look for changes to `.github/settings.yml` and run some custom actions to trigger the probot settings app. Essentially we can have a workflow that:
+
+- triggers on a PR or on main
+- only runs when the `.github/settings.yml` is updated (using path filters)
+- checkout the code in the incoming branch
+- trigger Probot to push settings (with continue-on-error in case things don't work out)
+- checkout the `main` branch
+- trigger Probot to reapply the "production" settings
+
+These actions are pretty quick, so there's maybe 2 seconds or so where the repo settings may be out of whack. This is a file that would normally have infrequent churn so hopefully being able to pickup bad yaml outweighs this risk.
+
+I'm running it on my blog or you can have a look at a more focused example at [https://github.com/GuacamoleResearch/MySettings](https://github.com/GuacamoleResearch/MySettings).

@@ -1,0 +1,51 @@
+---
+date: 2020-08-16
+title: Git and diffs
+summary: What do you do when you are trying to work out what has happenned over the span of a few commits?
+tags: [git]
+---
+
+Cover image by Ross Findon (@rossf) on [unsplash](https://unsplash.com/photos/mG28olYFgHI)
+
+A while back one of my colleagues was investigating an issue on a project he had just re-joined. There had been a lot of work done on various facets of the solution (from memory there were React and Xamarin front ends and a .NET Core API).
+
+## The Problem
+
+He wanted to see all the changes from when he last worked on the Xamarin project while he was away, if we unpack and abstract it, he wanted:
+
+- for a set of commits from *start* to *end*
+- for a given path (folder/file)
+- squash the commits and show the changes
+
+## The Potential Solutions
+
+1. Bad choice - Go to the *File* view for the repo in Azure DevOps and see the list of commits
+   ![In Azure DevOps you can see the history of commits for a specific folder](/blog/git-and-diffs/azdo-history.png)
+   This lists the specific commits that have changed files under the path but not the **actual** changes which is what he needed (he'd need to click on each commit, find the file(s) and look at the changes -> very time consuming)
+
+2. Unknown choice - I'm sure there's a nice GUI that could do this with a click-click-done, but he didn't have one already so this wasn't a feasible solution
+
+3. Good choice - Grab the SHA of the last commit he worked on and run a quick git command - here's an example for the repo that creates this site
+
+   ```sh
+   git diff 741d760 df32e83b -- gatsby-*.js 
+   ```
+
+    If we break this command down, it looks like: `sh•git diff <start commitish> <end commitish> -- <folder/file filter>` (the -- is there to separate the commits and the path)
+    ![This will produce a diff with all the interim changes squashed down](/blog/git-and-diffs/git-diff.png)
+
+After he ran this command, he was able to scroll through and see what had changed on the project - which helped him track down the issue (and when it was introduced).
+
+The advantage of the terminal solution was that:
+
+- it can work for both folders and files (even wih file globs)
+- it can be re-scoped by changing the commit range
+- if you have git installed - you can run the command
+
+Disavantages? Yes, there are some:
+
+- the output is in a terminal so scrolling through the changes is slow
+- you can't just jump to a specific file - you need to scroll through the list
+- having a GUI for the output would be better
+
+I'd love to know how you go about solving this type of problem, or what tools you use to help with your git workflow.
