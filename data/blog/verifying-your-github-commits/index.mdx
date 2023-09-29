@@ -2,7 +2,7 @@
 date: 2020-08-09
 title: Verifying your GitHub commits
 summary: Do you know how to sign your commits and let others know it was *actually* you who did them?
-cover: /blog/verifying-your-github-commits/cover.png
+cover: /static/blog/verifying-your-github-commits/cover.png
 tags: [gitHub, git]
 ---
 
@@ -14,7 +14,7 @@ Well it turns out that you are able to sign your commits with PGP to verify that
 git commit --author="Not Matt Wicks <someone.else@example.com>"
 ```
 
-![Setting the author of a commit is rather easy](/blog/verifying-your-github-commits/not-matt-wicks-commit-message.png)
+![Setting the author of a commit is rather easy](/static/blog/verifying-your-github-commits/not-matt-wicks-commit-message.png)
 
 Let's not jump to the conclusion that this is a universally bad thing - there are valid reasons when you want to commit something in someone else's name. For example, at SSW we are migrating [SSW Rules](https://rules.ssw.com.au) from a SharePoint site to a staticly generated site using Gatsby and GitHub. We want to preserve the history i.e. I wrote or updated a rule, then the commit message should be in my name - that way the history stays intact. Being able to set the author is critical for this to work.
 
@@ -77,7 +77,7 @@ Old way:
    1. Click *New GPG Key*
    2. Paste the key in the textbox
    3. Click *Add GPG Key*
-   ![Where to add GPG Keys](/blog/verifying-your-github-commits/github-keys.png)
+   ![Where to add GPG Keys](/static/blog/verifying-your-github-commits/github-keys.png)
 
 8. Now let's tell Git to sign commits and which PGP key to use
 
