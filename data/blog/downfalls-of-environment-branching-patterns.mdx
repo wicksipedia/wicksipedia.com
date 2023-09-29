@@ -24,7 +24,7 @@ There were a few notable things that I discovered:
 
 - they were following an environment branch pattern e.g. a separate branch for `dev`, `test`, and `prod` (a path I'd usually not tread)
 - there was also a `main` branch
-- they were using pipelines as code (which is great) but the pipelines were triggered of changes to any one of the branches
+- they were using pipelines as code (which is great) and the pipelines were triggered off of changes to any one of the branches
 - as a result of the above, they had to replicate the pipeline changes in each branch
 - also as a result of the above, they had to rebuild the code for each environment
 - to keep branches in sync they were using merge commits (I prefer rebasing)
