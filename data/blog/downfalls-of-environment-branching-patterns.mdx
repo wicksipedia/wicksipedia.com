@@ -76,9 +76,8 @@ With the change to TBD, the client was able to enjoy the following benefits:
 - Using PRs to review changes
 - Using PRs to have a linear commit history
 - Triggering pipelines on `main` only
-- Build the container once
-- Pipeline deployments to `dev` automatically
+- Build the container once then deploy to `dev` automatically
 - Manual promotion of a deployment to `test` and `prod` (for now) - super fast now that the container is already built
-- Used binary promotion to deploy to different environments
+- Same container image is used e.g. promotion to `test` uses the same image that was just on `test` aka binary promotion
 
 This incident was a stark reminder of the critical role that clear and repeatable branching strategy plays in software development and deployment lifecycle. And sometimes, it takes a minor hiccup to propel a significant leap towards better practices.
