@@ -16,7 +16,7 @@ export default function Comments({ slug }: { slug: string }) {
     if (isVisible) {
       setLoadComments(true)
     }
-  }, [entry])
+  }, [isVisible])
 
   return (
     <div ref={ref}>

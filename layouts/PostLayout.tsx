@@ -40,8 +40,14 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
         <div className="xl:divide-y xl:divide-gray-200 xl:dark:divide-gray-700">
           <header className="pt-6 xl:pb-6">
             {content.cover && (
-              <div className="w-100 pb-4">
-              <img className="mx-auto" src={content.cover} alt={content.coverAlt} />
+              <div className="w-100 mb-6 relative min-h-[10rem] md:min-h-[20rem] lg:min-h-[30rem]">
+                <Image
+                  className="mx-auto"
+                  src={content.cover}
+                  alt={content.coverAlt || ''}
+                  fill={true}
+                  style={{ objectFit: 'contain' }}
+                />
               </div>
             )}
             <div className="space-y-1 text-center">
