@@ -3,11 +3,11 @@ const siteMetadata = {
   title: 'Wicksipedia',
   author: 'Matt Wicks',
   headerTitle: 'Wicksipedia',
-  description: '',
+  description: 'Explore Wicksipedia for insightful articles by Matt Wicks, a seasoned Solution Architect. Optimize software development with CI/CD, DevOps, Git, and more',
   language: 'en-au',
   theme: 'system', // system, dark or light
   siteUrl: 'https://wicksipedia.com',
-  siteRepo: 'https://github.com/wicksipedia/wicksipedia.github.io/',
+  siteRepo: 'https://github.com/wicksipedia/wicksipedia.com/',
   siteLogo: '/static/images/logo.png',
   socialBanner: '/static/images/twitter-card.png',
   // mastodon: '',
