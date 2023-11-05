@@ -1,3 +1,4 @@
+import 'css/glitch.css';
 import Image from 'next/image';
 import siteMetadata from '@/data/siteMetadata';
 import headerNavLinks from '@/data/headerNavLinks';
@@ -23,11 +24,7 @@ const Header = () => {
 								/>
 							</div>
 						)}
-						{typeof siteMetadata.headerTitle === 'string' ? (
-							<div className="h-6 text-2xl font-semibold">{siteMetadata.headerTitle}</div>
-						) : (
-							siteMetadata.headerTitle
-						)}
+						<HeaderTitle title={siteMetadata.headerTitle}></HeaderTitle>
 					</div>
 				</Link>
 			</div>
@@ -44,6 +41,16 @@ const Header = () => {
 				<MobileNav />
 			</div>
 		</header>
+	);
+};
+
+const HeaderTitle = ({ title }) => {
+	if (!title) return null;
+
+	return (
+		<div className="glitch layers h-6 text-2xl font-semibold" data-text={siteMetadata.headerTitle}>
+			{siteMetadata.headerTitle}
+		</div>
 	);
 };
 
