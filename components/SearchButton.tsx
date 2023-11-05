@@ -20,6 +20,8 @@ const SearchButton = () => {
 				</svg>
 			</SearchButtonWrapper>
 		);
+	} else {
+		return <></>;
 	}
 };
 
