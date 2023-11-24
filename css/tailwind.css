@@ -29,3 +29,8 @@ input:-webkit-autofill:focus {
 		background-color 600000s 0s,
 		color 600000s 0s;
 }
+
+/* https://github.com/timlrx/tailwind-nextjs-starter-blog/issues/766 */
+.katex-display {
+	overflow: auto hidden;
+}
