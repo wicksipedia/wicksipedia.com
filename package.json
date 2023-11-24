@@ -74,5 +74,5 @@
 			"prettier --write"
 		]
 	},
-	"packageManager": "bun@1"
+	"packageManager": "yarn@4.0.2"
 }
