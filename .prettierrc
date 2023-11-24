@@ -7,5 +7,6 @@
 	"trailingComma": "es5",
 	"bracketSpacing": true,
 	"editorconfig": true,
-	"endOfLine": "lf"
+	"endOfLine": "lf",
+	"plugins": ["prettier-plugin-tailwindcss"]
 }
