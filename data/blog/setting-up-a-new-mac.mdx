@@ -43,20 +43,33 @@ Once installed, it's as simple as running `brew install [package]` to install to
 After setting up Homebrew, I'd start with the applications that I find indispensable:
 
 - [iTerm2](https://iterm2.com/) - A replacement for the default Terminal app, with better features like split panes, quake mode and search.
+
   ```shell
-	brew install --cask iterm2
-	```
+  brew install --cask iterm2
+  ```
 
 - [Fig](https://fig.io/) - Enhances your terminal experience on MacOS with autocomplete features, adding powerful IDE-like capabilities to your command line workflow (picture Visual Studio intellisense). Also dove tails nicely into VSCode and Rider integrated terminals.
+
   ```shell
   brew install --cask fig
   ```
 
+  Update: Fig was acquired by Amazon, so they aren't accepting new users at the time of writing, try Amazon CodeWhisperer CLI instead. It doesn't have as many features, but the autocomplete is still 🔥
+
+  ```shell
+  brew install --cask codewhisperer
+  ```
+
 - [Oh My Zsh](https://ohmyz.sh/) - An open source, community-driven framework for managing your Zsh configuration, providing themes and plugins to enhance your terminal experience. You can configure your prompt just like Oh My Posh, with all the cool stats and powerline glyphs.
+
   ```shell
   sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   ```
+
   Oh My Zsh has a great plugin model, my favourite is turning on aliases for many common Git operations. It translates to less typing and more doing. For example, `gst` stands for `git status`, `gswm` for `git switch main`, and `gpr` for `git pull --rebase`.
+
+  ![Preview of the Spaceship theme in Oh my zsh](/static/blog/optimizing-new-mac-setup/omz-spaceship.gif)
+  🔥 Hot tip: install the [Spaceship theme](https://github.com/pascaldevink/spaceship-zsh-theme)
 
 - [Nerd Fonts](https://github.com/ryanoasis/nerd-fonts) - Tap into the Nerd Fonts repository to access a variety of developer-friendly fonts that include Powerline symbols pre-baked, enhancing the terminal and code editor aesthetics.
   ```shell
@@ -68,31 +81,37 @@ After setting up Homebrew, I'd start with the applications that I find indispens
 ### Productivity
 
 - [1Password](https://1password.com/) - A premier password manager that securely stores various passwords, software licenses, and other sensitive information in a virtual vault.
+
   ```shell
   brew install --cask 1password
   ```
 
 - [Raycast](https://www.raycast.com/) - An alternative to Alfred and Spotlight, it offers a command bar to launch apps, find documents, manage tasks, and automate frequent actions. This deserves a post to itself - it's so good I've let Raycast replace my Spotlight shortcut!
+
   ```shell
-	brew install --cask raycast
+  brew install --cask raycast
   ```
 
 - [Rectangle](https://rectangleapp.com/) - A powerful window management app for Mac, enabling you to quickly organize and manipulate windows through easy-to-use keyboard shortcuts and snap areas.
+
   ```shell
   brew install --cask rectangle
   ```
 
 - [Bartender](https://www.macbartender.com/) - A macOS utility that helps you organize and hide menu bar icons, keeping your workspace tidy and free from distractions.
+
   ```shell
   brew install --cask bartender
   ```
 
 - [CleanShot X](https://cleanshot.com/) - A versatile screen capture tool for Mac that offers powerful features such as capturing scrolling content, annotating screenshots, and recording your screen with audio.
+
   ```shell
   brew install --cask cleanshot
   ```
 
 - [Arc Browser](https://thebrowser.company/) - A modern web browser designed to enhance productivity with a focus on design and user experience, offering unique features such as organizing tabs into stacks and a customizable interface.
+
   ```shell
   brew install --cask arc
   ```
@@ -105,6 +124,7 @@ After setting up Homebrew, I'd start with the applications that I find indispens
 ### Presentation tools
 
 - [Camo](https://reincubate.com/camo/) - Upgrade your webcam for your Mac, featuring Pan-Tilt-Zoom (PTZ) functionality, enhancing your video calls with superior image quality and camera control.
+
   ```shell
   brew install --cask camo-studio
   ```
@@ -114,27 +134,30 @@ After setting up Homebrew, I'd start with the applications that I find indispens
   brew install --cask camtasia
   ```
 - [Presentify](https://presentify.compzets.com/) - A Mac app perfect for annotating your screen, highlighting things or drawing on your screen; it's the closest alternative to ZoomIt for Mac users, offering similar functionality for presentations.
-  
-	Get it from the AppStore [https://apps.apple.com/us/app/presentify-screen-annotation/id1507246666](https://apps.apple.com/us/app/presentify-screen-annotation/id1507246666)
+
+  Get it from the AppStore [https://apps.apple.com/us/app/presentify-screen-annotation/id1507246666](https://apps.apple.com/us/app/presentify-screen-annotation/id1507246666)
 
 ### Dev tools
-	
+
 - [Visual Studio Code](https://code.visualstudio.com/) - A versatile code editor that's become the de facto choice for many developers.
+
   ```shell
-	brew install --cask visual-studio-code
+  brew install --cask visual-studio-code
   ```
 
 - [Rider](https://www.jetbrains.com/rider/) - A fast and powerful cross-platform .NET IDE by JetBrains, which provides an extensive set of features for .NET developers, including robust C# analysis, testing tools, and Docker integration.
+
   ```shell
   brew install --cask rider
   ```
 
 - [Docker](https://www.docker.com/) - Essential for containerization, Docker simplifies the creation, deployment, and running of applications using containers, streamlining the development process across different environments.
+
   ```shell
   brew install --cask docker
-	```
+  ```
 
-  To get the most out of Docker on MacOS (and stay withing licensing requirements) - I suggest using [Colima](https://github.com/abiosoft/colima). It's a lightweight alternative to Docker Desktop (not the UI but the runtime). With Colima, you can start a container runtime with  `colima start` and enjoy features such as automatic resource allocation and DNS resolution.
+  To get the most out of Docker on MacOS (and stay withing licensing requirements) - I suggest using [Colima](https://github.com/abiosoft/colima). It's a lightweight alternative to Docker Desktop (not the UI but the runtime). With Colima, you can start a container runtime with `colima start` and enjoy features such as automatic resource allocation and DNS resolution.
 
   ```shell
   brew install colima
@@ -142,11 +165,13 @@ After setting up Homebrew, I'd start with the applications that I find indispens
   ```
 
 - [Azure Data Studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/) - A cross-platform database tool for data professionals using the Microsoft family of on-premises and cloud SQL databases, offering a modern editor experience with IntelliSense, code snippets, source control integration, and an integrated terminal.
+
   ```shell
   brew install --cask azure-data-studio
   ```
 
 - [Microsoft Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/) - A powerful standalone app from Microsoft that enables you to easily work with Azure Storage data on Windows, macOS, and Linux.
+
   ```shell
   brew install --cask microsoft-azure-storage-explorer
   ```
@@ -170,7 +195,7 @@ brew install --cask dotnet-sdk3-1-400
 # And so on for other versions...
 ```
 
-Now you can still use `brew` to install your .NET SDKs *and* have multiple versions ready depending on project requirements.
+Now you can still use `brew` to install your .NET SDKs _and_ have multiple versions ready depending on project requirements.
 
 ## Managing Node.js
 
