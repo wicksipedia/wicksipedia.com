@@ -1,4 +1,5 @@
 import Link from '@/components/Link';
+import ReadingTime from '@/components/ReadingTime';
 import Tag from '@/components/Tag';
 import siteMetadata from '@/data/siteMetadata';
 import { formatDate } from 'pliny/utils/formatDate';
@@ -37,6 +38,7 @@ export default function Home({ posts }) {
 															{title}
 														</Link>
 													</h2>
+													<ReadingTime className="text-xs" post={post} />
 													<div className="flex flex-wrap">
 														{tags.map((tag) => (
 															<Tag key={tag} text={tag} />

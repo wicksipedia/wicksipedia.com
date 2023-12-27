@@ -9,6 +9,7 @@ import Image from '@/components/Image';
 import Tag from '@/components/Tag';
 import siteMetadata from '@/data/siteMetadata';
 import ScrollTopAndComment from '@/components/ScrollTopAndComment';
+import ReadingTime from '@/components/ReadingTime';
 
 const editUrl = (path) => `${siteMetadata.siteRepo}/blob/main/data/${path}`;
 const discussUrl = (path) => `https://mobile.twitter.com/search?q=${encodeURIComponent(`${siteMetadata.siteUrl}/${path}`)}`;
@@ -39,7 +40,7 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
 				<div className="xl:divide-y xl:divide-gray-200 xl:dark:divide-gray-700">
 					<header className="pt-6 xl:pb-6">
 						{content.cover && (
-							<div className="w-100 mb-6 relative min-h-[10rem] md:min-h-[20rem] lg:min-h-[30rem]">
+							<div className="w-100 relative mb-6 min-h-[10rem] md:min-h-[20rem] lg:min-h-[30rem]">
 								<Image className="mx-auto" src={content.cover} alt={content.coverAlt || ''} fill={true} style={{ objectFit: 'contain' }} />
 							</div>
 						)}
@@ -99,6 +100,7 @@ export default function PostLayout({ content, authorDetails, next, prev, childre
 						</div>
 						<footer>
 							<div className="divide-gray-200 text-sm font-medium leading-5 dark:divide-gray-700 xl:col-start-1 xl:row-start-2 xl:divide-y">
+								<ReadingTime className="py-4 xl:py-8" post={content} />
 								{tags && (
 									<div className="py-4 xl:py-8">
 										<h2 className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Tags</h2>
