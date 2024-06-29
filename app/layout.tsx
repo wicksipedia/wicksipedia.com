@@ -80,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						</div>
 					</SectionContainer>
 				</ThemeProviders>
-				<GoogleAnalytics gaId="" />
+				<GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID || ''} />
 			</body>
 		</html>
 	);
