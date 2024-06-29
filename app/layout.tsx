@@ -1,7 +1,6 @@
 import 'css/tailwind.css';
 import 'pliny/search/algolia.css';
-
-import { Analytics } from '@vercel/analytics/react';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { Space_Grotesk } from 'next/font/google';
 import { SearchProvider, SearchConfig } from 'pliny/search';
 import Header from '@/components/Header';
@@ -81,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 						</div>
 					</SectionContainer>
 				</ThemeProviders>
-				<Analytics />
+				<GoogleAnalytics gaId="" />
 			</body>
 		</html>
 	);
