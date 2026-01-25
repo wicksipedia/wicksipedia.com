@@ -52,6 +52,12 @@ export default defineConfig({
   image: {
     responsiveStyles: true,
     layout: "constrained",
+    service: {
+      entrypoint: "astro/assets/services/sharp",
+      config: {
+        limitInputPixels: false, // Disable pixel limit to pass through large images
+      },
+    },
   },
   env: {
     schema: {
