@@ -1,0 +1,45 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import Socials from "./Socials.astro";
+import IconRss from "@/assets/icons/IconRss.svg";
+import LinkButton from "./LinkButton.astro";
+
+const currentYear = new Date().getFullYear();
+
+type Props = {
+  noMarginTop?: boolean;
+} & HTMLAttributes<"footer">;
+
+const { noMarginTop = false, class: className, ...attrs } = Astro.props;
+---
+
+<footer
+  class:list={["app-layout", { "mt-auto": !noMarginTop }, className]}
+  {...attrs}
+>
+  <div
+    class:list={[
+      "py-6 sm:py-4",
+      "border-t border-border",
+      "flex flex-col items-center justify-between sm:flex-row-reverse",
+    ]}
+  >
+    <div class="flex items-center gap-1">
+      <LinkButton
+        href="/rss.xml"
+        class="p-2 hover:rotate-6 sm:p-1"
+        title="RSS Feed"
+        target="_blank"
+      >
+        <IconRss class="inline-block size-6 scale-125 fill-transparent stroke-current stroke-2 opacity-90 group-hover:fill-transparent sm:scale-110" />
+        <span class="sr-only">RSS Feed</span>
+      </LinkButton>
+      <Socials />
+    </div>
+    <div class="my-2 flex flex-col items-center whitespace-nowrap sm:flex-row">
+      <span>Copyright &#169; {currentYear}</span>
+      <span class="hidden sm:inline">&nbsp;|&nbsp;</span>
+      <span>All rights reserved.</span>
+    </div>
+  </div>
+</footer>
