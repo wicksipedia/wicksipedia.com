@@ -1,7 +1,8 @@
 import { defineConfig, envField, fontProviders } from "astro/config";
-import tailwindcss from "@tailwindcss/vite";
+import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
+import tailwindcss from "@tailwindcss/vite";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
 import {
@@ -12,18 +13,17 @@ import {
 import { transformerFileName } from "./src/utils/transformers/fileName";
 import { SITE } from "./src/config";
 
-
-import mdx from "@astrojs/mdx";
-
-
 // https://astro.build/config
 export default defineConfig({
   site: SITE.website,
+  output: "static", // Explicitly set to static mode for Cloudflare Workers
+
   integrations: [
     sitemap({ filter: page => SITE.showArchives || !page.endsWith("/archives"), }),
     react(),
     mdx(),
   ],
+
   markdown: {
     remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
     shikiConfig: {
@@ -39,6 +39,7 @@ export default defineConfig({
       ],
     },
   },
+
   vite: {
     // eslint-disable-next-line
     // @ts-ignore
@@ -49,6 +50,7 @@ export default defineConfig({
       exclude: ["@resvg/resvg-js"],
     },
   },
+
   image: {
     responsiveStyles: true,
     layout: "constrained",
@@ -59,6 +61,7 @@ export default defineConfig({
       },
     },
   },
+
   env: {
     schema: {
       PUBLIC_GOOGLE_SITE_VERIFICATION: envField.string({
@@ -68,6 +71,7 @@ export default defineConfig({
       }),
     },
   },
+
   experimental: {
     preserveScriptOrder: true,
     fonts: [
