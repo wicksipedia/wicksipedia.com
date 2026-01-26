@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/",
     "preview": "astro build && npx wrangler dev",
-    "deploy": "astro build && npx wrangler deploy",
+    "deploy": "npx wrangler deploy",
     "sync": "astro sync",
     "astro": "astro",
     "format:check": "prettier --check .",
