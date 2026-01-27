@@ -16,6 +16,7 @@ export const SITE = {
     text: "Edit page",
     url: "https://github.com/wicksipedia/wicksipedia.com/edit/main/",
   },
+  repo: "https://github.com/wicksipedia/wicksipedia.com",
   dynamicOgImage: true,
   dir: "ltr", // "rtl" | "auto"
   lang: "en", // html lang code. Set this empty and default will be "en"

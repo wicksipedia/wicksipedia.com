@@ -3,8 +3,19 @@ import type { HTMLAttributes } from "astro/types";
 import Socials from "./Socials.astro";
 import IconRss from "@/assets/icons/IconRss.svg";
 import LinkButton from "./LinkButton.astro";
+import { SITE } from "@/config";
+import { execSync } from "child_process";
 
 const currentYear = new Date().getFullYear();
+
+let commitSha = "";
+let commitShort = "";
+try {
+  commitSha = execSync("git rev-parse HEAD").toString().trim();
+  commitShort = execSync("git rev-parse --short HEAD").toString().trim();
+} catch {
+  // If git command fails, commit info will be empty
+}
 
 type Props = {
   noMarginTop?: boolean;
@@ -40,6 +51,20 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
       <span>Copyright &#169; {currentYear}</span>
       <span class="hidden sm:inline">&nbsp;|&nbsp;</span>
       <span>All rights reserved.</span>
+      {commitShort && (
+        <>
+          <span class="hidden sm:inline">&nbsp;|&nbsp;</span>
+          <a
+            href={`${SITE.repo}/commit/${commitSha}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hover:underline opacity-75 hover:opacity-100"
+            title={`Commit: ${commitSha}`}
+          >
+            {commitShort}
+          </a>
+        </>
+      )}
     </div>
   </div>
 </footer>
