@@ -1,5 +1,6 @@
 ---
 import { render, type CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
@@ -93,7 +94,7 @@ const nextPost =
   >
     <h1
       transition:name={slugifyStr(title.replaceAll(".", "-"))}
-      class="inline-block text-2xl font-bold text-accent sm:text-3xl"
+      class="inline-block text-2xl font-bold text-foreground sm:text-3xl"
     >
       {title}
     </h1>
@@ -108,6 +109,28 @@ const nextPost =
       >
       <EditPost {hideEditPost} {post} class="max-sm:hidden" />
     </div>
+    {
+      initOgImage && (
+        <div class="post-hero-banner">
+          {typeof initOgImage === "string" ? (
+            <img
+              src={initOgImage}
+              alt={title}
+              loading="eager"
+              decoding="async"
+            />
+          ) : (
+            <Image
+              src={initOgImage}
+              alt={title}
+              widths={[480, 768, 1024]}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 768px, 1024px"
+              loading="eager"
+            />
+          )}
+        </div>
+      )
+    }
     <article
       id="article"
       class="app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
@@ -132,17 +155,17 @@ const nextPost =
     <hr class="my-6 border-dashed" />
 
     <!-- Previous/Next Post Buttons -->
-    <div data-pagefind-ignore class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <div data-pagefind-ignore class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {
         prevPost && (
           <a
             href={getPath(prevPost.id, prevPost.filePath)}
-            class="flex w-full gap-1 hover:opacity-75"
+            class="post-nav-link flex w-full gap-2"
           >
-            <IconChevronLeft class="inline-block flex-none rtl:rotate-180" />
+            <IconChevronLeft class="mt-0.5 inline-block flex-none text-accent rtl:rotate-180" />
             <div>
-              <span>Previous Post</span>
-              <div class="text-sm text-accent/85">{prevPost.title}</div>
+              <span class="text-xs font-medium uppercase tracking-wider text-foreground/50">Previous</span>
+              <div class="text-sm font-medium text-accent">{prevPost.title}</div>
             </div>
           </a>
         )
@@ -151,13 +174,13 @@ const nextPost =
         nextPost && (
           <a
             href={getPath(nextPost.id, nextPost.filePath)}
-            class="flex w-full justify-end gap-1 text-end hover:opacity-75 sm:col-start-2"
+            class="post-nav-link flex w-full justify-end gap-2 text-end sm:col-start-2"
           >
             <div>
-              <span>Next Post</span>
-              <div class="text-sm text-accent/85">{nextPost.title}</div>
+              <span class="text-xs font-medium uppercase tracking-wider text-foreground/50">Next</span>
+              <div class="text-sm font-medium text-accent">{nextPost.title}</div>
             </div>
-            <IconChevronRight class="inline-block flex-none rtl:rotate-180" />
+            <IconChevronRight class="mt-0.5 inline-block flex-none text-accent rtl:rotate-180" />
           </a>
         )
       }

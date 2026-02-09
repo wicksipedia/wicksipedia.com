@@ -2,7 +2,7 @@ export const SITE = {
   website: "https://wicksipedia.com/", // replace this with your deployed domain
   author: "Matt Wicks",
   profile: "https://wicksipedia.com/",
-  desc: "A personal blog about technology, programming, and software development.",
+  desc: "Articles on CI/CD, DevOps, cloud-native architecture, and clean code by Matt Wicks, Solution Architect at SSW.",
   title: "Wicksipedia",
   ogImage: "astropaper-og.jpg",
   lightAndDarkMode: true,

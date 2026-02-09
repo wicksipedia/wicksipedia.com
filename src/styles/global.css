@@ -5,19 +5,31 @@
 
 :root,
 html[data-theme="light"] {
-  --background: #fdfdfd;
-  --foreground: #282728;
-  --accent: #006cac;
-  --muted: #e6e6e6;
-  --border: #ece9e9;
+  --background: #faf9f6;
+  --foreground: #1a1a1a;
+  --accent: #d4550a;
+  --accent-2: #16a34a;
+  --muted: #e8e5df;
+  --border: #d6d3cc;
+  --hero-bg: #DAD9DB;
+  --hero-text: #282728;
+  --hero-text-muted: rgba(40, 39, 40, 0.6);
+  --hero-accent: #d4550a;
+  --hero-social: rgba(40, 39, 40, 0.7);
 }
 
 html[data-theme="dark"] {
-  --background: #212737;
-  --foreground: #eaedf3;
-  --accent: #ff6b01;
-  --muted: #343f60;
-  --border: #ab4b08;
+  --background: #0f1117;
+  --foreground: #e8e6e3;
+  --accent: #ff7a1a;
+  --accent-2: #34d399;
+  --muted: #1e2130;
+  --border: #2a2d3a;
+  --hero-bg: #1a1d2a;
+  --hero-text: #e8e6e3;
+  --hero-text-muted: rgba(232, 230, 227, 0.55);
+  --hero-accent: #ff7a1a;
+  --hero-social: rgba(232, 230, 227, 0.7);
 }
 
 @theme inline {
@@ -25,21 +37,27 @@ html[data-theme="dark"] {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-hero-bg: var(--hero-bg);
+  --color-hero-text: var(--hero-text);
+  --color-hero-text-muted: var(--hero-text-muted);
+  --color-hero-accent: var(--hero-accent);
+  --color-hero-social: var(--hero-social);
 }
 
 @layer base {
   * {
     @apply border-border outline-accent/75;
-    scrollbar-width: auto;
-    scrollbar-color: var(--color-muted) transparent;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
   }
   html {
     @apply overflow-y-scroll scroll-smooth;
   }
   body {
-    @apply flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/75 selection:text-background;
+    @apply flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/90 selection:text-white;
   }
   a,
   button {
@@ -59,12 +77,321 @@ html[data-theme="dark"] {
   @apply mx-auto w-full max-w-app px-4;
 }
 
-.active-nav {
-  @apply underline decoration-wavy decoration-2 underline-offset-8;
-}
-
 /* Source: https://piccalil.li/blog/a-more-modern-css-reset/ */
-/* Anything that has been anchored to should have extra scroll margin */
 :target {
   scroll-margin-block: 1rem;
+}
+
+/* ===== Animations ===== */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@utility animate-reveal {
+  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-reveal-delay-1 {
+  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@utility animate-reveal-delay-2 {
+  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+@utility animate-reveal-delay-3 {
+  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+/* ===== Hero Section ===== */
+.hero-section {
+  overflow: hidden;
+  background: var(--hero-bg);
+  transition: background 0.3s ease;
+}
+
+/* Desktop avatar container — blends image into hero bg */
+.hero-avatar-wrap {
+  position: relative;
+}
+.hero-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to top, var(--hero-bg), transparent);
+  pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+.hero-avatar {
+  display: block;
+  object-fit: cover;
+  object-position: top center;
+}
+
+/* Mobile: avatar is compact, sits inline above text */
+.hero-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 9999px;
+  margin: 0 auto;
+}
+
+/* Larger phones */
+@media (min-width: 480px) {
+  .hero-avatar {
+    width: 160px;
+    height: 160px;
+  }
+}
+
+/* Tablet+: avatar breaks out of circle, gets big, crops at bottom */
+@media (min-width: 768px) {
+  .hero-avatar {
+    width: 320px;
+    height: 360px;
+    border-radius: 0;
+    margin: 0;
+    margin-bottom: -40px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .hero-avatar {
+    width: 420px;
+    height: 460px;
+    margin-bottom: -50px;
+  }
+}
+
+/* Large desktop: 500px as requested */
+@media (min-width: 1280px) {
+  .hero-avatar {
+    width: 480px;
+    height: 500px;
+    margin-bottom: -60px;
+  }
+}
+
+/* ===== Accent line at top ===== */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 9;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ===== Header ===== */
+.header-wrap {
+  background: color-mix(in srgb, var(--background) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(1.8);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Accent dot after site title — the period in "Wicksipedia." */
+.header-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-bottom: 2px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.group:hover .header-dot {
+  transform: scale(1.3);
+}
+
+/* Nav links — uppercase, tight, punchy */
+.header-nav-link {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--foreground);
+  opacity: 0.65;
+  border-radius: 0.5rem;
+  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.header-nav-link:hover {
+  opacity: 1;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.header-nav-active {
+  opacity: 1;
+  color: var(--accent);
+}
+.header-nav-active::after {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* Vertical divider between nav and utility buttons */
+.header-util-divider {
+  width: 1px;
+  height: 1.25rem;
+  margin: 0 0.25rem;
+  background: var(--border);
+  opacity: 0.6;
+}
+
+/* Icon buttons (search, theme toggle) */
+.header-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  color: var(--foreground);
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.header-icon-btn:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+.header-icon-btn:hover svg {
+  stroke: var(--accent);
+}
+
+/* Mobile menu layout */
+@media (max-width: 639px) {
+  .header-menu-mobile:not(.hidden) {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: color-mix(in srgb, var(--background) 95%, transparent);
+    backdrop-filter: blur(16px) saturate(1.8);
+    -webkit-backdrop-filter: blur(16px) saturate(1.8);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    padding: 0.75rem 1rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+    z-index: 50;
+  }
+  .header-menu-mobile .header-nav-link {
+    text-align: center;
+    padding: 0.75rem;
+  }
+}
+
+/* ===== Card Styles ===== */
+.card-hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 30px color-mix(in srgb, var(--accent) 12%, transparent),
+    0 2px 8px color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.card-border-left {
+  position: relative;
+}
+.card-border-left::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.card-border-left:hover::before {
+  opacity: 1;
+}
+
+/* ===== OG image hero banner ===== */
+.post-hero-banner {
+  @apply mt-6 overflow-hidden rounded-xl border border-border;
+}
+.post-hero-banner img {
+  @apply w-full object-cover;
+}
+
+/* ===== Section heading accent ===== */
+.section-heading::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 3px;
+  margin-top: 0.5rem;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+
+/* ===== Gradient text utility ===== */
+.text-gradient {
+  color: var(--accent);
+  -webkit-text-fill-color: var(--accent);
+}
+
+/* ===== Glow button ===== */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+.btn-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.btn-glow:hover::after {
+  opacity: 1;
+}
+
+/* ===== Prev/Next post nav ===== */
+.post-nav-link {
+  @apply rounded-xl border border-border p-4 transition-all duration-200;
+}
+.post-nav-link:hover {
+  @apply border-accent/50 bg-muted/50;
+  transform: translateY(-1px);
 }

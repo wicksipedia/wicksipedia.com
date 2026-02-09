@@ -13,6 +13,10 @@
       @apply mb-3 text-foreground;
     }
 
+    h2 {
+      @apply border-b border-border/50 pb-2;
+    }
+
     h3 {
       @apply italic;
     }
@@ -28,7 +32,7 @@
     }
 
     a {
-      @apply wrap-break-word text-foreground decoration-dashed underline-offset-4 hover:text-accent focus-visible:no-underline;
+      @apply wrap-break-word text-accent decoration-accent/40 decoration-dashed underline-offset-4 hover:text-accent hover:decoration-accent focus-visible:no-underline;
     }
 
     ul {
@@ -44,7 +48,7 @@
     }
 
     img {
-      @apply mx-auto border border-border;
+      @apply mx-auto rounded-lg border border-border;
     }
 
     figcaption {
@@ -58,7 +62,7 @@
       }
 
       th {
-        @apply py-1.5;
+        @apply bg-muted/50 py-1.5;
       }
 
       code {
@@ -67,15 +71,15 @@
     }
 
     code {
-      @apply rounded bg-muted/75 p-1 wrap-break-word text-foreground before:content-none after:content-none;
+      @apply rounded-md bg-muted/80 px-1.5 py-0.5 text-[0.9em] wrap-break-word text-accent before:content-none after:content-none;
     }
 
     .astro-code code {
-      @apply flex-[1_0_100%] bg-inherit p-0;
+      @apply flex-[1_0_100%] bg-inherit p-0 text-inherit;
     }
 
     blockquote {
-      @apply border-s-accent/80 wrap-break-word opacity-80;
+      @apply border-s-[3px] border-s-accent rounded-e-lg bg-accent/5 px-4 py-1 italic wrap-break-word;
     }
 
     details {
@@ -93,7 +97,7 @@
 
   /* ===== Code Blocks & Syntax Highlighting ===== */
   .astro-code {
-    @apply flex border bg-(--shiki-light-bg) text-(--shiki-light) outline-border [&_span]:text-(--shiki-light);
+    @apply flex rounded-xl border shadow-sm bg-(--shiki-light-bg) text-(--shiki-light) outline-border [&_span]:text-(--shiki-light);
   }
 
   html[data-theme="dark"] .astro-code {
@@ -101,7 +105,6 @@
   }
 
   /* Styles for Shiki transformers */
-  /* https://shiki.style/packages/transformers */
   .astro-code {
     .line.diff.add {
       @apply relative inline-block w-full bg-green-400/20 before:absolute before:-left-3 before:text-green-500 before:content-['+'];
@@ -110,10 +113,10 @@
       @apply relative inline-block w-full bg-red-500/20 before:absolute before:-left-3 before:text-red-500 before:content-['-'];
     }
     .line.highlighted {
-      @apply inline-block w-full bg-slate-400/20;
+      @apply inline-block w-full bg-accent/10;
     }
     .highlighted-word {
-      @apply rounded-sm border border-border px-0.5 py-px;
+      @apply rounded-sm border border-accent/30 px-0.5 py-px;
     }
   }
 }
