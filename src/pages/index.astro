@@ -19,7 +19,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
 
 <Layout>
   <Header />
-  <section id="hero" class="hero-section animate-reveal">
+  <section id="hero" class="animate-reveal overflow-hidden bg-hero-bg transition-[background] duration-300">
     <div class="app-layout">
       <div class="flex flex-col items-center gap-6 py-8 sm:py-10 md:flex-row md:items-end md:justify-between md:gap-8 md:py-0">
         <div class="text-center md:flex-1 md:py-16 md:text-left lg:py-20 xl:py-24">
@@ -28,7 +28,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
             alt="Matt Wicks"
             width="160"
             height="160"
-            class="mx-auto block size-[140px] rounded-full object-cover object-top sm:size-[160px] md:hidden"
+            class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
           />
           <p class="mt-4 text-sm font-semibold uppercase tracking-widest text-hero-accent md:mt-0">
             Solution Architect at{" "}
@@ -56,7 +56,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
             )
           }
         </div>
-        <div class="hero-avatar-wrap hidden md:block md:shrink-0">
+        <div class="relative hidden md:block md:shrink-0 after:content-[''] after:absolute after:bottom-0 after:inset-x-0 after:h-[40%] after:pointer-events-none after:bg-gradient-to-t after:from-hero-bg after:to-transparent after:transition-[background] after:duration-300">
           <img
             src="/avatar.png"
             alt="Matt Wicks"
@@ -78,7 +78,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
             { "border-b border-border/50": recentPosts.length > 0 },
           ]}
         >
-          <h2 class="section-heading text-2xl font-semibold tracking-wide">
+          <h2 class="text-2xl font-semibold tracking-wide text-foreground after:content-[''] after:block after:w-12 after:h-0.75 after:mt-2 after:rounded-full after:bg-accent">
             Featured
           </h2>
           <ul>
@@ -93,7 +93,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
     {
       recentPosts.length > 0 && (
         <section id="recent-posts" class="animate-reveal-delay-2 pt-12 pb-8">
-          <h2 class="section-heading text-2xl font-semibold tracking-wide">
+          <h2 class="text-2xl font-semibold tracking-wide text-foreground after:content-[''] after:block after:w-12 after:h-0.75 after:mt-2 after:rounded-full after:bg-accent">
             Recent Posts
           </h2>
           <ul>
@@ -110,10 +110,11 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
       <a
         href="/blog/"
         class:list={[
-          "btn-glow inline-flex items-center gap-2",
+          "relative overflow-hidden inline-flex items-center gap-2",
           "rounded-xl bg-accent px-8 py-3.5",
           "font-semibold text-white transition-all duration-200",
           "hover:brightness-110",
+          "after:content-[''] after:absolute after:inset-0 after:rounded-[inherit] after:opacity-0 after:transition-opacity after:duration-300 after:[box-shadow:0_0_24px_var(--accent)] hover:after:opacity-50",
         ]}
       >
         All Posts
@@ -123,6 +124,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
   </main>
   <Footer />
 </Layout>
+
 
 <script>
   document.addEventListener("astro:page-load", () => {

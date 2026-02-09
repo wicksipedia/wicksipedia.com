@@ -83,6 +83,14 @@ export default defineConfig({
         weights: [300, 400, 500, 600, 700],
         styles: ["normal", "italic"],
       },
+      {
+        name: "Source Serif 4",
+        cssVariable: "--font-source-serif",
+        provider: fontProviders.google(),
+        fallbacks: ["Georgia", "serif"],
+        weights: [400, 600, 700],
+        styles: ["normal", "italic"],
+      },
     ],
   },
 });

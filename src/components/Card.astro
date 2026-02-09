@@ -16,10 +16,10 @@ const { title, description, tags, ...props } = data;
 
 <li
   class:list={[
-    "group relative card-hover-lift card-border-left",
-    "my-4 rounded-xl border border-border/60 bg-muted/20 p-5",
-    "transition-all duration-200 cursor-pointer",
-    "hover:border-border hover:bg-muted/40",
+    "group relative my-4 cursor-pointer rounded-xl border border-border/60 bg-muted/20 p-5",
+    "transition-all duration-200 hover:border-border hover:bg-muted/40",
+    "hover:-translate-y-0.75 hover:shadow-xl shadow-accent/10",
+    "before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-0.75 before:rounded-l-[3px] before:bg-accent before:opacity-0 before:transition-opacity hover:before:opacity-100",
   ]}
 >
   <a
@@ -38,7 +38,7 @@ const { title, description, tags, ...props } = data;
     </Heading>
   </a>
   <Datetime {...props} />
-  <p class="text-foreground/70">{description}</p>
+  <p class="font-prose text-foreground/70">{description}</p>
   {
     tags.length > 0 && (
       <ul class="relative z-10 mt-3 flex flex-wrap gap-1.5">

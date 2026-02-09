@@ -25,30 +25,29 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
 
 <nav class="app-layout mt-8 mb-1" aria-label="breadcrumb">
   <ul
-    class="font-light text-foreground/60 [&>li]:inline [&>li:not(:last-child)>a]:hover:text-accent"
+    class="flex flex-wrap items-center gap-1 text-sm text-foreground/50"
   >
-    <li>
-      <a href="/" class="hover:text-accent">Home</a>
-      <span aria-hidden="true">&raquo;</span>
+    <li class="flex items-center gap-1">
+      <a href="/" class="transition-colors hover:text-accent">Home</a>
+      <span aria-hidden="true" class="text-border">/</span>
     </li>
     {
       breadcrumbList.map((breadcrumb, index) =>
         index + 1 === breadcrumbList.length ? (
           <li>
             <span
-              class:list={["capitalize text-foreground/80", { lowercase: index > 0 }]}
+              class:list={["font-medium text-foreground/80", { lowercase: index > 0 }]}
               aria-current="page"
             >
-              {/* make the last part lowercase in Home > Tags > some-tag */}
               {decodeURIComponent(breadcrumb)}
             </span>
           </li>
         ) : (
-          <li>
-            <a href={`/${breadcrumb}/`} class="capitalize hover:text-accent">
+          <li class="flex items-center gap-1">
+            <a href={`/${breadcrumb}/`} class="capitalize transition-colors hover:text-accent">
               {breadcrumb}
             </a>
-            <span aria-hidden="true">&raquo;</span>
+            <span aria-hidden="true" class="text-border">/</span>
           </li>
         )
       )

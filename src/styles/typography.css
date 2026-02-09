@@ -3,14 +3,14 @@
 @layer base {
   /* ===== Override default Tailwind Typography styles ===== */
   .app-prose {
-    @apply prose;
+    @apply prose font-prose;
 
     h1,
     h2,
     h3,
     h4,
     th {
-      @apply mb-3 text-foreground;
+      @apply mb-3 font-app text-foreground;
     }
 
     h2 {
@@ -71,7 +71,7 @@
     }
 
     code {
-      @apply rounded-md bg-muted/80 px-1.5 py-0.5 text-[0.9em] wrap-break-word text-accent before:content-none after:content-none;
+      @apply rounded-md bg-muted/80 px-1.5 py-0.5 font-app text-[0.9em] wrap-break-word text-accent before:content-none after:content-none;
     }
 
     .astro-code code {

@@ -34,6 +34,7 @@ html[data-theme="dark"] {
 
 @theme inline {
   --font-app: var(--font-google-sans-code);
+  --font-prose: var(--font-source-serif);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
@@ -69,6 +70,8 @@ html[data-theme="dark"] {
   }
 }
 
+/* ===== Layout Utilities ===== */
+
 @utility max-w-app {
   @apply max-w-4xl xl:max-w-5xl;
 }
@@ -82,22 +85,51 @@ html[data-theme="dark"] {
   scroll-margin-block: 1rem;
 }
 
-/* ===== Animations ===== */
+/* ===== Keyframe Animations ===== */
+
 @keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes shimmer {
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
 }
+
+@keyframes dot-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.1);
+    animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
+  }
+}
+
+@keyframes dot-squish {
+  0%, 100% { transform: translateY(0) scaleX(1) scaleY(1); }
+  15% { transform: translateY(0) scaleX(1.3) scaleY(0.7); }
+  30% { transform: translateY(-10px) scaleX(0.85) scaleY(1.15); }
+  50% { transform: translateY(-14px) scaleX(1) scaleY(1); }
+  70% { transform: translateY(-10px) scaleX(0.85) scaleY(1.15); }
+  85% { transform: translateY(0) scaleX(1.25) scaleY(0.75); }
+}
+
+@keyframes dot-shadow {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.3; }
+  50% { transform: translateX(-50%) scaleX(0.5); opacity: 0.1; }
+}
+
+@keyframes dot-shadow-squish {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.3; }
+  15% { transform: translateX(-50%) scaleX(1.4); opacity: 0.35; }
+  50% { transform: translateX(-50%) scaleX(0.4); opacity: 0.05; }
+  85% { transform: translateX(-50%) scaleX(1.4); opacity: 0.35; }
+}
+
+/* ===== Animation Utilities ===== */
 
 @utility animate-reveal {
   animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -115,283 +147,46 @@ html[data-theme="dark"] {
   animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
 }
 
-/* ===== Hero Section ===== */
-.hero-section {
-  overflow: hidden;
-  background: var(--hero-bg);
-  transition: background 0.3s ease;
-}
+/* ===== Text Utilities ===== */
 
-/* Desktop avatar container — blends image into hero bg */
-.hero-avatar-wrap {
-  position: relative;
-}
-.hero-avatar-wrap::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40%;
-  background: linear-gradient(to top, var(--hero-bg), transparent);
-  pointer-events: none;
-  transition: background 0.3s ease;
-}
-
-.hero-avatar {
-  display: block;
-  object-fit: cover;
-  object-position: top center;
-}
-
-/* Mobile: avatar is compact, sits inline above text */
-.hero-avatar {
-  width: 140px;
-  height: 140px;
-  border-radius: 9999px;
-  margin: 0 auto;
-}
-
-/* Larger phones */
-@media (min-width: 480px) {
-  .hero-avatar {
-    width: 160px;
-    height: 160px;
-  }
-}
-
-/* Tablet+: avatar breaks out of circle, gets big, crops at bottom */
-@media (min-width: 768px) {
-  .hero-avatar {
-    width: 320px;
-    height: 360px;
-    border-radius: 0;
-    margin: 0;
-    margin-bottom: -40px;
-  }
-}
-
-/* Desktop */
-@media (min-width: 1024px) {
-  .hero-avatar {
-    width: 420px;
-    height: 460px;
-    margin-bottom: -50px;
-  }
-}
-
-/* Large desktop: 500px as requested */
-@media (min-width: 1280px) {
-  .hero-avatar {
-    width: 480px;
-    height: 500px;
-    margin-bottom: -60px;
-  }
-}
-
-/* ===== Accent line at top ===== */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  z-index: 9;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--accent),
-    transparent
-  );
-  pointer-events: none;
-}
-
-/* ===== Header ===== */
-.header-wrap {
-  background: color-mix(in srgb, var(--background) 82%, transparent);
-  backdrop-filter: blur(16px) saturate(1.8);
-  -webkit-backdrop-filter: blur(16px) saturate(1.8);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
-  transition: background 0.3s ease, border-color 0.3s ease;
-}
-
-/* Accent dot after site title — the period in "Wicksipedia." */
-.header-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  margin-bottom: 2px;
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-.group:hover .header-dot {
-  transform: scale(1.3);
-}
-
-/* Nav links — uppercase, tight, punchy */
-.header-nav-link {
-  display: block;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--foreground);
-  opacity: 0.65;
-  border-radius: 0.5rem;
-  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-.header-nav-link:hover {
-  opacity: 1;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-.header-nav-active {
-  opacity: 1;
-  color: var(--accent);
-}
-.header-nav-active::after {
-  content: "";
-  display: block;
-  height: 2px;
-  margin-top: 2px;
-  border-radius: 2px;
-  background: var(--accent);
-}
-
-/* Vertical divider between nav and utility buttons */
-.header-util-divider {
-  width: 1px;
-  height: 1.25rem;
-  margin: 0 0.25rem;
-  background: var(--border);
-  opacity: 0.6;
-}
-
-/* Icon buttons (search, theme toggle) */
-.header-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.5rem;
-  color: var(--foreground);
-  opacity: 0.6;
-  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-.header-icon-btn:hover {
-  opacity: 1;
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
-}
-.header-icon-btn:hover svg {
-  stroke: var(--accent);
-}
-
-/* Mobile menu layout */
-@media (max-width: 639px) {
-  .header-menu-mobile:not(.hidden) {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: color-mix(in srgb, var(--background) 95%, transparent);
-    backdrop-filter: blur(16px) saturate(1.8);
-    -webkit-backdrop-filter: blur(16px) saturate(1.8);
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
-    padding: 0.75rem 1rem 1rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.25rem;
-    z-index: 50;
-  }
-  .header-menu-mobile .header-nav-link {
-    text-align: center;
-    padding: 0.75rem;
-  }
-}
-
-/* ===== Card Styles ===== */
-.card-hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.card-hover-lift:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 8px 30px color-mix(in srgb, var(--accent) 12%, transparent),
-    0 2px 8px color-mix(in srgb, var(--accent) 6%, transparent);
-}
-
-.card-border-left {
-  position: relative;
-}
-.card-border-left::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 3px;
-  border-radius: 3px 0 0 3px;
-  background: var(--accent);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.card-border-left:hover::before {
-  opacity: 1;
-}
-
-/* ===== OG image hero banner ===== */
-.post-hero-banner {
-  @apply mt-6 overflow-hidden rounded-xl border border-border;
-}
-.post-hero-banner img {
-  @apply w-full object-cover;
-}
-
-/* ===== Section heading accent ===== */
-.section-heading::after {
-  content: "";
-  display: block;
-  width: 3rem;
-  height: 3px;
-  margin-top: 0.5rem;
-  border-radius: 9999px;
-  background: var(--accent);
-}
-
-/* ===== Gradient text utility ===== */
-.text-gradient {
+@utility text-gradient {
   color: var(--accent);
   -webkit-text-fill-color: var(--accent);
 }
 
-/* ===== Glow button ===== */
-.btn-glow {
-  position: relative;
-  overflow: hidden;
-}
-.btn-glow::after {
+/* ===== Accent line at top of viewport ===== */
+body::before {
   content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 50%, transparent);
-}
-.btn-glow:hover::after {
-  opacity: 1;
+  @apply fixed top-0 left-0 right-0 z-45 h-[3px] pointer-events-none;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
 }
 
-/* ===== Prev/Next post nav ===== */
-.post-nav-link {
-  @apply rounded-xl border border-border p-4 transition-all duration-200;
+/* ===== Hero avatar responsive sizes ===== */
+/* These use raw CSS because they need custom breakpoints (480px) and
+   complex object-fit rules that are cleaner than long Tailwind strings */
+
+.hero-avatar {
+  @apply block object-cover object-top size-[140px] rounded-full mx-auto;
 }
-.post-nav-link:hover {
-  @apply border-accent/50 bg-muted/50;
-  transform: translateY(-1px);
+
+@media (min-width: 480px) {
+  .hero-avatar { @apply size-[160px]; }
+}
+
+@media (min-width: 768px) {
+  .hero-avatar {
+    @apply w-[320px] h-[360px] rounded-none mx-0 -mb-10;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-avatar {
+    @apply w-[420px] h-[460px] -mb-[50px];
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-avatar {
+    @apply w-[480px] h-[500px] -mb-[60px];
+  }
 }
