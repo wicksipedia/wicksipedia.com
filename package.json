@@ -3,8 +3,10 @@
   "type": "module",
   "version": "5.5.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "tinacms dev -c \"astro dev\"",
+    "dev:astro": "astro dev",
     "build": "astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/",
+    "build:tina": "tinacms build && astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/",
     "preview": "astro build && npx wrangler dev",
     "deploy": "npx wrangler deploy",
     "sync": "astro sync",
@@ -34,13 +36,15 @@
     "satori": "^0.18.3",
     "sharp": "^0.34.5",
     "slugify": "^1.6.6",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "tinacms": "^3.4.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.6",
     "@pagefind/default-ui": "^1.4.0",
     "@shikijs/transformers": "^3.20.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@tinacms/cli": "^2.1.5",
     "@types/lodash.kebabcase": "^4.1.9",
     "@typescript-eslint/parser": "^8.51.0",
     "eslint": "^9.39.2",
