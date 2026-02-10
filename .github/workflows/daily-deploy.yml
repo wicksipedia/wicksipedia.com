@@ -11,6 +11,15 @@ jobs:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun install
+
+      - name: Cache Astro build artifacts
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.astro
+          key: astro-build-${{ hashFiles('src/assets/images/**', 'src/data/blog/**/*.{png,jpg,jpeg,gif,webp,svg,avif}') }}
+          restore-keys: |
+            astro-build-
+
       - run: bun run build
       - run: bun run deploy
         env:
