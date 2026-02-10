@@ -1,0 +1,66 @@
+/*
+ * Wicksipedia — Giscus Light Theme
+ * Matches the site's warm off-white / burnt orange design system.
+ */
+
+main {
+  --color-canvas-default: #faf9f6;
+  --color-canvas-overlay: #faf9f6;
+  --color-canvas-inset: #f2f0ec;
+  --color-canvas-subtle: #e8e5df;
+  --color-border-default: #d6d3cc;
+  --color-border-muted: rgba(214, 211, 204, 0.5);
+  --color-neutral-muted: rgba(214, 211, 204, 0.4);
+  --color-accent-fg: #d4550a;
+  --color-accent-emphasis: #d4550a;
+  --color-accent-muted: rgba(212, 85, 10, 0.3);
+  --color-accent-subtle: rgba(212, 85, 10, 0.08);
+  --color-fg-default: #1a1a1a;
+  --color-fg-muted: rgba(26, 26, 26, 0.7);
+  --color-fg-subtle: rgba(26, 26, 26, 0.5);
+  --color-btn-text: #1a1a1a;
+  --color-btn-bg: #f2f0ec;
+  --color-btn-border: rgba(214, 211, 204, 0.6);
+  --color-btn-shadow: none;
+  --color-btn-insetShadow: none;
+  --color-btn-hover-bg: #e8e5df;
+  --color-btn-hover-border: #d6d3cc;
+  --color-btn-active-bg: #dedad3;
+  --color-btn-active-border: #d6d3cc;
+  --color-btn-selected-bg: #e8e5df;
+  --color-btn-primary-text: #fff;
+  --color-btn-primary-bg: #d4550a;
+  --color-btn-primary-border: #c04e09;
+  --color-btn-primary-shadow: none;
+  --color-btn-primary-insetShadow: none;
+  --color-btn-primary-hover-bg: #c04e09;
+  --color-btn-primary-hover-border: #aa4508;
+  --color-btn-primary-selected-bg: #aa4508;
+  --color-btn-primary-disabled-text: rgba(255, 255, 255, 0.5);
+  --color-btn-primary-disabled-bg: rgba(212, 85, 10, 0.5);
+  --color-btn-primary-disabled-border: transparent;
+  --color-social-count-bg: #f2f0ec;
+  --color-header-text: #1a1a1a;
+  --color-header-bg: #faf9f6;
+}
+
+/* Round corners on the widget to match site cards */
+.gsc-main {
+  border-radius: 0.75rem;
+}
+
+.gsc-comment-box {
+  border-radius: 0.75rem;
+}
+
+.gsc-comment {
+  border-radius: 0.75rem;
+}
+
+.gsc-timeline {
+  border-color: rgba(214, 211, 204, 0.4);
+}
+
+.gsc-header .gsc-left-header em {
+  color: rgba(26, 26, 26, 0.5);
+}

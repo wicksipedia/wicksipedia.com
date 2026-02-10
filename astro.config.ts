@@ -2,6 +2,7 @@ import { defineConfig, envField, fontProviders } from "astro/config";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import tailwindcss from "@tailwindcss/vite";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
@@ -45,9 +46,12 @@ export default defineConfig({
     // @ts-ignore
     // This will be fixed in Astro 6 with Vite 7 support
     // See: https://github.com/withastro/astro/issues/14030
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), basicSsl()],
     optimizeDeps: {
       exclude: ["@resvg/resvg-js"],
+    },
+    server: {
+      cors: true, // Allow cross-origin requests (giscus iframe fetches theme CSS)
     },
   },
 

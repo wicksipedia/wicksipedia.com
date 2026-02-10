@@ -1,0 +1,3 @@
+# Allow giscus iframe to fetch custom theme stylesheets
+/giscus-*.css
+  Access-Control-Allow-Origin: https://giscus.app

@@ -1,0 +1,83 @@
+---
+/**
+ * Giscus comments — pure Astro component (no React dependency).
+ * Uses the giscus client.js script and the postMessage API for theme sync.
+ */
+import { GISCUS } from "@/constants";
+---
+
+<div id="giscus-container" class="mt-8"></div>
+
+<script is:inline data-astro-rerun define:vars={{ GISCUS }}>
+  /**
+   * Resolve the giscus theme value.
+   * In production (HTTPS) we serve custom CSS that matches the site palette.
+   * In development (HTTP) the HTTPS giscus iframe can't load HTTP stylesheets
+   * (mixed-content block), so we fall back to giscus built-in theme names.
+   */
+  function giscusTheme() {
+    const theme = document.documentElement.getAttribute("data-theme") || "light";
+    if (window.location.protocol === "https:") {
+      return `${window.location.origin}/giscus-${theme}.css`;
+    }
+    return theme; // "light" or "dark" — giscus built-in names
+  }
+
+  /** Build and inject the Giscus script with the current theme */
+  function loadGiscus() {
+    const container = document.getElementById("giscus-container");
+    if (!container) return;
+    // Clear previous instance (view transitions)
+    container.innerHTML = "";
+
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.setAttribute("data-repo", GISCUS.repo);
+    script.setAttribute("data-repo-id", GISCUS.repoId);
+    script.setAttribute("data-category", GISCUS.category);
+    script.setAttribute("data-category-id", GISCUS.categoryId);
+    script.setAttribute("data-mapping", GISCUS.mapping);
+    script.setAttribute("data-reactions-enabled", GISCUS.reactionsEnabled);
+    script.setAttribute("data-emit-metadata", GISCUS.emitMetadata);
+    script.setAttribute("data-input-position", GISCUS.inputPosition);
+    script.setAttribute("data-lang", GISCUS.lang);
+    script.setAttribute("data-loading", GISCUS.loading);
+    script.setAttribute("data-theme", giscusTheme());
+    script.setAttribute("crossorigin", "anonymous");
+    script.async = true;
+    container.appendChild(script);
+  }
+  loadGiscus();
+
+  /** Send a theme update to the Giscus iframe via postMessage */
+  function sendGiscusTheme() {
+    const theme = giscusTheme();
+
+    function trySend() {
+      const iframe = document.querySelector("iframe.giscus-frame");
+      if (iframe) {
+        iframe.contentWindow?.postMessage(
+          { giscus: { setConfig: { theme } } },
+          "*"
+        );
+        return true;
+      }
+      return false;
+    }
+
+    // Retry a few times in case the iframe hasn't loaded yet
+    if (!trySend()) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        if (trySend() || ++attempts > 10) clearInterval(interval);
+      }, 200);
+    }
+  }
+
+  // Watch for theme changes on <html data-theme="...">
+  const observer = new MutationObserver(() => sendGiscusTheme());
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+</script>

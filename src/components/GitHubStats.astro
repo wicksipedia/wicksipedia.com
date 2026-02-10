@@ -1,0 +1,888 @@
+---
+const username = "wicksipedia";
+
+interface GitHubUser {
+  public_repos: number;
+  followers: number;
+  following: number;
+  created_at: string;
+}
+
+interface GitHubRepo {
+  stargazers_count: number;
+  fork: boolean;
+  language: string | null;
+}
+
+let stats = {
+  publicRepos: 0,
+  followers: 0,
+  totalStars: 0,
+  topLanguages: [] as { name: string; count: number }[],
+};
+
+let contribs = {
+  total: 0,
+  currentStreak: 0,
+  currentStreakStart: "",
+  currentStreakEnd: "",
+  longestStreak: 0,
+  longestStreakStart: "",
+  longestStreakEnd: "",
+  accountCreated: "2011-02-04",
+};
+
+const allDays = new Map<string, number>();
+
+// Parse contribution tooltips from a GitHub contributions HTML page
+function parseDailyContributions(html: string): Map<string, number> {
+  const days = new Map<string, number>();
+  // Match tooltips: "N contributions on Month Day." or "No contributions on Month Day."
+  const tooltipRegex = /(\d+) contributions? on [^<]+|No contributions on [^<]+/g;
+  // Match data-date to associate with tooltips
+  const dateRegex = /data-date="(\d{4}-\d{2}-\d{2})"/g;
+
+  const dates: string[] = [];
+  let dateMatch;
+  while ((dateMatch = dateRegex.exec(html)) !== null) {
+    dates.push(dateMatch[1]);
+  }
+
+  const counts: number[] = [];
+  let tooltipMatch;
+  while ((tooltipMatch = tooltipRegex.exec(html)) !== null) {
+    const full = tooltipMatch[0];
+    if (full.startsWith("No ")) {
+      counts.push(0);
+    } else {
+      counts.push(parseInt(tooltipMatch[1], 10));
+    }
+  }
+
+  for (let i = 0; i < Math.min(dates.length, counts.length); i++) {
+    days.set(dates[i], counts[i]);
+  }
+  return days;
+}
+
+function formatStreakDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00Z");
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+try {
+  // Fetch user info + repos
+  const [userRes, reposRes] = await Promise.all([
+    fetch(`https://api.github.com/users/${username}`, {
+      headers: { "User-Agent": "wicksipedia-site" },
+    }),
+    fetch(
+      `https://api.github.com/users/${username}/repos?per_page=100&sort=pushed&type=owner`,
+      {
+        headers: { "User-Agent": "wicksipedia-site" },
+      }
+    ),
+  ]);
+
+  if (userRes.ok && reposRes.ok) {
+    const user: GitHubUser = await userRes.json();
+    const repos: GitHubRepo[] = await reposRes.json();
+
+    contribs.accountCreated = user.created_at.split("T")[0];
+
+    const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0);
+
+    const langCounts: Record<string, number> = {};
+    for (const repo of repos) {
+      if (repo.language && !repo.fork) {
+        langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
+      }
+    }
+    const topLanguages = Object.entries(langCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count }));
+
+    stats = {
+      publicRepos: user.public_repos,
+      followers: user.followers,
+      totalStars,
+      topLanguages,
+    };
+  }
+
+  // Fetch contribution data for all years
+  const startYear = new Date(contribs.accountCreated).getFullYear();
+  const currentYear = new Date().getFullYear();
+  const years = Array.from(
+    { length: currentYear - startYear + 1 },
+    (_, i) => startYear + i
+  );
+
+  const yearPages = await Promise.all(
+    years.map(async year => {
+      const res = await fetch(
+        `https://github.com/users/${username}/contributions?from=${year}-01-01`,
+        { headers: { "User-Agent": "wicksipedia-site" } }
+      );
+      return res.ok ? res.text() : "";
+    })
+  );
+
+  // Parse yearly totals and daily data
+  let totalContribs = 0;
+
+  for (const html of yearPages) {
+    if (!html) continue;
+
+    // Extract yearly total from header
+    const totalMatch = html.match(/([\d,]+)\s*\n\s*contributions/);
+    if (totalMatch) {
+      totalContribs += parseInt(totalMatch[1].replace(/,/g, ""), 10);
+    }
+
+    // Parse daily data
+    const days = parseDailyContributions(html);
+    for (const [date, count] of days) {
+      allDays.set(date, count);
+    }
+  }
+
+  contribs.total = totalContribs;
+
+  // Sort dates and calculate streaks
+  const sortedDates = [...allDays.keys()].sort();
+  const today = new Date().toISOString().split("T")[0];
+
+  let longestStreak = 0;
+  let longestStart = "";
+  let longestEnd = "";
+  let currentStreak = 0;
+  let currentStart = "";
+  let currentEnd = "";
+  let tempStreak = 0;
+  let tempStart = "";
+
+  for (const date of sortedDates) {
+    const count = allDays.get(date) || 0;
+    if (count > 0) {
+      if (tempStreak === 0) tempStart = date;
+      tempStreak++;
+
+      if (tempStreak > longestStreak) {
+        longestStreak = tempStreak;
+        longestStart = tempStart;
+        longestEnd = date;
+      }
+    } else {
+      // Before resetting, check if this was the current streak
+      if (tempStreak > 0) {
+        currentStreak = tempStreak;
+        currentStart = tempStart;
+        currentEnd = sortedDates[sortedDates.indexOf(date) - 1] || tempStart;
+      }
+      tempStreak = 0;
+    }
+  }
+
+  // If the last day in the data has contributions, the streak is still active
+  if (tempStreak > 0) {
+    currentStreak = tempStreak;
+    currentStart = tempStart;
+    currentEnd = sortedDates[sortedDates.length - 1];
+  }
+
+  // If the current streak ended before yesterday, it's no longer "current"
+  if (currentEnd && currentEnd < today) {
+    const endDate = new Date(currentEnd + "T00:00:00Z");
+    const todayDate = new Date(today + "T00:00:00Z");
+    const diffDays = Math.floor(
+      (todayDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (diffDays > 1) {
+      currentStreak = 0;
+      currentStart = "";
+      currentEnd = "";
+    }
+  }
+
+  contribs.currentStreak = currentStreak;
+  contribs.currentStreakStart = currentStart;
+  contribs.currentStreakEnd = currentEnd;
+  contribs.longestStreak = longestStreak;
+  contribs.longestStreakStart = longestStart;
+  contribs.longestStreakEnd = longestEnd;
+} catch {
+  // Stats will show zeros if API fails — fine for a static build
+}
+
+const langColors: Record<string, string> = {
+  TypeScript: "#3178c6",
+  JavaScript: "#f1e05a",
+  "C#": "#178600",
+  Python: "#3572A5",
+  HTML: "#e34c26",
+  CSS: "#563d7c",
+  Shell: "#89e051",
+  Bicep: "#519aba",
+  PowerShell: "#012456",
+  Rust: "#dea584",
+  Go: "#00ADD8",
+  Java: "#b07219",
+  Ruby: "#701516",
+  Vue: "#41b883",
+  Svelte: "#ff3e00",
+  Astro: "#ff5a03",
+  MDX: "#fcb32c",
+  Dockerfile: "#384d54",
+  HCL: "#844fba",
+};
+
+const totalLangRepos = stats.topLanguages.reduce((s, l) => s + l.count, 0);
+
+// Build contribution graph data for the last year
+// We need 53 columns (weeks) x 7 rows (days, Sun=0 to Sat=6)
+const graphWeeks: { date: string; count: number; level: number }[][] = [];
+const now = new Date();
+const todayStr = now.toISOString().split("T")[0];
+
+// Find the most recent Sunday to end on (or today if Sunday)
+const endDate = new Date(now);
+endDate.setUTCDate(endDate.getUTCDate() + (6 - endDate.getUTCDay()));
+// Start 52 weeks before that Sunday
+const startDate = new Date(endDate);
+startDate.setUTCDate(startDate.getUTCDate() - 52 * 7 + 1);
+
+// Find the max contribution count for level scaling
+const recentDays = [...allDays.entries()].filter(
+  ([d]) => d >= startDate.toISOString().split("T")[0]
+);
+const maxCount = Math.max(1, ...recentDays.map(([, c]) => c));
+
+let cursor = new Date(startDate);
+let currentWeek: { date: string; count: number; level: number }[] = [];
+
+while (cursor <= endDate) {
+  const dateStr = cursor.toISOString().split("T")[0];
+  const count = allDays.get(dateStr) || 0;
+  const isFuture = dateStr > todayStr;
+
+  let level = 0;
+  if (!isFuture && count > 0) {
+    const ratio = count / maxCount;
+    if (ratio <= 0.25) level = 1;
+    else if (ratio <= 0.5) level = 2;
+    else if (ratio <= 0.75) level = 3;
+    else level = 4;
+  }
+  if (isFuture) level = -1; // Mark future days
+
+  currentWeek.push({ date: dateStr, count, level });
+
+  if (cursor.getUTCDay() === 6) {
+    graphWeeks.push(currentWeek);
+    currentWeek = [];
+  }
+
+  cursor.setUTCDate(cursor.getUTCDate() + 1);
+}
+if (currentWeek.length > 0) graphWeeks.push(currentWeek);
+
+// Month labels for the graph
+const monthLabels: { label: string; col: number }[] = [];
+let lastMonth = -1;
+for (let w = 0; w < graphWeeks.length; w++) {
+  const firstDay = graphWeeks[w][0];
+  if (firstDay) {
+    const month = new Date(firstDay.date + "T00:00:00Z").getUTCMonth();
+    if (month !== lastMonth) {
+      monthLabels.push({
+        label: new Date(firstDay.date + "T00:00:00Z").toLocaleDateString(
+          "en-US",
+          { month: "short", timeZone: "UTC" }
+        ),
+        col: w,
+      });
+      lastMonth = month;
+    }
+  }
+}
+---
+
+<div class="github-stats-grid">
+  <!-- Stats Card -->
+  <a
+    href={`https://github.com/${username}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    class="stats-card group"
+  >
+    <div class="stats-card-header">
+      <svg
+        class="stats-icon"
+        viewBox="0 0 16 16"
+        fill="currentColor"
+        width="20"
+        height="20"
+      >
+        <path
+          d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"
+        ></path>
+      </svg>
+      <span class="stats-username">@{username}</span>
+      <svg
+        class="stats-arrow"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M7 17L17 7M17 7H7M17 7v10"></path>
+      </svg>
+    </div>
+
+    <div class="stats-numbers">
+      <div class="stat-item">
+        <span class="stat-value">{stats.publicRepos}</span>
+        <span class="stat-label">Repos</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-value">{stats.totalStars}</span>
+        <span class="stat-label">Stars</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-value">{stats.followers}</span>
+        <span class="stat-label">Followers</span>
+      </div>
+    </div>
+  </a>
+
+  <!-- Languages Card -->
+  <div class="langs-card">
+    <div class="langs-header">
+      <span class="langs-title">Top Languages</span>
+    </div>
+
+    <!-- Language bar -->
+    <div class="lang-bar">
+      {
+        stats.topLanguages.map(lang => (
+          <div
+            class="lang-bar-segment"
+            style={`width: ${(lang.count / totalLangRepos) * 100}%; background: ${langColors[lang.name] || "var(--accent)"}`}
+            title={`${lang.name}: ${lang.count} repos`}
+          />
+        ))
+      }
+    </div>
+
+    <!-- Language labels -->
+    <div class="lang-labels">
+      {
+        stats.topLanguages.map(lang => (
+          <div class="lang-label">
+            <span
+              class="lang-dot"
+              style={`background: ${langColors[lang.name] || "var(--accent)"}`}
+            />
+            <span class="lang-name">{lang.name}</span>
+            <span class="lang-pct">
+              {((lang.count / totalLangRepos) * 100).toFixed(1)}%
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <!-- Contributions & Streak Card -->
+  <div class="contribs-card">
+    <div class="contribs-grid">
+      <div class="contrib-item">
+        <span class="contrib-value">{contribs.total.toLocaleString()}</span>
+        <span class="contrib-label">Total Contributions</span>
+        <span class="contrib-date">
+          {formatStreakDate(contribs.accountCreated)} &ndash; Present
+        </span>
+      </div>
+
+      <div class="contrib-divider"></div>
+
+      <div class="contrib-item">
+        <div class="streak-ring-wrap">
+          <svg class="streak-ring" viewBox="0 0 80 80">
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              fill="none"
+              stroke="var(--border)"
+              stroke-width="4"
+            />
+            <circle
+              cx="40"
+              cy="40"
+              r="34"
+              fill="none"
+              stroke="var(--accent)"
+              stroke-width="4"
+              stroke-linecap="round"
+              stroke-dasharray={`${Math.min(contribs.currentStreak / 30, 1) * 213.6} 213.6`}
+              transform="rotate(-90 40 40)"
+            />
+          </svg>
+          <span class="streak-ring-value">{contribs.currentStreak}</span>
+        </div>
+        <span class="contrib-label">Current Streak</span>
+        {
+          contribs.currentStreakStart ? (
+            <span class="contrib-date">
+              {formatStreakDate(contribs.currentStreakStart)} &ndash;{" "}
+              {formatStreakDate(contribs.currentStreakEnd)}
+            </span>
+          ) : (
+            <span class="contrib-date">No active streak</span>
+          )
+        }
+      </div>
+
+      <div class="contrib-divider"></div>
+
+      <div class="contrib-item">
+        <span class="contrib-value">{contribs.longestStreak}</span>
+        <span class="contrib-label">Longest Streak</span>
+        {
+          contribs.longestStreakStart ? (
+            <span class="contrib-date">
+              {formatStreakDate(contribs.longestStreakStart)} &ndash;{" "}
+              {formatStreakDate(contribs.longestStreakEnd)}
+            </span>
+          ) : (
+            <span class="contrib-date">&mdash;</span>
+          )
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Contribution Graph -->
+  <div class="graph-card">
+    <div class="graph-header">
+      <span class="graph-title">Contribution Activity</span>
+    </div>
+    <div class="graph-scroll">
+      <svg
+        class="graph-svg"
+        viewBox={`0 0 ${graphWeeks.length * 15 + 30} ${7 * 15 + 20}`}
+        role="img"
+        aria-label="GitHub contribution graph for the last year"
+      >
+        {/* Month labels */}
+        {
+          monthLabels.map(m => (
+            <text
+              x={m.col * 15 + 30}
+              y={10}
+              class="graph-month-label"
+              font-size="10"
+            >
+              {m.label}
+            </text>
+          ))
+        }
+        {/* Day labels */}
+        <text x="0" y={2 * 15 + 26} class="graph-day-label" font-size="9">
+          Mon
+        </text>
+        <text x="0" y={4 * 15 + 26} class="graph-day-label" font-size="9">
+          Wed
+        </text>
+        <text x="0" y={6 * 15 + 26} class="graph-day-label" font-size="9">
+          Fri
+        </text>
+        {/* Grid cells */}
+        {
+          graphWeeks.map((week, wi) =>
+            week.map((day, di) => (
+              <rect
+                x={wi * 15 + 30}
+                y={di * 15 + 16}
+                width="11"
+                height="11"
+                rx="2"
+                class={
+                  day.level === -1
+                    ? "graph-cell-future"
+                    : `graph-cell graph-cell-${day.level}`
+                }
+              >
+                <title>
+                  {day.count} contribution{day.count !== 1 ? "s" : ""} on{" "}
+                  {day.date}
+                </title>
+              </rect>
+            ))
+          )
+        }
+      </svg>
+    </div>
+    <div class="graph-legend">
+      <span class="graph-legend-label">Less</span>
+      <div class="graph-cell graph-cell-0 graph-legend-cell"></div>
+      <div class="graph-cell graph-cell-1 graph-legend-cell"></div>
+      <div class="graph-cell graph-cell-2 graph-legend-cell"></div>
+      <div class="graph-cell graph-cell-3 graph-legend-cell"></div>
+      <div class="graph-cell graph-cell-4 graph-legend-cell"></div>
+      <span class="graph-legend-label">More</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .github-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 640px) {
+    .github-stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .contribs-card,
+  .graph-card {
+    grid-column: 1 / -1;
+  }
+
+  .stats-card,
+  .langs-card,
+  .contribs-card,
+  .graph-card {
+    border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    background: color-mix(in srgb, var(--muted) 20%, transparent);
+    transition: all 0.25s ease;
+  }
+
+  .stats-card {
+    text-decoration: none !important;
+    color: var(--foreground) !important;
+    display: block;
+  }
+
+  .stats-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  .stats-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stats-icon {
+    color: var(--foreground);
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .stats-username {
+    font-size: 0.875rem;
+    font-weight: 600;
+    opacity: 0.7;
+  }
+
+  .stats-arrow {
+    margin-left: auto;
+    opacity: 0;
+    color: var(--accent);
+    transition: all 0.25s ease;
+    transform: translateX(-4px);
+  }
+
+  .stats-card:hover .stats-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .stats-numbers {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--foreground);
+    opacity: 0.65;
+    margin-top: 0.35rem;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 2.5rem;
+    background: color-mix(in srgb, var(--border) 50%, transparent);
+    flex-shrink: 0;
+  }
+
+  .langs-header {
+    margin-bottom: 1rem;
+  }
+
+  .langs-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--foreground);
+    opacity: 0.65;
+  }
+
+  .lang-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    gap: 2px;
+    margin-bottom: 1rem;
+  }
+
+  .lang-bar-segment {
+    border-radius: 2px;
+    transition: opacity 0.2s;
+  }
+
+  .lang-bar-segment:hover {
+    opacity: 0.8;
+  }
+
+  .lang-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+  }
+
+  .lang-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .lang-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .lang-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .lang-pct {
+    font-size: 0.7rem;
+    color: var(--foreground);
+    opacity: 0.55;
+  }
+
+  /* Contributions & Streak Card */
+  .contribs-grid {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .contrib-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    text-align: center;
+    gap: 0.15rem;
+  }
+
+  .contrib-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .contrib-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--foreground);
+    opacity: 0.65;
+    margin-top: 0.25rem;
+  }
+
+  .contrib-date {
+    font-size: 0.7rem;
+    color: var(--foreground);
+    opacity: 0.62;
+    margin-top: 0.1rem;
+  }
+
+  .contrib-divider {
+    width: 1px;
+    height: 5rem;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .streak-ring-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .streak-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .streak-ring-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--accent);
+    position: relative;
+  }
+
+  @media (max-width: 640px) {
+    .contribs-grid {
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .contrib-divider {
+      width: 3rem;
+      height: 1px;
+    }
+  }
+
+  /* Contribution Graph */
+  .graph-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .graph-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--foreground);
+    opacity: 0.65;
+  }
+
+  .graph-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .graph-svg {
+    display: block;
+    width: 100%;
+    min-width: 720px;
+    height: auto;
+  }
+
+  .graph-month-label,
+  .graph-day-label {
+    fill: var(--foreground);
+    opacity: 0.55;
+    font-family: var(--font-app);
+  }
+
+  .graph-cell {
+    shape-rendering: geometricPrecision;
+  }
+
+  .graph-cell-future {
+    fill: transparent;
+  }
+
+  .graph-cell-0 {
+    fill: color-mix(in srgb, var(--foreground) 8%, transparent);
+  }
+
+  .graph-cell-1 {
+    fill: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  .graph-cell-2 {
+    fill: color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  .graph-cell-3 {
+    fill: color-mix(in srgb, var(--accent) 75%, transparent);
+  }
+
+  .graph-cell-4 {
+    fill: var(--accent);
+  }
+
+  .graph-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  .graph-legend-label {
+    font-size: 0.6rem;
+    color: var(--foreground);
+    opacity: 0.65;
+    padding: 0 0.25rem;
+  }
+
+  .graph-legend-cell {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+  }
+</style>

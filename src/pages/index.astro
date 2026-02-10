@@ -5,11 +5,13 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Socials from "@/components/Socials.astro";
-import Card from "@/components/Card.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
+import IconHash from "@/assets/icons/IconHash.svg";
 import { SITE } from "@/config";
 import { SOCIALS } from "@/constants";
+import { getPath } from "@/utils/getPath";
+import { slugifyStr } from "@/utils/slugify";
 import avatarImage from "@/assets/images/avatar.png";
 
 const posts = await getCollection("blog");
@@ -17,6 +19,31 @@ const posts = await getCollection("blog");
 const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
+
+// Editorial helpers
+const now = new Date();
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+const issueMonth = monthNames[now.getMonth()];
+const issueYear = now.getFullYear();
+const issueNumber = (now.getFullYear() - 2024) * 12 + now.getMonth() + 1;
+
+function formatEditorialDate(date: string | Date) {
+  const d = new Date(date);
+  return d.toLocaleDateString("en-US", {
+    month: "long", day: "numeric", year: "numeric",
+  });
+}
+
+// Lead post gets hero treatment; remaining fill the grid
+const heroPost = featuredPosts.length > 0 ? featuredPosts[0] : recentPosts[0];
+const secondaryFeatured = featuredPosts.length > 1 ? featuredPosts.slice(1) : [];
+const gridPosts = [
+  ...secondaryFeatured,
+  ...(featuredPosts.length > 0 ? recentPosts : recentPosts.slice(1)),
+].slice(0, SITE.postPerIndex);
 ---
 
 <Layout>
@@ -24,7 +51,7 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
   <section id="hero" class="animate-reveal overflow-hidden bg-hero-bg transition-[background] duration-300">
     <div class="app-layout">
       <div class="flex flex-col items-center gap-6 py-8 sm:py-10 md:flex-row md:items-end md:justify-between md:gap-8 md:py-0">
-        <div class="text-center md:flex-1 md:py-16 md:text-left lg:py-20 xl:py-24">
+        <div class="text-center md:flex-1 md:py-6 md:text-left lg:py-10 xl:py-16">
           <Image
             src={avatarImage}
             alt="Matt Wicks"
@@ -34,7 +61,17 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
             loading="eager"
             decoding="async"
           />
-          <p class="mt-4 text-sm font-semibold uppercase tracking-widest text-hero-accent md:mt-0">
+          <p class="mt-4 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-hero-accent md:mt-0 md:justify-start" style="font-variant: small-caps;">
+            <span class="hidden w-8 h-px bg-hero-accent/40 md:inline-block"></span>
+            Issue No.&thinsp;{issueNumber} &mdash; {issueMonth} {issueYear}
+          </p>
+          <h1 class="mt-3 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl">
+            Matt Wicks
+          </h1>
+          <p class="mx-auto mt-4 max-w-lg font-prose text-lg leading-relaxed italic text-hero-text-muted sm:text-xl md:mx-0">
+            <span class="text-2xl leading-none text-accent/50">&ldquo;</span>Exploring CI/CD, DevOps, cloud-native architecture, and clean code &mdash; sharing practical tips and hard-won lessons from the trenches.<span class="text-2xl leading-none text-accent/50">&rdquo;</span>
+          </p>
+          <p class="mt-3 text-sm font-semibold uppercase tracking-widest text-hero-accent">
             Solution Architect at{" "}
             <a
               href="https://ssw.com.au/people/matt-wicks/"
@@ -45,16 +82,9 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
               SSW
             </a>
           </p>
-          <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl">
-            Matt Wicks
-          </h1>
-          <p class="mx-auto mt-4 max-w-lg text-base leading-relaxed text-hero-text-muted sm:text-lg md:mx-0 md:text-xl">
-            Exploring CI/CD, DevOps, cloud-native architecture, and clean code —
-            sharing practical tips and hard-won lessons from the trenches.
-          </p>
           {
             SOCIALS.length > 0 && (
-              <div class="mt-5 [&_svg]:stroke-hero-social [&_svg]:hover:stroke-hero-accent">
+              <div class="mt-5 flex justify-center md:justify-start [&_svg]:stroke-hero-social [&_svg]:hover:stroke-hero-accent">
                 <Socials />
               </div>
             )
@@ -64,67 +94,175 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
           <Image
             src={avatarImage}
             alt="Matt Wicks"
-            widths={[160, 320, 420, 480]}
-            sizes="(max-width: 767px) 160px, (max-width: 1023px) 320px, (max-width: 1279px) 420px, 480px"
-            class="hero-avatar"
-            loading="eager"
-            decoding="async"
+            width="500"
+            height="500"
+            class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
           />
         </div>
       </div>
     </div>
   </section>
+
   <main id="main-content" data-layout="index" class="app-layout">
-    {
-      featuredPosts.length > 0 && (
-        <section
-          id="featured"
-          class:list={[
-            "animate-reveal-delay-1 pt-12 pb-8",
-            { "border-b border-border/50": recentPosts.length > 0 },
-          ]}
-        >
-          <h2 class="text-2xl font-semibold tracking-wide text-foreground after:content-[''] after:block after:w-12 after:h-0.75 after:mt-2 after:rounded-full after:bg-accent">
-            Featured
-          </h2>
-          <ul>
-            {featuredPosts.map((data) => (
-              <Card variant="h3" {...data} />
-            ))}
-          </ul>
-        </section>
-      )
-    }
+    {heroPost && (
+      <section id="featured" class="animate-reveal-delay-1 pt-14 pb-10">
+        <div class="flex items-center gap-4 mb-8">
+          <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Lead Story</span>
+          <span class="flex-1 h-px bg-border/60"></span>
+        </div>
+        <article class="group relative overflow-hidden rounded-xl border border-border/40 transition-all duration-300 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-accent/5">
+          {/* Cover image */}
+          {heroPost.data.ogImage && (
+            <a href={getPath(heroPost.id, heroPost.filePath)} class="block overflow-hidden" tabindex="-1" aria-hidden="true">
+              <div class="relative aspect-21/9 overflow-hidden bg-muted">
+                {typeof heroPost.data.ogImage === "string" ? (
+                  <img
+                    src={heroPost.data.ogImage}
+                    alt=""
+                    loading="eager"
+                    fetchpriority="high"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <Image
+                    src={heroPost.data.ogImage}
+                    alt=""
+                    widths={[180, 360, 480, 640]}
+                    sizes="(max-width: 895px) calc(100vw - 2rem), (max-width: 1279px) 864px, 992px"
+                    loading="eager"
+                    fetchpriority="high"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                )}
+                {/* Bottom fade into card body */}
+                <div class="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-background to-transparent pointer-events-none"></div>
+              </div>
+            </a>
+          )}
+          {/* Text content */}
+          <div class="p-6 pt-4 border-l-[3px] border-accent/40 transition-all duration-300 group-hover:border-accent">
+            <a
+              href={getPath(heroPost.id, heroPost.filePath)}
+              class="block no-underline"
+            >
+              <h2
+                class="font-prose text-3xl font-bold text-foreground leading-tight transition-colors duration-200 group-hover:text-accent sm:text-4xl"
+                style={{ viewTransitionName: slugifyStr(heroPost.data.title.replaceAll(".", "-")) }}
+              >
+                {heroPost.data.title}
+              </h2>
+            </a>
+            <p class="mt-3 font-prose text-base leading-relaxed text-foreground/70 sm:text-lg">{heroPost.data.description}</p>
+            <div class="flex flex-wrap items-center gap-4 mt-4">
+              <time
+                datetime={new Date(heroPost.data.pubDatetime).toISOString()}
+                class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/65"
+              >
+                {formatEditorialDate(heroPost.data.pubDatetime)}
+              </time>
+              {heroPost.data.tags.length > 0 && (
+                <ul class="flex flex-wrap gap-1.5">
+                  {heroPost.data.tags.map((tag: string) => (
+                    <li>
+                      <a
+                        href={`/tags/${slugifyStr(tag)}/`}
+                        class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
+                      >
+                        <IconHash class="size-3 opacity-70" />{tag}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </article>
+      </section>
+    )}
 
-    {
-      recentPosts.length > 0 && (
-        <section id="recent-posts" class="animate-reveal-delay-2 pt-12 pb-8">
-          <h2 class="text-2xl font-semibold tracking-wide text-foreground after:content-[''] after:block after:w-12 after:h-0.75 after:mt-2 after:rounded-full after:bg-accent">
-            Recent Posts
-          </h2>
-          <ul>
-            {recentPosts.map(
-              (data, index) =>
-                index < SITE.postPerIndex && <Card variant="h3" {...data} />,
-            )}
-          </ul>
-        </section>
-      )
-    }
+    <hr class="border-0 border-t border-border/40 my-2 animate-reveal-delay-1" />
 
-    <div class="animate-reveal-delay-3 my-8 text-center">
-      <a
-        href="/blog/"
-        class:list={[
-          "relative overflow-hidden inline-flex items-center gap-2",
-          "rounded-xl bg-accent px-8 py-3.5",
-          "font-semibold text-white transition-all duration-200",
-          "hover:brightness-110",
-          "after:content-[''] after:absolute after:inset-0 after:rounded-[inherit] after:opacity-0 after:transition-opacity after:duration-300 after:[box-shadow:0_0_24px_var(--accent)] hover:after:opacity-50",
-        ]}
-      >
-        All Posts
-        <IconArrowRight class="inline-block rtl:-rotate-180" />
+    {gridPosts.length > 0 && (
+      <section id="recent-posts" class="animate-reveal-delay-2 pt-10 pb-8">
+        <div class="flex items-center gap-4 mb-8">
+          <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Recent Dispatches</span>
+          <span class="flex-1 h-px bg-border/60"></span>
+        </div>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {gridPosts.map((post) => (
+            <article class="group relative overflow-hidden rounded-xl bg-muted/20 border border-border/40 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5">
+              {/* Faded background image */}
+              {post.data.ogImage && (
+                <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                  {typeof post.data.ogImage === "string" ? (
+                    <img
+                      src={post.data.ogImage}
+                      alt=""
+                      loading="lazy"
+                      class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
+                    />
+                  ) : (
+                    <Image
+                      src={post.data.ogImage}
+                      alt=""
+                      widths={[320, 480]}
+                      sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1279px) 432px, 496px"
+                      quality={60}
+                      loading="lazy"
+                      class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
+                    />
+                  )}
+                  <div class="absolute inset-0 bg-linear-to-r from-muted via-(--muted)/80 to-transparent"></div>
+                </div>
+              )}
+              {/* Card content */}
+              <div class="relative z-10 p-5">
+                <a
+                  href={getPath(post.id, post.filePath)}
+                  class="block no-underline"
+                >
+                  <h3
+                    class="font-prose text-xl font-bold text-foreground leading-snug transition-colors duration-200 group-hover:text-accent"
+                    style={{ viewTransitionName: slugifyStr(post.data.title.replaceAll(".", "-")) }}
+                  >
+                    {post.data.title}
+                  </h3>
+                </a>
+                <p class="mt-2 font-prose text-sm leading-relaxed text-foreground/70 line-clamp-3">{post.data.description}</p>
+                <div class="mt-3">
+                  <time
+                    datetime={new Date(post.data.pubDatetime).toISOString()}
+                    class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/65"
+                  >
+                    {formatEditorialDate(post.data.pubDatetime)}
+                  </time>
+                </div>
+                {post.data.tags.length > 0 && (
+                  <ul class="mt-3 flex flex-wrap gap-1.5">
+                    {post.data.tags.slice(0, 3).map((tag: string) => (
+                      <li>
+                        <a
+                          href={`/tags/${slugifyStr(tag)}/`}
+                          class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
+                        >
+                          <IconHash class="size-3 opacity-70" />{tag}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <div class="animate-reveal-delay-3 my-10">
+      <hr class="border-0 border-t border-border/40 my-2" />
+      <a href="/blog/" class="group flex items-center justify-center gap-2 py-6 text-sm font-semibold uppercase tracking-[0.15em] text-accent no-underline transition-all duration-300 hover:tracking-[0.2em]">
+        <span>Continue to the Archive</span>
+        <IconArrowRight class="inline-block size-4 transition-transform duration-300 group-hover:translate-x-1 rtl:-rotate-180" />
       </a>
     </div>
   </main>
