@@ -51,12 +51,14 @@ const gridPosts = [
     <div class="app-layout">
       <div class="flex flex-col items-center gap-6 py-8 sm:py-10 md:flex-row md:items-end md:justify-between md:gap-8 md:py-0">
         <div class="text-center md:flex-1 md:py-16 md:text-left lg:py-20 xl:py-24">
-          <img
-            src="/avatar.png"
+          <Image
+            src={avatarImage}
             alt="Matt Wicks"
-            width="160"
-            height="160"
+            width={160}
+            height={160}
             class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
+            loading="eager"
+            decoding="async"
           />
           <p class="mt-4 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-hero-accent md:mt-0" style="font-variant: small-caps;">
             <span class="inline-block w-8 h-px bg-hero-accent/40"></span>
@@ -88,8 +90,8 @@ const gridPosts = [
           }
         </div>
         <div class="relative hidden md:block md:shrink-0 after:content-[''] after:absolute after:bottom-0 after:inset-x-0 after:h-[40%] after:pointer-events-none after:bg-gradient-to-t after:from-hero-bg after:to-transparent after:transition-[background] after:duration-300">
-          <img
-            src="/avatar.png"
+          <Image
+            src={avatarImage}
             alt="Matt Wicks"
             width="500"
             height="500"
