@@ -7,14 +7,42 @@ import Socials from "@/components/Socials.astro";
 import Card from "@/components/Card.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
+import IconHash from "@/assets/icons/IconHash.svg";
 import { SITE } from "@/config";
 import { SOCIALS } from "@/constants";
+import { getPath } from "@/utils/getPath";
+import { slugifyStr } from "@/utils/slugify";
 
 const posts = await getCollection("blog");
 
 const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
+
+// Editorial helpers
+const now = new Date();
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+const issueMonth = monthNames[now.getMonth()];
+const issueYear = now.getFullYear();
+const issueNumber = (now.getFullYear() - 2024) * 12 + now.getMonth() + 1;
+
+function formatEditorialDate(date: string | Date) {
+  const d = new Date(date);
+  return d.toLocaleDateString("en-US", {
+    month: "long", day: "numeric", year: "numeric",
+  });
+}
+
+// Lead post gets hero treatment; remaining fill the grid
+const heroPost = featuredPosts.length > 0 ? featuredPosts[0] : recentPosts[0];
+const secondaryFeatured = featuredPosts.length > 1 ? featuredPosts.slice(1) : [];
+const gridPosts = [
+  ...secondaryFeatured,
+  ...(featuredPosts.length > 0 ? recentPosts : recentPosts.slice(1)),
+].slice(0, SITE.postPerIndex);
 ---
 
 <Layout>
@@ -30,7 +58,17 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
             height="160"
             class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
           />
-          <p class="mt-4 text-sm font-semibold uppercase tracking-widest text-hero-accent md:mt-0">
+          <p class="editorial-issue-label mt-4 md:mt-0">
+            <span class="editorial-issue-rule"></span>
+            Issue No.&thinsp;{issueNumber} &mdash; {issueMonth} {issueYear}
+          </p>
+          <h1 class="mt-3 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl">
+            Matt Wicks
+          </h1>
+          <p class="editorial-tagline mx-auto mt-4 max-w-lg md:mx-0">
+            <span class="editorial-quote-mark">&ldquo;</span>Exploring CI/CD, DevOps, cloud-native architecture, and clean code &mdash; sharing practical tips and hard-won lessons from the trenches.<span class="editorial-quote-mark">&rdquo;</span>
+          </p>
+          <p class="mt-3 text-sm font-semibold uppercase tracking-widest text-hero-accent">
             Solution Architect at{" "}
             <a
               href="https://ssw.com.au/people/matt-wicks/"
@@ -40,13 +78,6 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
             >
               SSW
             </a>
-          </p>
-          <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl">
-            Matt Wicks
-          </h1>
-          <p class="mx-auto mt-4 max-w-lg text-base leading-relaxed text-hero-text-muted sm:text-lg md:mx-0 md:text-xl">
-            Exploring CI/CD, DevOps, cloud-native architecture, and clean code —
-            sharing practical tips and hard-won lessons from the trenches.
           </p>
           {
             SOCIALS.length > 0 && (
@@ -68,57 +99,109 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
       </div>
     </div>
   </section>
+
   <main id="main-content" data-layout="index" class="app-layout">
-    {
-      featuredPosts.length > 0 && (
-        <section
-          id="featured"
-          class:list={[
-            "animate-reveal-delay-1 pt-12 pb-8",
-            { "border-b border-border/50": recentPosts.length > 0 },
-          ]}
-        >
-          <h2 class="text-2xl font-semibold tracking-wide text-foreground after:content-[''] after:block after:w-12 after:h-0.75 after:mt-2 after:rounded-full after:bg-accent">
-            Featured
-          </h2>
-          <ul>
-            {featuredPosts.map((data) => (
-              <Card variant="h3" {...data} />
-            ))}
-          </ul>
-        </section>
-      )
-    }
-
-    {
-      recentPosts.length > 0 && (
-        <section id="recent-posts" class="animate-reveal-delay-2 pt-12 pb-8">
-          <h2 class="text-2xl font-semibold tracking-wide text-foreground after:content-[''] after:block after:w-12 after:h-0.75 after:mt-2 after:rounded-full after:bg-accent">
-            Recent Posts
-          </h2>
-          <ul>
-            {recentPosts.map(
-              (data, index) =>
-                index < SITE.postPerIndex && <Card variant="h3" {...data} />,
+    {heroPost && (
+      <section id="featured" class="animate-reveal-delay-1 editorial-lead-section">
+        <div class="editorial-section-header">
+          <span class="editorial-section-label">Lead Story</span>
+          <span class="editorial-section-rule"></span>
+        </div>
+        <article class="editorial-lead-card group">
+          <a
+            href={getPath(heroPost.id, heroPost.filePath)}
+            class="editorial-lead-link"
+          >
+            <h2
+              class="editorial-lead-title"
+              style={{ viewTransitionName: slugifyStr(heroPost.data.title.replaceAll(".", "-")) }}
+            >
+              {heroPost.data.title}
+            </h2>
+          </a>
+          <p class="editorial-lead-description">{heroPost.data.description}</p>
+          <div class="editorial-lead-meta">
+            <time
+              datetime={new Date(heroPost.data.pubDatetime).toISOString()}
+              class="editorial-meta-date"
+            >
+              {formatEditorialDate(heroPost.data.pubDatetime)}
+            </time>
+            {heroPost.data.tags.length > 0 && (
+              <ul class="editorial-tag-list">
+                {heroPost.data.tags.map((tag: string) => (
+                  <li>
+                    <a
+                      href={`/tags/${slugifyStr(tag)}/`}
+                      class="editorial-tag"
+                    >
+                      <IconHash class="size-3 opacity-70" />{tag}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             )}
-          </ul>
-        </section>
-      )
-    }
+          </div>
+        </article>
+      </section>
+    )}
 
-    <div class="animate-reveal-delay-3 my-8 text-center">
-      <a
-        href="/blog/"
-        class:list={[
-          "relative overflow-hidden inline-flex items-center gap-2",
-          "rounded-xl bg-accent px-8 py-3.5",
-          "font-semibold text-white transition-all duration-200",
-          "hover:brightness-110",
-          "after:content-[''] after:absolute after:inset-0 after:rounded-[inherit] after:opacity-0 after:transition-opacity after:duration-300 after:[box-shadow:0_0_24px_var(--accent)] hover:after:opacity-50",
-        ]}
-      >
-        All Posts
-        <IconArrowRight class="inline-block rtl:-rotate-180" />
+    <hr class="editorial-divider animate-reveal-delay-1" />
+
+    {gridPosts.length > 0 && (
+      <section id="recent-posts" class="animate-reveal-delay-2 editorial-grid-section">
+        <div class="editorial-section-header">
+          <span class="editorial-section-label">Recent Dispatches</span>
+          <span class="editorial-section-rule"></span>
+        </div>
+        <div class="editorial-grid">
+          {gridPosts.map((post) => (
+            <article class="editorial-grid-card group">
+              <a
+                href={getPath(post.id, post.filePath)}
+                class="editorial-card-link"
+              >
+                <h3
+                  class="editorial-card-title"
+                  style={{ viewTransitionName: slugifyStr(post.data.title.replaceAll(".", "-")) }}
+                >
+                  {post.data.title}
+                </h3>
+              </a>
+              <p class="editorial-card-description">{post.data.description}</p>
+              <div class="editorial-card-meta">
+                <time
+                  datetime={new Date(post.data.pubDatetime).toISOString()}
+                  class="editorial-meta-date"
+                >
+                  {formatEditorialDate(post.data.pubDatetime)}
+                </time>
+              </div>
+              {post.data.tags.length > 0 && (
+                <ul class="editorial-tag-list editorial-card-tags">
+                  {post.data.tags.slice(0, 3).map((tag: string) => (
+                    <li>
+                      <a
+                        href={`/tags/${slugifyStr(tag)}/`}
+                        class="editorial-tag"
+                      >
+                        <IconHash class="size-3 opacity-70" />{tag}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <div class="animate-reveal-delay-3 editorial-cta-wrap">
+      <hr class="editorial-divider" />
+      <a href="/blog/" class="editorial-cta group">
+        <span class="editorial-cta-text">Continue to the Archive</span>
+        <IconArrowRight class="inline-block size-4 transition-transform duration-300 group-hover:translate-x-1 rtl:-rotate-180" />
       </a>
     </div>
   </main>

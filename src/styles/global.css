@@ -190,3 +190,131 @@ body::before {
     @apply w-[480px] h-[500px] -mb-[60px];
   }
 }
+
+/* ===== Editorial Design — Homepage Only ===== */
+
+.editorial-issue-label {
+  @apply flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-hero-accent;
+  font-variant: small-caps;
+}
+
+.editorial-issue-rule {
+  @apply inline-block w-8 h-px bg-hero-accent/40;
+}
+
+.editorial-tagline {
+  @apply font-prose text-lg leading-relaxed italic text-hero-text-muted sm:text-xl;
+}
+
+.editorial-quote-mark {
+  @apply text-accent/50 text-2xl leading-none;
+}
+
+.editorial-lead-section {
+  @apply pt-14 pb-10;
+}
+
+.editorial-section-header {
+  @apply flex items-center gap-4 mb-8;
+}
+
+.editorial-section-label {
+  @apply text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap;
+  font-variant: small-caps;
+}
+
+.editorial-section-rule {
+  @apply flex-1 h-px bg-border/60;
+}
+
+.editorial-lead-card {
+  @apply relative py-6 px-0 border-l-[3px] border-accent/40 pl-6 transition-all duration-300;
+}
+
+.editorial-lead-card:hover {
+  @apply border-accent;
+}
+
+.editorial-lead-link {
+  @apply block no-underline;
+}
+
+.editorial-lead-title {
+  @apply font-prose text-3xl font-bold text-foreground leading-tight transition-colors duration-200 sm:text-4xl;
+}
+
+.editorial-lead-card:hover .editorial-lead-title {
+  @apply text-accent;
+}
+
+.editorial-lead-description {
+  @apply mt-3 font-prose text-base leading-relaxed text-foreground/60 sm:text-lg;
+}
+
+.editorial-lead-meta {
+  @apply flex flex-wrap items-center gap-4 mt-4;
+}
+
+.editorial-meta-date {
+  @apply text-xs font-medium uppercase tracking-[0.15em] text-foreground/40;
+}
+
+.editorial-tag-list {
+  @apply flex flex-wrap gap-1.5;
+}
+
+.editorial-tag {
+  @apply relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 hover:border-accent/60 hover:bg-accent/15 no-underline;
+}
+
+.editorial-divider {
+  @apply border-0 border-t border-border/40 my-2;
+}
+
+.editorial-grid-section {
+  @apply pt-10 pb-8;
+}
+
+.editorial-grid {
+  @apply grid grid-cols-1 gap-6 sm:grid-cols-2;
+}
+
+.editorial-grid-card {
+  @apply relative py-5 px-5 rounded-xl bg-muted/20 border border-border/40 transition-all duration-300;
+}
+
+.editorial-grid-card:hover {
+  @apply bg-muted/40 border-border/70 -translate-y-0.5 shadow-lg shadow-accent/5;
+}
+
+.editorial-card-link {
+  @apply block no-underline;
+}
+
+.editorial-card-title {
+  @apply font-prose text-xl font-bold text-foreground leading-snug transition-colors duration-200;
+}
+
+.editorial-grid-card:hover .editorial-card-title {
+  @apply text-accent;
+}
+
+.editorial-card-description {
+  @apply mt-2 font-prose text-sm leading-relaxed text-foreground/55 line-clamp-3;
+}
+
+.editorial-card-meta {
+  @apply mt-3;
+}
+
+.editorial-card-tags {
+  @apply mt-3;
+}
+
+.editorial-cta-wrap {
+  @apply my-10;
+}
+
+.editorial-cta {
+  @apply flex items-center justify-center gap-2 py-6 text-sm font-semibold uppercase tracking-[0.15em] text-accent no-underline transition-all duration-300 hover:tracking-[0.2em] hover:text-accent;
+}
