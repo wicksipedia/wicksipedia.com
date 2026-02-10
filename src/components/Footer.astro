@@ -38,7 +38,7 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
             </span>
             <span class="inline-block size-1.5 rounded-full bg-accent opacity-80"></span>
           </div>
-          <div class="flex items-center gap-2 text-xs text-foreground/50">
+          <div class="flex items-center gap-2 text-xs text-foreground/75">
             <span>&copy; {currentYear}</span>
             <span aria-hidden="true" class="text-border">|</span>
             <span>All rights reserved</span>
@@ -49,7 +49,7 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
                   href={`${SITE.repo}/commit/${commitSha}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="font-mono text-accent/70 transition-opacity hover:text-accent hover:underline"
+                  class="font-mono text-accent/85 transition-opacity hover:text-accent hover:underline"
                   title={`Commit: ${commitSha}`}
                 >
                   {commitShort}

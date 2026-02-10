@@ -25,7 +25,7 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
 
 <nav class="app-layout mt-8 mb-1" aria-label="breadcrumb">
   <ul
-    class="flex flex-wrap items-center gap-1 text-sm text-foreground/50"
+    class="flex flex-wrap items-center gap-1 text-sm text-foreground/75"
   >
     <li class="flex items-center gap-1">
       <a href="/" class="transition-colors hover:text-accent">Home</a>
@@ -36,7 +36,7 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
         index + 1 === breadcrumbList.length ? (
           <li>
             <span
-              class:list={["font-medium text-foreground/80", { lowercase: index > 0 }]}
+              class:list={["font-medium text-foreground/85", { lowercase: index > 0 }]}
               aria-current="page"
             >
               {decodeURIComponent(breadcrumb)}
