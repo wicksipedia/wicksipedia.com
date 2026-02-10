@@ -7,14 +7,14 @@
 html[data-theme="light"] {
   --background: #faf9f6;
   --foreground: #1a1a1a;
-  --accent: #d4550a;
+  --accent: #ae4508;
   --accent-2: #16a34a;
   --muted: #e8e5df;
   --border: #d6d3cc;
   --hero-bg: #dad9db;
   --hero-text: #282728;
   --hero-text-muted: rgba(40, 39, 40, 0.7);
-  --hero-accent: #d4550a;
+  --hero-accent: #a04008;
   --hero-social: rgba(40, 39, 40, 0.75);
 }
 
@@ -201,7 +201,7 @@ html[data-theme="dark"] {
 /* ===== Accent line at top of viewport ===== */
 body::before {
   content: "";
-  @apply fixed top-0 left-0 right-0 z-45 h-[3px] pointer-events-none;
+  @apply fixed top-0 left-0 right-0 z-45 h-0.75 pointer-events-none;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
 }
 
