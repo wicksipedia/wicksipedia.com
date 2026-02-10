@@ -126,8 +126,8 @@ const gridPosts = [
                   <Image
                     src={heroPost.data.ogImage}
                     alt=""
-                    widths={[640, 960, 1280]}
-                    sizes="(max-width: 1024px) 100vw, 1024px"
+                    widths={[480, 640, 864, 992]}
+                    sizes="(max-width: 895px) calc(100vw - 2rem), (max-width: 1279px) 864px, 992px"
                     loading="eager"
                     class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   />
@@ -204,7 +204,8 @@ const gridPosts = [
                       src={post.data.ogImage}
                       alt=""
                       widths={[320, 480]}
-                      sizes="(max-width: 640px) 100vw, 50vw"
+                      sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1279px) 432px, 496px"
+                      quality={60}
                       loading="lazy"
                       class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
                     />
