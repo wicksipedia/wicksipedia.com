@@ -4,7 +4,6 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Socials from "@/components/Socials.astro";
-import Card from "@/components/Card.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import IconHash from "@/assets/icons/IconHash.svg";
@@ -58,15 +57,15 @@ const gridPosts = [
             height="160"
             class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
           />
-          <p class="editorial-issue-label mt-4 md:mt-0">
-            <span class="editorial-issue-rule"></span>
+          <p class="mt-4 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-hero-accent md:mt-0" style="font-variant: small-caps;">
+            <span class="inline-block w-8 h-px bg-hero-accent/40"></span>
             Issue No.&thinsp;{issueNumber} &mdash; {issueMonth} {issueYear}
           </p>
           <h1 class="mt-3 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl">
             Matt Wicks
           </h1>
-          <p class="editorial-tagline mx-auto mt-4 max-w-lg md:mx-0">
-            <span class="editorial-quote-mark">&ldquo;</span>Exploring CI/CD, DevOps, cloud-native architecture, and clean code &mdash; sharing practical tips and hard-won lessons from the trenches.<span class="editorial-quote-mark">&rdquo;</span>
+          <p class="mx-auto mt-4 max-w-lg font-prose text-lg leading-relaxed italic text-hero-text-muted sm:text-xl md:mx-0">
+            <span class="text-2xl leading-none text-accent/50">&ldquo;</span>Exploring CI/CD, DevOps, cloud-native architecture, and clean code &mdash; sharing practical tips and hard-won lessons from the trenches.<span class="text-2xl leading-none text-accent/50">&rdquo;</span>
           </p>
           <p class="mt-3 text-sm font-semibold uppercase tracking-widest text-hero-accent">
             Solution Architect at{" "}
@@ -93,7 +92,7 @@ const gridPosts = [
             alt="Matt Wicks"
             width="500"
             height="500"
-            class="hero-avatar"
+            class="block object-cover object-top size-[140px] rounded-full mx-auto min-[480px]:size-[160px] md:w-[320px] md:h-[360px] md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
           />
         </div>
       </div>
@@ -102,38 +101,38 @@ const gridPosts = [
 
   <main id="main-content" data-layout="index" class="app-layout">
     {heroPost && (
-      <section id="featured" class="animate-reveal-delay-1 editorial-lead-section">
-        <div class="editorial-section-header">
-          <span class="editorial-section-label">Lead Story</span>
-          <span class="editorial-section-rule"></span>
+      <section id="featured" class="animate-reveal-delay-1 pt-14 pb-10">
+        <div class="flex items-center gap-4 mb-8">
+          <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Lead Story</span>
+          <span class="flex-1 h-px bg-border/60"></span>
         </div>
-        <article class="editorial-lead-card group">
+        <article class="group relative py-6 pl-6 border-l-[3px] border-accent/40 transition-all duration-300 hover:border-accent">
           <a
             href={getPath(heroPost.id, heroPost.filePath)}
-            class="editorial-lead-link"
+            class="block no-underline"
           >
             <h2
-              class="editorial-lead-title"
+              class="font-prose text-3xl font-bold text-foreground leading-tight transition-colors duration-200 group-hover:text-accent sm:text-4xl"
               style={{ viewTransitionName: slugifyStr(heroPost.data.title.replaceAll(".", "-")) }}
             >
               {heroPost.data.title}
             </h2>
           </a>
-          <p class="editorial-lead-description">{heroPost.data.description}</p>
-          <div class="editorial-lead-meta">
+          <p class="mt-3 font-prose text-base leading-relaxed text-foreground/60 sm:text-lg">{heroPost.data.description}</p>
+          <div class="flex flex-wrap items-center gap-4 mt-4">
             <time
               datetime={new Date(heroPost.data.pubDatetime).toISOString()}
-              class="editorial-meta-date"
+              class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/40"
             >
               {formatEditorialDate(heroPost.data.pubDatetime)}
             </time>
             {heroPost.data.tags.length > 0 && (
-              <ul class="editorial-tag-list">
+              <ul class="flex flex-wrap gap-1.5">
                 {heroPost.data.tags.map((tag: string) => (
                   <li>
                     <a
                       href={`/tags/${slugifyStr(tag)}/`}
-                      class="editorial-tag"
+                      class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
                     >
                       <IconHash class="size-3 opacity-70" />{tag}
                     </a>
@@ -146,44 +145,44 @@ const gridPosts = [
       </section>
     )}
 
-    <hr class="editorial-divider animate-reveal-delay-1" />
+    <hr class="border-0 border-t border-border/40 my-2 animate-reveal-delay-1" />
 
     {gridPosts.length > 0 && (
-      <section id="recent-posts" class="animate-reveal-delay-2 editorial-grid-section">
-        <div class="editorial-section-header">
-          <span class="editorial-section-label">Recent Dispatches</span>
-          <span class="editorial-section-rule"></span>
+      <section id="recent-posts" class="animate-reveal-delay-2 pt-10 pb-8">
+        <div class="flex items-center gap-4 mb-8">
+          <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Recent Dispatches</span>
+          <span class="flex-1 h-px bg-border/60"></span>
         </div>
-        <div class="editorial-grid">
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {gridPosts.map((post) => (
-            <article class="editorial-grid-card group">
+            <article class="group relative py-5 px-5 rounded-xl bg-muted/20 border border-border/40 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5">
               <a
                 href={getPath(post.id, post.filePath)}
-                class="editorial-card-link"
+                class="block no-underline"
               >
                 <h3
-                  class="editorial-card-title"
+                  class="font-prose text-xl font-bold text-foreground leading-snug transition-colors duration-200 group-hover:text-accent"
                   style={{ viewTransitionName: slugifyStr(post.data.title.replaceAll(".", "-")) }}
                 >
                   {post.data.title}
                 </h3>
               </a>
-              <p class="editorial-card-description">{post.data.description}</p>
-              <div class="editorial-card-meta">
+              <p class="mt-2 font-prose text-sm leading-relaxed text-foreground/55 line-clamp-3">{post.data.description}</p>
+              <div class="mt-3">
                 <time
                   datetime={new Date(post.data.pubDatetime).toISOString()}
-                  class="editorial-meta-date"
+                  class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/40"
                 >
                   {formatEditorialDate(post.data.pubDatetime)}
                 </time>
               </div>
               {post.data.tags.length > 0 && (
-                <ul class="editorial-tag-list editorial-card-tags">
+                <ul class="mt-3 flex flex-wrap gap-1.5">
                   {post.data.tags.slice(0, 3).map((tag: string) => (
                     <li>
                       <a
                         href={`/tags/${slugifyStr(tag)}/`}
-                        class="editorial-tag"
+                        class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
                       >
                         <IconHash class="size-3 opacity-70" />{tag}
                       </a>
@@ -197,10 +196,10 @@ const gridPosts = [
       </section>
     )}
 
-    <div class="animate-reveal-delay-3 editorial-cta-wrap">
-      <hr class="editorial-divider" />
-      <a href="/blog/" class="editorial-cta group">
-        <span class="editorial-cta-text">Continue to the Archive</span>
+    <div class="animate-reveal-delay-3 my-10">
+      <hr class="border-0 border-t border-border/40 my-2" />
+      <a href="/blog/" class="group flex items-center justify-center gap-2 py-6 text-sm font-semibold uppercase tracking-[0.15em] text-accent no-underline transition-all duration-300 hover:tracking-[0.2em]">
+        <span>Continue to the Archive</span>
         <IconArrowRight class="inline-block size-4 transition-transform duration-300 group-hover:translate-x-1 rtl:-rotate-180" />
       </a>
     </div>

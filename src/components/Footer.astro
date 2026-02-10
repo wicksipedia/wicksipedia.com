@@ -24,38 +24,48 @@ type Props = {
 const { noMarginTop = false, class: className, ...attrs } = Astro.props;
 ---
 
-<footer
-  class:list={[{ "mt-auto": !noMarginTop }, className]}
-  {...attrs}
->
+<footer class:list={[{ "mt-auto": !noMarginTop }, className]} {...attrs}>
   <div class="bg-muted/40 border-t border-border/60">
     <div class="app-layout">
-      <div class="flex flex-col items-center gap-4 py-8 sm:flex-row sm:justify-between sm:py-6">
+      <!-- Editorial section label -->
+      <div class="flex items-center gap-4 py-4">
+        <div class="flex items-baseline gap-1.5">
+          <span
+            class="font-prose text-sm font-bold italic tracking-tight text-foreground"
+          >
+            {SITE.title}
+          </span>
+          <span class="inline-block size-1.5 rounded-full bg-accent opacity-80"
+          ></span>
+        </div>
+        <span class="flex-1 h-px bg-border/60"></span>
+      </div>
+      <div
+        class="flex flex-col items-center gap-4 pb-8 sm:flex-row sm:justify-between sm:pb-6"
+      >
         <div class="flex flex-col items-center gap-1.5 sm:items-start">
-          <div class="flex items-baseline gap-1.5">
-            <span class="text-sm font-bold tracking-tight text-foreground">
-              {SITE.title}
-            </span>
-            <span class="inline-block size-1.5 rounded-full bg-accent opacity-80"></span>
-          </div>
           <div class="flex items-center gap-2 text-xs text-foreground/50">
             <span>&copy; {currentYear}</span>
             <span aria-hidden="true" class="text-border">|</span>
             <span>All rights reserved</span>
-            {commitShort && (
-              <>
-                <span aria-hidden="true" class="text-border">|</span>
-                <a
-                  href={`${SITE.repo}/commit/${commitSha}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="font-mono text-accent/70 transition-opacity hover:text-accent hover:underline"
-                  title={`Commit: ${commitSha}`}
-                >
-                  {commitShort}
-                </a>
-              </>
-            )}
+            {
+              commitShort && (
+                <>
+                  <span aria-hidden="true" class="text-border">
+                    |
+                  </span>
+                  <a
+                    href={`${SITE.repo}/commit/${commitSha}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-mono text-accent/70 transition-opacity hover:text-accent hover:underline"
+                    title={`Commit: ${commitSha}`}
+                  >
+                    {commitShort}
+                  </a>
+                </>
+              )
+            }
           </div>
         </div>
 
@@ -66,7 +76,9 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
             title="RSS Feed"
             target="_blank"
           >
-            <IconRss class="inline-block size-6 scale-125 fill-transparent stroke-current stroke-2 opacity-90 sm:scale-110" />
+            <IconRss
+              class="inline-block size-6 scale-125 fill-transparent stroke-current stroke-2 opacity-90 sm:scale-110"
+            />
             <span class="sr-only">RSS Feed</span>
           </LinkButton>
           <Socials />

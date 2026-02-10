@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Preferences
+
+For design/aesthetic tasks, implement changes immediately rather than spending the session exploring and planning. If a plan already exists, execute it. If no plan exists, produce a brief plan (max 10 lines) then start implementing.
+
+## UI/CSS Changes
+
+When making UI/CSS changes, always verify the result by checking for:
+
+1. Mobile vs desktop layout consistency
+2. No duplicate elements appearing at different breakpoints
+3. CSS animations actually functioning (test with a quick browser check or review keyframe/animation properties)
+
+List these checks after every UI change.
+
+When making visual/design changes, go bold on the first pass. The user prefers distinctive, punchy aesthetics over minimal or subtle changes. If unsure, err on the side of more visual impact rather than less.
+
 ## Commands
 
 ```bash

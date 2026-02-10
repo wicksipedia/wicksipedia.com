@@ -256,7 +256,7 @@ body::before {
 }
 
 .editorial-meta-date {
-  @apply text-xs font-medium uppercase tracking-[0.15em] text-foreground/40;
+  @apply text-xs font-medium uppercase tracking-[0.15em] text-foreground/60;
 }
 
 .editorial-tag-list {
@@ -300,7 +300,7 @@ body::before {
 }
 
 .editorial-card-description {
-  @apply mt-2 font-prose text-sm leading-relaxed text-foreground/55 line-clamp-3;
+  @apply mt-2 font-prose text-sm leading-relaxed text-foreground/70 line-clamp-3;
 }
 
 .editorial-card-meta {
