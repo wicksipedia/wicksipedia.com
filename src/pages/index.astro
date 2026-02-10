@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
@@ -9,6 +10,7 @@ import getSortedPosts from "@/utils/getSortedPosts";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import { SITE } from "@/config";
 import { SOCIALS } from "@/constants";
+import avatarImage from "@/assets/images/avatar.png";
 
 const posts = await getCollection("blog");
 
@@ -23,12 +25,14 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
     <div class="app-layout">
       <div class="flex flex-col items-center gap-6 py-8 sm:py-10 md:flex-row md:items-end md:justify-between md:gap-8 md:py-0">
         <div class="text-center md:flex-1 md:py-16 md:text-left lg:py-20 xl:py-24">
-          <img
-            src="/avatar.png"
+          <Image
+            src={avatarImage}
             alt="Matt Wicks"
-            width="160"
-            height="160"
+            width={160}
+            height={160}
             class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
+            loading="eager"
+            decoding="async"
           />
           <p class="mt-4 text-sm font-semibold uppercase tracking-widest text-hero-accent md:mt-0">
             Solution Architect at{" "}
@@ -57,12 +61,14 @@ const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
           }
         </div>
         <div class="relative hidden md:block md:shrink-0 after:content-[''] after:absolute after:bottom-0 after:inset-x-0 after:h-[40%] after:pointer-events-none after:bg-gradient-to-t after:from-hero-bg after:to-transparent after:transition-[background] after:duration-300">
-          <img
-            src="/avatar.png"
+          <Image
+            src={avatarImage}
             alt="Matt Wicks"
-            width="500"
-            height="500"
+            widths={[320, 420, 480, 640]}
+            sizes="(max-width: 767px) 160px, (max-width: 1023px) 320px, (max-width: 1279px) 420px, 480px"
             class="hero-avatar"
+            loading="eager"
+            decoding="async"
           />
         </div>
       </div>
