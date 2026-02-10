@@ -13,9 +13,9 @@ html[data-theme="light"] {
   --border: #d6d3cc;
   --hero-bg: #DAD9DB;
   --hero-text: #282728;
-  --hero-text-muted: rgba(40, 39, 40, 0.6);
+  --hero-text-muted: rgba(40, 39, 40, 0.7);
   --hero-accent: #d4550a;
-  --hero-social: rgba(40, 39, 40, 0.7);
+  --hero-social: rgba(40, 39, 40, 0.75);
 }
 
 html[data-theme="dark"] {
@@ -27,9 +27,9 @@ html[data-theme="dark"] {
   --border: #2a2d3a;
   --hero-bg: #1a1d2a;
   --hero-text: #e8e6e3;
-  --hero-text-muted: rgba(232, 230, 227, 0.55);
+  --hero-text-muted: rgba(232, 230, 227, 0.7);
   --hero-accent: #ff7a1a;
-  --hero-social: rgba(232, 230, 227, 0.7);
+  --hero-social: rgba(232, 230, 227, 0.75);
 }
 
 @theme inline {
