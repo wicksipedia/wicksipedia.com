@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
@@ -106,40 +107,69 @@ const gridPosts = [
           <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Lead Story</span>
           <span class="flex-1 h-px bg-border/60"></span>
         </div>
-        <article class="group relative py-6 pl-6 border-l-[3px] border-accent/40 transition-all duration-300 hover:border-accent">
-          <a
-            href={getPath(heroPost.id, heroPost.filePath)}
-            class="block no-underline"
-          >
-            <h2
-              class="font-prose text-3xl font-bold text-foreground leading-tight transition-colors duration-200 group-hover:text-accent sm:text-4xl"
-              style={{ viewTransitionName: slugifyStr(heroPost.data.title.replaceAll(".", "-")) }}
+        <article class="group relative overflow-hidden rounded-xl border border-border/40 transition-all duration-300 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-accent/5">
+          {/* Cover image */}
+          {heroPost.data.ogImage && (
+            <a href={getPath(heroPost.id, heroPost.filePath)} class="block overflow-hidden" tabindex="-1" aria-hidden="true">
+              <div class="relative aspect-21/9 overflow-hidden bg-muted">
+                {typeof heroPost.data.ogImage === "string" ? (
+                  <img
+                    src={heroPost.data.ogImage}
+                    alt=""
+                    loading="eager"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <Image
+                    src={heroPost.data.ogImage}
+                    alt=""
+                    widths={[640, 960, 1280]}
+                    sizes="(max-width: 1024px) 100vw, 1024px"
+                    loading="eager"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                )}
+                {/* Bottom fade into card body */}
+                <div class="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-background to-transparent pointer-events-none"></div>
+              </div>
+            </a>
+          )}
+          {/* Text content */}
+          <div class="p-6 pt-4 border-l-[3px] border-accent/40 transition-all duration-300 group-hover:border-accent">
+            <a
+              href={getPath(heroPost.id, heroPost.filePath)}
+              class="block no-underline"
             >
-              {heroPost.data.title}
-            </h2>
-          </a>
-          <p class="mt-3 font-prose text-base leading-relaxed text-foreground/60 sm:text-lg">{heroPost.data.description}</p>
-          <div class="flex flex-wrap items-center gap-4 mt-4">
-            <time
-              datetime={new Date(heroPost.data.pubDatetime).toISOString()}
-              class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/40"
-            >
-              {formatEditorialDate(heroPost.data.pubDatetime)}
-            </time>
-            {heroPost.data.tags.length > 0 && (
-              <ul class="flex flex-wrap gap-1.5">
-                {heroPost.data.tags.map((tag: string) => (
-                  <li>
-                    <a
-                      href={`/tags/${slugifyStr(tag)}/`}
-                      class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
-                    >
-                      <IconHash class="size-3 opacity-70" />{tag}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
+              <h2
+                class="font-prose text-3xl font-bold text-foreground leading-tight transition-colors duration-200 group-hover:text-accent sm:text-4xl"
+                style={{ viewTransitionName: slugifyStr(heroPost.data.title.replaceAll(".", "-")) }}
+              >
+                {heroPost.data.title}
+              </h2>
+            </a>
+            <p class="mt-3 font-prose text-base leading-relaxed text-foreground/70 sm:text-lg">{heroPost.data.description}</p>
+            <div class="flex flex-wrap items-center gap-4 mt-4">
+              <time
+                datetime={new Date(heroPost.data.pubDatetime).toISOString()}
+                class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/60"
+              >
+                {formatEditorialDate(heroPost.data.pubDatetime)}
+              </time>
+              {heroPost.data.tags.length > 0 && (
+                <ul class="flex flex-wrap gap-1.5">
+                  {heroPost.data.tags.map((tag: string) => (
+                    <li>
+                      <a
+                        href={`/tags/${slugifyStr(tag)}/`}
+                        class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
+                      >
+                        <IconHash class="size-3 opacity-70" />{tag}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </article>
       </section>
@@ -155,41 +185,67 @@ const gridPosts = [
         </div>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {gridPosts.map((post) => (
-            <article class="group relative py-5 px-5 rounded-xl bg-muted/20 border border-border/40 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5">
-              <a
-                href={getPath(post.id, post.filePath)}
-                class="block no-underline"
-              >
-                <h3
-                  class="font-prose text-xl font-bold text-foreground leading-snug transition-colors duration-200 group-hover:text-accent"
-                  style={{ viewTransitionName: slugifyStr(post.data.title.replaceAll(".", "-")) }}
-                >
-                  {post.data.title}
-                </h3>
-              </a>
-              <p class="mt-2 font-prose text-sm leading-relaxed text-foreground/55 line-clamp-3">{post.data.description}</p>
-              <div class="mt-3">
-                <time
-                  datetime={new Date(post.data.pubDatetime).toISOString()}
-                  class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/40"
-                >
-                  {formatEditorialDate(post.data.pubDatetime)}
-                </time>
-              </div>
-              {post.data.tags.length > 0 && (
-                <ul class="mt-3 flex flex-wrap gap-1.5">
-                  {post.data.tags.slice(0, 3).map((tag: string) => (
-                    <li>
-                      <a
-                        href={`/tags/${slugifyStr(tag)}/`}
-                        class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
-                      >
-                        <IconHash class="size-3 opacity-70" />{tag}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+            <article class="group relative overflow-hidden rounded-xl bg-muted/20 border border-border/40 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5">
+              {/* Faded background image */}
+              {post.data.ogImage && (
+                <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                  {typeof post.data.ogImage === "string" ? (
+                    <img
+                      src={post.data.ogImage}
+                      alt=""
+                      loading="lazy"
+                      class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
+                    />
+                  ) : (
+                    <Image
+                      src={post.data.ogImage}
+                      alt=""
+                      widths={[320, 480]}
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      loading="lazy"
+                      class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
+                    />
+                  )}
+                  <div class="absolute inset-0 bg-linear-to-r from-muted via-(--muted)/80 to-transparent"></div>
+                </div>
               )}
+              {/* Card content */}
+              <div class="relative z-10 p-5">
+                <a
+                  href={getPath(post.id, post.filePath)}
+                  class="block no-underline"
+                >
+                  <h3
+                    class="font-prose text-xl font-bold text-foreground leading-snug transition-colors duration-200 group-hover:text-accent"
+                    style={{ viewTransitionName: slugifyStr(post.data.title.replaceAll(".", "-")) }}
+                  >
+                    {post.data.title}
+                  </h3>
+                </a>
+                <p class="mt-2 font-prose text-sm leading-relaxed text-foreground/70 line-clamp-3">{post.data.description}</p>
+                <div class="mt-3">
+                  <time
+                    datetime={new Date(post.data.pubDatetime).toISOString()}
+                    class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/60"
+                  >
+                    {formatEditorialDate(post.data.pubDatetime)}
+                  </time>
+                </div>
+                {post.data.tags.length > 0 && (
+                  <ul class="mt-3 flex flex-wrap gap-1.5">
+                    {post.data.tags.slice(0, 3).map((tag: string) => (
+                      <li>
+                        <a
+                          href={`/tags/${slugifyStr(tag)}/`}
+                          class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
+                        >
+                          <IconHash class="size-3 opacity-70" />{tag}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </article>
           ))}
         </div>
