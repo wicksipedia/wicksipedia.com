@@ -7,7 +7,6 @@ import tz from "dayjs/plugin/timezone";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import Datetime from "@/components/Datetime.astro";
 import EditPost from "@/components/EditPost.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import BackButton from "@/components/BackButton.astro";
@@ -18,7 +17,7 @@ import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
 import IconHash from "@/assets/icons/IconHash.svg";
 import { SITE } from "@/config";
-import Comments from "@/components/Comments";
+import Comments from "@/components/Comments.astro";
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -253,7 +252,13 @@ const nextPost =
 
     <ShareLinks />
 
-    <Comments client:only="react" />
+    <!-- Editorial divider before comments -->
+    <div class="flex items-center gap-4 my-8">
+      <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Discussion</span>
+      <span class="flex-1 h-px bg-border/60"></span>
+    </div>
+
+    <Comments />
 
     <!-- Editorial divider before nav -->
     <div class="flex items-center gap-4 my-8">
