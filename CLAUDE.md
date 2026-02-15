@@ -28,9 +28,20 @@ bun run deploy       # Deploy to Cloudflare Workers via wrangler
 bun run format:check # Prettier check
 bun run format       # Prettier write
 bun run lint         # ESLint (note: console.log is an error)
+vale src/data/blog/  # Prose linting (banned words/phrases)
 ```
 
 Search requires a build before it works locally (pagefind indexes `dist/`).
+
+## Blog Post Writing
+
+When writing or editing blog posts, always run Vale before considering the post done:
+
+```bash
+vale src/data/blog/path-to-post/index.mdx
+```
+
+Vale is configured (`.vale.ini` + `styles/Wicksipedia/`) to catch banned words and phrases that sound too "AI-generated" or corporate. All Vale errors must be resolved before a post is considered finished.
 
 ## Architecture
 

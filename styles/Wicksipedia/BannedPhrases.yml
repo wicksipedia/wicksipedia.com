@@ -1,0 +1,17 @@
+extends: existence
+message: "Banned phrase '%s' — consider rephrasing."
+level: error
+ignorecase: true
+tokens:
+  - in today's world
+  - at the end of the day
+  - best practices
+  - game-changer
+  - game changer
+  - paradigm shift
+  - breakthrough technology
+  - seamless integration
+  - effortless setup
+  - works like magic
+  - enterprise-grade
+  - industry-leading
