@@ -1,0 +1,29 @@
+extends: existence
+message: "Avoid corporate hedging: '%s'. Be more direct."
+level: warning
+ignorecase: true
+tokens:
+  - it should be noted
+  - it is important to note
+  - it is worth mentioning
+  - it is worth noting
+  - as previously mentioned
+  - as mentioned above
+  - as stated earlier
+  - one might say
+  - it could be argued
+  - arguably
+  - essentially
+  - generally speaking
+  - for the most part
+  - in general
+  - appears to
+  - seems to
+  - may or may not
+  - might or might not
+  - in today's landscape
+  - in the current landscape
+  - it is believed that
+  - it has been said that
+  - some would say
+  - one could argue
