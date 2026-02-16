@@ -30,7 +30,10 @@ jobs:
       - name: Install Vale
         if: steps.changed.outputs.found == 'true'
         run: |
-          wget -qO- https://github.com/errata-ai/vale/releases/latest/download/vale_Linux_64-bit.tar.gz | tar xz -C /usr/local/bin vale
+          gh release download --repo errata-ai/vale --pattern 'vale_*_Linux_64-bit.tar.gz' --dir /tmp
+          tar xzf /tmp/vale_*_Linux_64-bit.tar.gz -C /usr/local/bin vale
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint changed posts
         if: steps.changed.outputs.found == 'true'
