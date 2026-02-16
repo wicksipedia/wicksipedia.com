@@ -1,0 +1,20 @@
+{
+  "entries": [
+    { "date": "2026-02-01", "move": { "value": 520, "goal": 600 }, "exercise": { "value": 32, "goal": 30 }, "stand": { "value": 11, "goal": 12 } },
+    { "date": "2026-02-02", "move": { "value": 610, "goal": 600 }, "exercise": { "value": 45, "goal": 30 }, "stand": { "value": 12, "goal": 12 } },
+    { "date": "2026-02-03", "move": { "value": 280, "goal": 600 }, "exercise": { "value": 15, "goal": 30 }, "stand": { "value": 8, "goal": 12 } },
+    { "date": "2026-02-04", "move": { "value": 750, "goal": 600 }, "exercise": { "value": 55, "goal": 30 }, "stand": { "value": 12, "goal": 12 } },
+    { "date": "2026-02-05", "move": { "value": 600, "goal": 600 }, "exercise": { "value": 30, "goal": 30 }, "stand": { "value": 12, "goal": 12 } },
+    { "date": "2026-02-06", "move": { "value": 430, "goal": 600 }, "exercise": { "value": 22, "goal": 30 }, "stand": { "value": 10, "goal": 12 } },
+    { "date": "2026-02-07", "move": { "value": 350, "goal": 600 }, "exercise": { "value": 18, "goal": 30 }, "stand": { "value": 7, "goal": 12 } },
+    { "date": "2026-02-08", "move": { "value": 690, "goal": 600 }, "exercise": { "value": 40, "goal": 30 }, "stand": { "value": 12, "goal": 12 } },
+    { "date": "2026-02-09", "move": { "value": 580, "goal": 600 }, "exercise": { "value": 28, "goal": 30 }, "stand": { "value": 11, "goal": 12 } },
+    { "date": "2026-02-10", "move": { "value": 820, "goal": 600 }, "exercise": { "value": 60, "goal": 30 }, "stand": { "value": 12, "goal": 12 } },
+    { "date": "2026-02-11", "move": { "value": 450, "goal": 600 }, "exercise": { "value": 25, "goal": 30 }, "stand": { "value": 9, "goal": 12 } },
+    { "date": "2026-02-12", "move": { "value": 600, "goal": 600 }, "exercise": { "value": 35, "goal": 30 }, "stand": { "value": 12, "goal": 12 } },
+    { "date": "2026-02-13", "move": { "value": 550, "goal": 600 }, "exercise": { "value": 30, "goal": 30 }, "stand": { "value": 10, "goal": 12 } },
+    { "date": "2026-02-14", "move": { "value": 720, "goal": 600 }, "exercise": { "value": 48, "goal": 30 }, "stand": { "value": 12, "goal": 12 } },
+    { "date": "2026-02-15", "move": { "value": 480, "goal": 600 }, "exercise": { "value": 20, "goal": 30 }, "stand": { "value": 8, "goal": 12 } },
+    { "date": "2026-02-16", "move": { "value": 390, "goal": 600 }, "exercise": { "value": 15, "goal": 30 }, "stand": { "value": 6, "goal": 12 } }
+  ]
+}

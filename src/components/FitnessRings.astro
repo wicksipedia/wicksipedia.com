@@ -1,0 +1,406 @@
+---
+interface RingData {
+  value: number;
+  goal: number;
+}
+
+interface FitnessEntry {
+  date: string;
+  move: RingData;
+  exercise: RingData;
+  stand: RingData;
+}
+
+interface Props {
+  entries: FitnessEntry[];
+}
+
+const { entries } = Astro.props;
+---
+
+<div
+  id="fitness-rings"
+  data-entries={JSON.stringify(entries)}
+>
+  <!-- Month navigation -->
+  <div class="flex items-center justify-between mb-6">
+    <button
+      id="fitness-prev"
+      class="flex items-center justify-center size-9 rounded-lg text-foreground/75 transition-all duration-150 hover:text-accent hover:bg-accent/10"
+      aria-label="Previous month"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <h2 id="fitness-month-label" class="text-lg font-bold tracking-tight text-foreground"></h2>
+    <button
+      id="fitness-next"
+      class="flex items-center justify-center size-9 rounded-lg text-foreground/75 transition-all duration-150 hover:text-accent hover:bg-accent/10"
+      aria-label="Next month"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Day-of-week headers -->
+  <div class="grid grid-cols-7 gap-1 mb-2">
+    <span class="text-center text-xs font-semibold uppercase tracking-widest text-foreground/40">S</span>
+    <span class="text-center text-xs font-semibold uppercase tracking-widest text-foreground/40">M</span>
+    <span class="text-center text-xs font-semibold uppercase tracking-widest text-foreground/40">T</span>
+    <span class="text-center text-xs font-semibold uppercase tracking-widest text-foreground/40">W</span>
+    <span class="text-center text-xs font-semibold uppercase tracking-widest text-foreground/40">T</span>
+    <span class="text-center text-xs font-semibold uppercase tracking-widest text-foreground/40">F</span>
+    <span class="text-center text-xs font-semibold uppercase tracking-widest text-foreground/40">S</span>
+  </div>
+
+  <!-- Calendar grid -->
+  <div id="fitness-grid" class="grid grid-cols-7 gap-1"></div>
+
+  <!-- Detail panel (shown on day click) -->
+  <div id="fitness-detail" class="mt-6 rounded-xl border border-border/60 bg-muted/20 p-5 hidden">
+    <h3 id="fitness-detail-date" class="text-sm font-bold tracking-tight text-foreground mb-4"></h3>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="flex flex-col items-center gap-2">
+        <svg id="fitness-detail-move-ring" width="64" height="64" viewBox="0 0 64 64"></svg>
+        <span class="text-xs font-semibold uppercase tracking-widest" style="color: #FA114F;">Move</span>
+        <span id="fitness-detail-move-val" class="text-sm font-bold text-foreground"></span>
+        <span id="fitness-detail-move-unit" class="text-xs text-foreground/50">cal</span>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <svg id="fitness-detail-exercise-ring" width="64" height="64" viewBox="0 0 64 64"></svg>
+        <span class="text-xs font-semibold uppercase tracking-widest" style="color: #92E82A;">Exercise</span>
+        <span id="fitness-detail-exercise-val" class="text-sm font-bold text-foreground"></span>
+        <span id="fitness-detail-exercise-unit" class="text-xs text-foreground/50">min</span>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <svg id="fitness-detail-stand-ring" width="64" height="64" viewBox="0 0 64 64"></svg>
+        <span class="text-xs font-semibold uppercase tracking-widest" style="color: #00C7FC;">Stand</span>
+        <span id="fitness-detail-stand-val" class="text-sm font-bold text-foreground"></span>
+        <span id="fitness-detail-stand-unit" class="text-xs text-foreground/50">hrs</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="fitness-empty" class="mt-8 text-center text-foreground/40 text-sm hidden">
+    No fitness data for this month.
+  </div>
+</div>
+
+<script>
+  function initFitnessRings() {
+    const container = document.getElementById("fitness-rings");
+    if (!container) return;
+
+    const MOVE_COLOR = "#FA114F";
+    const EXERCISE_COLOR = "#92E82A";
+    const STAND_COLOR = "#00C7FC";
+
+    const entries: Array<{
+      date: string;
+      move: { value: number; goal: number };
+      exercise: { value: number; goal: number };
+      stand: { value: number; goal: number };
+    }> = JSON.parse(container.dataset.entries || "[]");
+
+    // Index entries by date
+    const entryMap = new Map<string, (typeof entries)[0]>();
+    for (const e of entries) entryMap.set(e.date, e);
+
+    // State
+    const now = new Date();
+    let currentYear = now.getFullYear();
+    let currentMonth = now.getMonth();
+    let selectedDate: string | null = null;
+
+    const grid = document.getElementById("fitness-grid")!;
+    const label = document.getElementById("fitness-month-label")!;
+    const detail = document.getElementById("fitness-detail")!;
+    const empty = document.getElementById("fitness-empty")!;
+    const prevBtn = document.getElementById("fitness-prev")!;
+    const nextBtn = document.getElementById("fitness-next")!;
+
+    const MONTHS = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+
+    function pad(n: number): string {
+      return n.toString().padStart(2, "0");
+    }
+
+    function dateStr(y: number, m: number, d: number): string {
+      return `${y}-${pad(m + 1)}-${pad(d)}`;
+    }
+
+    /** Create an SVG ring arc. Returns an SVG string. */
+    function ringsSvg(
+      entry: (typeof entries)[0] | undefined,
+      size: number,
+    ): string {
+      const cx = size / 2;
+      const cy = size / 2;
+      const strokeWidth = size <= 40 ? 3.5 : 5;
+      const gap = size <= 40 ? 1.5 : 2;
+      const outerR = cx - strokeWidth / 2 - 1;
+      const midR = outerR - strokeWidth - gap;
+      const innerR = midR - strokeWidth - gap;
+
+      function arcPath(
+        radius: number,
+        progress: number,
+        color: string,
+        trackColor: string,
+      ): string {
+        const circ = 2 * Math.PI * radius;
+        const clamped = Math.min(Math.max(progress, 0), 2);
+        const mainProgress = Math.min(clamped, 1);
+        const overflow = Math.max(clamped - 1, 0);
+
+        // Track (background circle)
+        let svg = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${trackColor}" stroke-width="${strokeWidth}" stroke-linecap="round" />`;
+
+        if (mainProgress > 0) {
+          // Main arc
+          const offset = circ * (1 - mainProgress);
+          svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 ${cx} ${cy})" />`;
+        }
+
+        if (overflow > 0) {
+          // Overflow arc (brighter, on top)
+          const overflowOffset = circ * (1 - overflow);
+          svg += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${overflowOffset}" transform="rotate(-90 ${cx} ${cy})" opacity="0.65" />`;
+        }
+
+        return svg;
+      }
+
+      const moveProgress = entry ? entry.move.value / entry.move.goal : 0;
+      const exerciseProgress = entry ? entry.exercise.value / entry.exercise.goal : 0;
+      const standProgress = entry ? entry.stand.value / entry.stand.goal : 0;
+
+      const trackAlpha = entry ? "0.15" : "0.08";
+
+      const moveTrack = `color-mix(in srgb, ${MOVE_COLOR} ${Number(trackAlpha) * 100}%, transparent)`;
+      const exerciseTrack = `color-mix(in srgb, ${EXERCISE_COLOR} ${Number(trackAlpha) * 100}%, transparent)`;
+      const standTrack = `color-mix(in srgb, ${STAND_COLOR} ${Number(trackAlpha) * 100}%, transparent)`;
+
+      return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`
+        + arcPath(outerR, moveProgress, MOVE_COLOR, moveTrack)
+        + arcPath(midR, exerciseProgress, EXERCISE_COLOR, exerciseTrack)
+        + arcPath(innerR, standProgress, STAND_COLOR, standTrack)
+        + `</svg>`;
+    }
+
+    function renderMonth() {
+      const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      label.textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+
+      // Check if any entries exist this month
+      let hasData = false;
+      for (let d = 1; d <= daysInMonth; d++) {
+        if (entryMap.has(dateStr(currentYear, currentMonth, d))) {
+          hasData = true;
+          break;
+        }
+      }
+
+      // Build grid cells
+      let html = "";
+
+      // Leading empty cells
+      for (let i = 0; i < firstDayOfWeek; i++) {
+        html += `<div class="aspect-square"></div>`;
+      }
+
+      const today = dateStr(now.getFullYear(), now.getMonth(), now.getDate());
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = dateStr(currentYear, currentMonth, d);
+        const entry = entryMap.get(ds);
+        const isFuture = ds > today;
+        const isSelected = ds === selectedDate;
+
+        const cellClasses = [
+          "aspect-square flex flex-col items-center justify-center rounded-lg transition-all duration-150 relative",
+          !isFuture ? "cursor-pointer hover:bg-muted/40" : "",
+          isSelected ? "bg-muted/40 ring-1 ring-accent/40" : "",
+          ds === today ? "ring-1 ring-foreground/15" : "",
+        ].filter(Boolean).join(" ");
+
+        html += `<div class="${cellClasses}" data-date="${ds}">`;
+        html += `<span class="text-[10px] font-semibold text-foreground/50 mb-0.5 ${ds === today ? "text-accent" : ""}">${d}</span>`;
+
+        if (!isFuture) {
+          html += ringsSvg(entry, 36);
+        }
+
+        html += `</div>`;
+      }
+
+      grid.innerHTML = html;
+
+      // Show/hide empty state
+      empty.classList.toggle("hidden", hasData || entries.length === 0);
+
+      // Show/hide prev/next based on data bounds
+      updateNavState();
+
+      // Attach click handlers
+      grid.querySelectorAll("[data-date]").forEach(cell => {
+        cell.addEventListener("click", () => {
+          const date = (cell as HTMLElement).dataset.date!;
+          if (date > today) return;
+
+          selectedDate = selectedDate === date ? null : date;
+          renderMonth();
+          renderDetail();
+        });
+      });
+    }
+
+    function renderDetail() {
+      if (!selectedDate) {
+        detail.classList.add("hidden");
+        return;
+      }
+
+      const entry = entryMap.get(selectedDate);
+      if (!entry) {
+        detail.classList.add("hidden");
+        return;
+      }
+
+      detail.classList.remove("hidden");
+
+      // Format the date nicely
+      const [y, m, d] = selectedDate.split("-").map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const formatted = dateObj.toLocaleDateString("en-AU", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+      document.getElementById("fitness-detail-date")!.textContent = formatted;
+
+      // Move detail ring
+      const moveRingSvg = document.getElementById("fitness-detail-move-ring")!;
+      moveRingSvg.outerHTML = ringsSvgSingle(entry.move, 64, MOVE_COLOR, "move");
+
+      // Exercise detail ring
+      const exerciseRingSvg = document.getElementById("fitness-detail-exercise-ring")!;
+      exerciseRingSvg.outerHTML = ringsSvgSingle(entry.exercise, 64, EXERCISE_COLOR, "exercise");
+
+      // Stand detail ring
+      const standRingSvg = document.getElementById("fitness-detail-stand-ring")!;
+      standRingSvg.outerHTML = ringsSvgSingle(entry.stand, 64, STAND_COLOR, "stand");
+
+      // Values
+      document.getElementById("fitness-detail-move-val")!.textContent =
+        `${Math.round(entry.move.value)} / ${Math.round(entry.move.goal)}`;
+      document.getElementById("fitness-detail-exercise-val")!.textContent =
+        `${Math.round(entry.exercise.value)} / ${Math.round(entry.exercise.goal)}`;
+      document.getElementById("fitness-detail-stand-val")!.textContent =
+        `${Math.round(entry.stand.value)} / ${Math.round(entry.stand.goal)}`;
+    }
+
+    function ringsSvgSingle(
+      ring: { value: number; goal: number },
+      size: number,
+      color: string,
+      id: string,
+    ): string {
+      const cx = size / 2;
+      const cy = size / 2;
+      const strokeWidth = 6;
+      const r = cx - strokeWidth / 2 - 2;
+      const circ = 2 * Math.PI * r;
+      const progress = Math.min(ring.value / ring.goal, 2);
+      const mainProgress = Math.min(progress, 1);
+      const overflow = Math.max(progress - 1, 0);
+      const pct = Math.round((ring.value / ring.goal) * 100);
+
+      const trackColor = `color-mix(in srgb, ${color} 15%, transparent)`;
+
+      let svg = `<svg id="fitness-detail-${id}-ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+      svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${trackColor}" stroke-width="${strokeWidth}" stroke-linecap="round" />`;
+
+      if (mainProgress > 0) {
+        const offset = circ * (1 - mainProgress);
+        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 ${cx} ${cy})" />`;
+      }
+
+      if (overflow > 0) {
+        const overflowOffset = circ * (1 - overflow);
+        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${overflowOffset}" transform="rotate(-90 ${cx} ${cy})" opacity="0.65" />`;
+      }
+
+      // Percentage text in center
+      svg += `<text x="${cx}" y="${cx + 1}" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="13" font-weight="700" font-family="var(--font-app)">${pct}%</text>`;
+
+      svg += `</svg>`;
+      return svg;
+    }
+
+    // Determine earliest month with data
+    const earliestDate = entries.length > 0 ? entries.reduce((min, e) => e.date < min ? e.date : min, entries[0].date) : null;
+    const earliestYear = earliestDate ? Number(earliestDate.split("-")[0]) : null;
+    const earliestMonth = earliestDate ? Number(earliestDate.split("-")[1]) - 1 : null;
+
+    function isAtEarliestMonth(): boolean {
+      if (earliestYear === null || earliestMonth === null) return true;
+      return currentYear === earliestYear && currentMonth === earliestMonth;
+    }
+
+    function updateNavState() {
+      const isCurrentMonth = currentYear === now.getFullYear() && currentMonth === now.getMonth();
+      nextBtn.classList.toggle("opacity-30", isCurrentMonth);
+      nextBtn.classList.toggle("pointer-events-none", isCurrentMonth);
+
+      const atEarliest = isAtEarliestMonth();
+      prevBtn.classList.toggle("opacity-30", atEarliest);
+      prevBtn.classList.toggle("pointer-events-none", atEarliest);
+    }
+
+    // Event listeners
+    prevBtn.addEventListener("click", () => {
+      if (isAtEarliestMonth()) return;
+
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      selectedDate = null;
+      renderMonth();
+      renderDetail();
+    });
+
+    nextBtn.addEventListener("click", () => {
+      const isCurrentMonth = currentYear === now.getFullYear() && currentMonth === now.getMonth();
+      if (isCurrentMonth) return;
+
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      selectedDate = null;
+      renderMonth();
+      renderDetail();
+    });
+
+    // Initial render
+    renderMonth();
+  }
+
+  initFitnessRings();
+  document.addEventListener("astro:after-swap", initFitnessRings);
+</script>

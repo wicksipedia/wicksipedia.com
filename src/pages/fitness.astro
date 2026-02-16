@@ -1,0 +1,47 @@
+---
+import Main from "@/layouts/Main.astro";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import FitnessRings from "@/components/FitnessRings.astro";
+import { SITE } from "@/config";
+
+// Import all year files from src/data/fitness/
+const yearFiles = import.meta.glob<{ entries: Array<{ date: string; move: { value: number; goal: number }; exercise: { value: number; goal: number }; stand: { value: number; goal: number } }> }>("@/data/fitness/*.json", { eager: true });
+
+// Merge all entries from all year files
+const entries = Object.values(yearFiles).flatMap(f => f.entries);
+---
+
+<Layout title={`Fitness | ${SITE.title}`}>
+  <Header />
+  <Main
+    pageTitle="Fitness Rings"
+    pageDesc="Daily Apple Fitness ring data, tracked automatically."
+    sectionLabel="Activity"
+  >
+    {/* TODO: Write a blog post about this setup — Apple Shortcut → GitHub Action → Astro page */}
+    <div class="mb-8 space-y-4 text-foreground/75 text-sm leading-relaxed">
+      <p>
+        I'm trying to move around more. Sitting at a desk all day writing code is
+        great for the mind, not so great for the body. Putting my fitness rings on
+        the internet keeps me honest — if I skip a day, everyone can see it.
+        Public accountability works.
+      </p>
+      <p>
+        This page is powered by a{" "}
+        <a href="https://support.apple.com/en-au/guide/shortcuts/welcome/ios" class="text-accent hover:underline">Shortcut</a>{" "}
+        on my phone that runs every night, grabs my Apple Fitness ring data, and
+        posts it to a{" "}
+        <a href="https://github.com/wicksipedia/wicksipedia.com/actions" class="text-accent hover:underline">GitHub Action</a>.
+        The action commits the data to this site's repo, and the next deploy picks
+        it up. No server, no database — just a JSON file, a workflow, and a phone
+        that tattles on me.
+      </p>
+
+        <pre class="bg-yellow-300 py-2 text-center">// TODO: Write a blog post about this setup — Apple Shortcut → GitHub Action → Astro page</pre>
+    </div>
+    <FitnessRings entries={entries} />
+  </Main>
+  <Footer />
+</Layout>

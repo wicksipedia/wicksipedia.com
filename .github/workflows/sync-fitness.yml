@@ -1,0 +1,63 @@
+name: Sync fitness rings
+
+on:
+  repository_dispatch:
+    types: [fitness-sync]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Update fitness data
+        run: |
+          # Extract payload from the dispatch event
+          DATE='${{ github.event.client_payload.date }}'
+
+          # Derive year from date for file-per-year storage
+          YEAR="${DATE%%-*}"
+          FILE="src/data/fitness/${YEAR}.json"
+          mkdir -p "$(dirname "$FILE")"
+
+          # Initialize file if it doesn't exist
+          if [ ! -f "$FILE" ]; then
+            echo '{"entries":[]}' > "$FILE"
+          fi
+          MOVE_VALUE='${{ github.event.client_payload.move_value }}'
+          MOVE_GOAL='${{ github.event.client_payload.move_goal }}'
+          EXERCISE_VALUE='${{ github.event.client_payload.exercise_value }}'
+          EXERCISE_GOAL='${{ github.event.client_payload.exercise_goal }}'
+          STAND_VALUE='${{ github.event.client_payload.stand_value }}'
+          STAND_GOAL='${{ github.event.client_payload.stand_goal }}'
+
+          # Validate required fields
+          if [ -z "$DATE" ] || [ -z "$MOVE_VALUE" ] || [ -z "$MOVE_GOAL" ]; then
+            echo "::error::Missing required fields in payload"
+            exit 1
+          fi
+
+          # Upsert entry: remove existing for same date, add new, sort by date
+          jq --arg date "$DATE" \
+             --argjson mv "$MOVE_VALUE" --argjson mg "$MOVE_GOAL" \
+             --argjson ev "$EXERCISE_VALUE" --argjson eg "$EXERCISE_GOAL" \
+             --argjson sv "$STAND_VALUE" --argjson sg "$STAND_GOAL" \
+             '.entries = ([.entries[] | select(.date != $date)] + [{
+               date: $date,
+               move: {value: $mv, goal: $mg},
+               exercise: {value: $ev, goal: $eg},
+               stand: {value: $sv, goal: $sg}
+             }]) | .entries |= sort_by(.date)' \
+             "$FILE" > tmp.json && mv tmp.json "$FILE"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/fitness/
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "chore: sync fitness data for ${{ github.event.client_payload.date }}"
+          git push
