@@ -1,0 +1,56 @@
+extends: substitution
+message: "Consider '%s' instead of '%s' for a more conversational tone"
+level: warning
+ignorecase: true
+swap:
+  utilize: use
+  utilizes: uses
+  utilized: used
+  utilizing: using
+  commence: start
+  commences: starts
+  commenced: started
+  commencing: starting
+  terminate: end
+  terminates: ends
+  terminated: ended
+  terminating: ending
+  regarding: about
+  obtain: get
+  obtains: gets
+  obtained: got
+  obtaining: getting
+  purchase: buy
+  purchases: buys
+  purchased: bought
+  purchasing: buying
+  however: but
+  therefore: so
+  thus: so
+  hence: so
+  consequently: so
+  additionally: also
+  furthermore: also
+  moreover: also
+  subsequently: then
+  prior to: before
+  in order to: to
+  due to the fact that: because
+  for the purpose of: to
+  in the event that: if
+  at this point in time: now
+  endeavor: try
+  ascertain: find out
+  facilitate: help
+  implement: use
+  leverage: use
+  substantial: large
+  numerous: many
+  sufficient: enough
+  require: need
+  retain: keep
+  demonstrate: show
+  indicate: show
+  perform: do
+  provides: gives
+  provided: gave

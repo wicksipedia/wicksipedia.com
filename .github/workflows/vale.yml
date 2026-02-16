@@ -1,0 +1,40 @@
+name: Prose lint
+
+on:
+  pull_request:
+    paths:
+      - 'src/data/blog/**/*.mdx'
+
+jobs:
+  vale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get changed blog posts
+        id: changed
+        run: |
+          files=$(gh pr diff ${{ github.event.pull_request.number }} --name-only | grep '^src/data/blog/.*\.mdx$' || true)
+          if [ -z "$files" ]; then
+            echo "No blog posts changed"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "$files" > /tmp/changed-posts.txt
+            echo "Changed posts:"
+            cat /tmp/changed-posts.txt
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Vale
+        if: steps.changed.outputs.found == 'true'
+        run: |
+          gh release download --repo errata-ai/vale --pattern 'vale_*_Linux_64-bit.tar.gz' --dir /tmp
+          tar xzf /tmp/vale_*_Linux_64-bit.tar.gz -C /usr/local/bin vale
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lint changed posts
+        if: steps.changed.outputs.found == 'true'
+        run: xargs vale < /tmp/changed-posts.txt

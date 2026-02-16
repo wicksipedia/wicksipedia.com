@@ -37,6 +37,7 @@ const { page, tagName } = Astro.props;
     pageTitle={[`Tag:`, `${tagName}`]}
     titleTransition={tag}
     pageDesc={`All the articles with the tag "${tagName}".`}
+    sectionLabel="Taxonomy"
   >
     <h1 slot="title" transition:name={tag}>{`Tag:${tag}`}</h1>
     <ul>

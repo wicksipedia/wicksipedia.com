@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Preferences
+
+For design/aesthetic tasks, implement changes immediately rather than spending the session exploring and planning. If a plan already exists, execute it. If no plan exists, produce a brief plan (max 10 lines) then start implementing.
+
+## UI/CSS Changes
+
+When making UI/CSS changes, always verify the result by checking for:
+
+1. Mobile vs desktop layout consistency
+2. No duplicate elements appearing at different breakpoints
+3. CSS animations actually functioning (test with a quick browser check or review keyframe/animation properties)
+
+List these checks after every UI change.
+
+When making visual/design changes, go bold on the first pass. The user prefers distinctive, punchy aesthetics over minimal or subtle changes. If unsure, err on the side of more visual impact rather than less.
+
 ## Commands
 
 ```bash
@@ -12,9 +28,20 @@ bun run deploy       # Deploy to Cloudflare Workers via wrangler
 bun run format:check # Prettier check
 bun run format       # Prettier write
 bun run lint         # ESLint (note: console.log is an error)
+vale src/data/blog/  # Prose linting (banned words/phrases)
 ```
 
 Search requires a build before it works locally (pagefind indexes `dist/`).
+
+## Blog Post Writing
+
+When writing or editing blog posts, always run Vale before considering the post done:
+
+```bash
+vale src/data/blog/path-to-post/index.mdx
+```
+
+Vale is configured (`.vale.ini` + `styles/Wicksipedia/`) to catch banned words and phrases that sound too "AI-generated" or corporate. All Vale errors must be resolved before a post is considered finished.
 
 ## Architecture
 

@@ -5,35 +5,45 @@ import { SITE } from "@/config";
 type StringTitle = { pageTitle: string };
 type ArrayTitle = { pageTitle: [string, string]; titleTransition: string };
 
-type Props = (StringTitle | ArrayTitle) & { pageDesc?: string };
+type Props = (StringTitle | ArrayTitle) & { pageDesc?: string; sectionLabel?: string };
 
 const { props } = Astro;
 
 const backUrl = SITE.showBackButton ? Astro.url.pathname : "/";
+const sectionLabel = "sectionLabel" in props ? props.sectionLabel : undefined;
 ---
 
 <Breadcrumb />
 <main data-backUrl={backUrl} id="main-content" class="app-layout pb-8">
-  <div class="pb-6 mb-2 border-b border-border/50">
+  <div class="animate-reveal pt-4 pb-6 mb-2 border-b border-border/50">
+    {/* Editorial section header */}
+    {sectionLabel && (
+      <div class="flex items-center gap-4 mb-6">
+        <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">{sectionLabel}</span>
+        <span class="flex-1 h-px bg-border/60"></span>
+      </div>
+    )}
     {
       "titleTransition" in props ? (
-        <h1 class="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+        <h1 class="font-prose text-2xl font-bold italic tracking-tight text-foreground sm:text-3xl lg:text-4xl">
           {props.pageTitle[0]}{" "}
           <span class="text-accent" transition:name={props.titleTransition}>
             {props.pageTitle[1]}
           </span>
         </h1>
       ) : (
-        <h1 class="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+        <h1 class="font-prose text-2xl font-bold italic tracking-tight text-foreground sm:text-3xl lg:text-4xl">
           {props.pageTitle}
         </h1>
       )
     }
     {props.pageDesc && (
-      <p class="mt-2 text-base text-foreground/55 font-prose">{props.pageDesc}</p>
+      <p class="mt-3 font-prose text-base leading-relaxed italic text-foreground/55">{props.pageDesc}</p>
     )}
   </div>
-  <slot />
+  <div class="animate-reveal-delay-1">
+    <slot />
+  </div>
 </main>
 
 <script>

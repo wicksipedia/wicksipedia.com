@@ -1,0 +1,305 @@
+---
+pubDatetime: 2026-02-16
+draft: false
+title: 'Speeding Up My Zsh Startup by 81%: From 640ms to 120ms'
+description: 'My Zsh shell took 640ms to start. After profiling with zprof and migrating from Antigen to Zinit, I cut it down to 120ms. Here is exactly how.'
+ogImage: ./cover.png
+tags: ['MacOS', 'Zsh', 'productivity', 'shell']
+---
+
+## The Problem
+
+My terminal was slow. Really slow. Every time I opened a new shell, there was a noticeable lag before my prompt appeared. Admittedly this was a papercut, but it made me feel like my laptop was slowing down. I don't really want to upgrade right now, and I don't really want to go scorched earth and wipe my machine to start again to get a fresh, fast terminal. So I decided to optimize my existing setup.
+
+I jumped straight into fix-it mode. Let's start with `zoxide`, that must slow down things, right? So I disabled it, which promptly broke tab completion with errors like `__zoxide_z_complete: command not found`. Great, now I have broken tab completion _and_ a slow terminal. Fantastic.
+
+I fell into the classic trap of "ready, fire, aim". I made changes without measuring first.
+
+So I needed to do what I should've from the start, I added profiling to figure out where all that time was actually going. 🤦
+
+```bash
+# Add to the top of ~/.zshrc
+zmodload zsh/zprof
+
+# Add to the bottom
+zprof
+```
+
+As usual, the results were not what I expected.
+
+## The Diagnosis
+
+**Startup time: 640ms** 🐌
+
+Here's what `zprof` revealed:
+
+| Function | Time (ms) | % of Total | Issue |
+|----------|-----------|------------|-------|
+| `compinit` | 444 | 78.87% | **Called twice!** |
+| `compdump` | 181 | 32.20% | Writing completion cache |
+| `compdef` | 123 | 21.78% | 1,633 calls! |
+| `antigen` | 317 | 56.32% | Slow plugin manager |
+| `_omz_source` | 53 | 9.33% | Loading Oh-My-Zsh plugins |
+
+That's nice, but what does it actually mean? I had no idea what `compinit` or `compdef` were doing, and I had no idea why they were taking so long. I just knew that `zoxide` was the last thing I added, so it must be the problem, right?
+
+## A Different Kind of Pair Programming
+
+I usually use GitHub Copilot for my day-to-day coding, but this week I decided to try out Claude Code for this optimization problem. The difference was notable.
+
+I pasted my `zprof` output into Claude and asked it to analyze the results. Within seconds, it identified the major culprits, and `zoxide` wasn't one of them.
+
+1. `compinit` was being called twice—once by Antigen, once by Oh-My-Zsh
+2. The plugin manager itself was eating 300ms+
+3. I had previously put in a quick fix for some plugins not working, and the full Oh-My-Zsh was loading when I only needed a handful of features
+4. I was loading a built in and external fzf plugin
+
+> Two minutes with `zprof` and a dash of AI would have saved me 20 minutes of wrong guesses. Measure first, tinker second.
+
+It suggested migrating from Antigen to Zinit. Ironically, I'd tried Zinit a few years ago when I first set up [my terminal with Antigen](/blog/terminal-setup) but couldn't get it configured quite right so I parked it. Now with the power of AI, this would be different.
+
+Here's what made it valuable: **this wasn't just handing off the problem**. I asked questions throughout:
+
+- "Why is compinit being called twice?"
+- "What's the difference between these fzf plugins?"
+- "Can we keep the OMZ git plugin features I use?"
+
+We debugged the ZLE warnings together, and I understood each change we made. It felt more like pair programming than autocomplete — and I ended up with a configuration I still understand.
+
+## What Actually Worked
+
+### Step 1: Replace Antigen with Zinit
+
+Antigen is convenient but slow. [Zinit](https://github.com/zdharma-continuum/zinit) is a modern, faster alternative. This was a great suggestion from Claude, and it did a great job of converting my setup in a couple of minutes with only a few back-and-forths to fix edge cases.
+
+```bash
+# Zinit installation (faster than antigen)
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+[ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
+[ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+source "${ZINIT_HOME}/zinit.zsh"
+```
+
+**Savings: ~200ms**
+
+### Step 2: Load Only What You Need from Oh-My-Zsh
+
+Instead of loading the entire Oh-My-Zsh framework, I cherry-picked just the libraries and plugins I actually use. I had a list of plugins at the top of my `~/.zshrc` that I wanted to keep, so I made sure to include those. I wasn't aware that I had added a call in the prompt that caused the entire framework to load.
+
+```bash
+# Load OMZ libs we need (not the whole thing)
+zinit snippet OMZL::git.zsh
+zinit snippet OMZL::theme-and-appearance.zsh
+zinit snippet OMZL::async_prompt.zsh  # Required by git plugin
+
+# Load OMZ plugins
+zinit snippet OMZP::git
+zinit snippet OMZP::brew
+zinit snippet OMZP::direnv
+zinit snippet OMZP::eza
+# Removed OMZP::fzf - using fzf-tab instead
+```
+
+This eliminated the overhead of loading unused OMZ plugins and prevented the double `compinit` call.
+
+**Savings: ~150ms**
+
+### Step 3: Loading 3rd Party Plugins
+
+```bash
+# Fast syntax highlighting and autosuggestions
+zinit light zsh-users/zsh-syntax-highlighting
+zinit light zsh-users/zsh-autosuggestions
+
+# fzf-tab for better tab completion
+zinit light Aloxaf/fzf-tab
+# Don't load fzf-tab-source - it has bugs and we don't need it
+```
+
+**Key learning**: The OMZP::fzf plugin was causing harmless but annoying ZLE warnings. Since we're using the superior `fzf-tab` plugin, we don't need it.
+
+**Savings: ~50ms + eliminated warnings**
+
+### Step 4: Load Completions Once
+
+Instead of letting multiple plugins call `compinit`, do it once explicitly:
+
+```bash
+# Load completions efficiently
+autoload -Uz compinit
+compinit
+```
+
+**Savings: ~180ms (from eliminating duplicate call)**
+
+### Step 5: Initialize Tools Properly
+
+Re-enable zoxide (it wasn't the problem after all!):
+
+```bash
+# Initialize tools
+eval "$(starship init zsh)"
+eval "$(fnm env --use-on-cd --shell zsh --version-file-strategy=recursive)"
+eval "$(zoxide init zsh)"
+```
+
+## The Results
+
+**New startup time: 120ms** 🚀
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Plugin manager | Antigen (slow) | Zinit (fast) | ✅ Upgraded |
+| ZLE Warnings | Multiple | None | ✅ Fixed |
+| `compinit` calls | 2 | 1 | ✅ Fixed |
+| Startup time | 640ms | 120ms | **81% faster** |
+
+### New `zprof` breakdown:
+
+```
+num  calls                time                       self            name
+-----------------------------------------------------------------------------------
+ 1)  508          16.88     0.03   19.72%     14.13     0.03   16.50%  :zinit-tmp-subst-alias
+ 2)    2          11.05     5.53   12.91%     11.05     5.53   12.91%  compaudit
+ 3)    7          12.58     1.80   14.70%      9.23     1.32   10.78%  .zinit-load-snippet
+ 4)    1          19.04    19.04   22.24%      7.99     7.99    9.33%  compinit
+ 5)    4          43.43    10.86   50.73%      6.23     1.56    7.28%  .zinit-load-plugin
+ 6)    1           5.07     5.07    5.92%      5.07     5.07    5.92%  _fnm_autoload_hook
+```
+
+
+## Cleanup: Removing Old Caches
+
+After migrating to Zinit, I cleaned up the old Antigen cache:
+
+```bash
+#!/bin/bash
+# Remove old antigen cache
+rm -rf ~/.antigen
+
+# Clean old completion dumps
+rm -f ~/.zcompdump*
+
+# Regenerate fresh cache
+zsh -i -c "autoload -Uz compinit && compinit -C"
+```
+
+## The Complete Configuration
+
+Here's the final `~/.zshrc`:
+
+```bash
+# used for debugging and profiling - uncomment if needed
+# zmodload zsh/zprof
+
+# Zinit installation (faster than antigen)
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+[ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
+[ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+source "${ZINIT_HOME}/zinit.zsh"
+
+# Load OMZ libs we need (not the whole thing)
+zinit snippet OMZL::git.zsh
+zinit snippet OMZL::theme-and-appearance.zsh
+zinit snippet OMZL::async_prompt.zsh
+
+# eza config - must be set BEFORE loading the plugin
+zstyle ':omz:plugins:eza' 'dirs-first' yes
+zstyle ':omz:plugins:eza' 'git-status' yes
+zstyle ':omz:plugins:eza' 'header' yes
+zstyle ':omz:plugins:eza' 'icons' yes
+
+# Load OMZ plugins
+zinit snippet OMZP::git
+zinit snippet OMZP::brew
+zinit snippet OMZP::direnv
+zinit snippet OMZP::eza
+
+# Fast syntax highlighting and autosuggestions
+zinit light zsh-users/zsh-syntax-highlighting
+zinit light zsh-users/zsh-autosuggestions
+
+# fzf-tab
+zinit light Aloxaf/fzf-tab
+
+# Load completions efficiently (after prompt is ready)
+autoload -Uz compinit
+compinit
+
+# Initialize tools - these need to load synchronously
+eval "$(starship init zsh)"
+eval "$(fnm env --use-on-cd --shell zsh --version-file-strategy=recursive)"
+eval "$(zoxide init zsh)"
+
+export HOMEBREW_AUTO_UPDATE_SECS="86400"
+
+# history setup
+HISTFILE=$HOME/.zhistory
+SAVEHIST=1000
+HISTSIZE=999
+setopt share_history
+setopt hist_expire_dups_first
+setopt hist_ignore_dups
+setopt hist_verify
+
+# Aliases
+alias code=code-insiders
+alias d=dotnet
+alias db="dotnet build"
+alias dw="dotnet watch"
+alias dr="dotnet run"
+alias dt="dotnet test"
+alias gprune='git branch --merged origin/$(git_main_branch) | xargs git branch -d'
+alias zshconfig="code ~/.zshrc"
+
+# pnpm
+export PNPM_HOME="/Users/matt/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# RVM
+export PATH="$PATH:$HOME/.rvm/bin"
+
+# Aspire
+export PATH="$HOME/.aspire/bin:$PATH"
+
+# vscode integration
+[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
+
+# used for profiling only 
+# zprof
+```
+
+## Try It Yourself
+
+1. **First, profile your current setup**:
+   ```bash
+   # Add to top of ~/.zshrc
+   zmodload zsh/zprof
+
+   ...
+
+   # Add to bottom of ~/.zshrc
+   zprof
+   ```
+
+2. **Measure your startup time**:
+   ```bash
+   for i in {1..5}; do /usr/bin/time zsh -i -c exit 2>&1 | grep real; done
+   ```
+
+3. **Review the `zprof` output** to identify your actual bottlenecks (don't guess like I did!)
+
+4. **Optimize based on what the data shows**
+
+5. **Measure again** to verify your improvements
+
+## Wrapping Up
+
+Your terminal is where you spend a huge chunk of your dev time. If yours feels sluggish, don't guess — profile it first. My intuition was completely wrong, and two minutes with `zprof` saved me from going down the wrong rabbit hole.
+
+**Data > Intuition.** Always.
+
+Happy profiling! ⚡

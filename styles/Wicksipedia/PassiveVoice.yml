@@ -1,0 +1,17 @@
+extends: existence
+message: "Passive voice detected: '%s'. Consider active voice for a more direct tone."
+level: suggestion
+ignorecase: false
+raw:
+  - '\b(am|is|are|was|were|be|been|being) ([a-z]+ed|[a-z]+en)\b'
+exceptions:
+  - was wondering
+  - were wondering
+  - are done
+  - is done
+  - was done
+  - were done
+  - is based
+  - are based
+  - was based
+  - were based

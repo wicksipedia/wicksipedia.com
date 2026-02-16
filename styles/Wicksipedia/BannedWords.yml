@@ -1,0 +1,30 @@
+extends: existence
+message: "Banned word '%s' — consider using an alternative."
+level: error
+ignorecase: true
+tokens:
+  - opt
+  - dive
+  - unlock
+  - unleash
+  - intricate
+  - utilization
+  - transformative
+  - alignment
+  - proactive
+  - scalable
+  - delve
+  - landscape
+  - evolving
+  - nuanced
+  - paradigm
+  - comprehensive
+  - holistic
+  - synergy
+  - pivotal
+  - robust
+  - empower
+  - enables
+  - transforms
+  - solution
+  - optimized
