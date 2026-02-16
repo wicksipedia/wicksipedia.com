@@ -25,5 +25,8 @@ pnpm-debug.log*
 .idea/
 
 # pagefind
-
 public/pagefind
+
+# TinaCMS
+tina/__generated__
+public/admin
