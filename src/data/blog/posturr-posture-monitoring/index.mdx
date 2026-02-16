@@ -1,0 +1,58 @@
+---
+pubDatetime: 2026-02-17
+draft: false
+title: 'Your Mac Can See You Slouching'
+description: 'My back hurts. I slouch at my desk all day and forget to sit up straight. Posturr blurs your screen when your posture drops, which turns out to be the nudge I actually needed.'
+ogImage: ./cover.png
+tags: ['MacOS', 'productivity', 'health']
+---
+
+I'm getting old. My back hurts. I sit at my desk for hours and by 3pm I'm basically horizontal, wondering why my neck is stiff and my lower back is angry at me.
+
+I've tried the usual stuff. We've got standing desks at work, and sometimes I stand for about 20 minutes but then I sit and forget to do it again. My watch tells me to "stand up" every hour, but I've worked out that I can just dangle my arm over the side of the chair and it thinks that I'm standing. I still don't know why I don't close my standing rings every day though.
+
+The problem with all of these is that they're easy to ignore. I needed something I couldn't ignore.
+
+## What If Your Screen Fought Back?
+
+[Posturr](https://github.com/tldev/posturr) is a macOS menu bar app that progressively blurs your screen when you slouch. The worse your posture gets, the blurrier your screen gets. Sit up straight, and it clears immediately.
+
+That's the whole thing. So far it's working.
+
+You can't dismiss a blur. You can't snooze it. Your screen is blurry and you can't read your code until you fix your posture. I've tried ignoring it. You can't.
+
+## How It Knows
+
+Posturr has two tracking modes:
+
+1. **Camera Mode** — Uses your Mac's camera and Apple's Vision framework to track your head and body position.
+2. **AirPods Mode** — Uses the motion sensors in AirPods Pro/Max to detect head tilt. No camera needed. Requires macOS 14.0+.
+
+I usually have my AirPods in when I'm working, so AirPods mode was a no brainer.
+
+Both modes process everything locally on your Mac. No cloud, no account, no data leaving your machine. For AirPods mode, it's reading the same motion sensor data that Apple Music uses for spatial audio.
+
+## Setup
+
+Homebrew, as usual:
+
+```bash
+brew install posturr
+```
+
+First launch, it'll ask for camera permissions and motion tracking permissions. Then you calibrate by sitting in your "good posture" position by looking at different points on your screen and pressing the spacebar. That's your baseline.
+
+I have multiple monitors, so it asked me to look at the corners of each screen to calibrate properly. It took about 20 seconds total.
+
+## The First Week
+
+I won't lie, the first couple of days were rough. I didn't realize how often I slouch until my screen was blurry a few times a day. Even writing this post, I had to sit up straight a few times to clear the blur.
+
+But that's the point. Hopefully, I'll start catching myself before the blur kicks in. Muscle memory is real, you just need something obnoxious enough to build the habit.
+
+If you spend your days at a desk and your back reminds you about it every evening, it's worth a look. It's free, open source, and takes about 30 seconds to set up.
+
+---
+
+**Links:**
+- GitHub: [github.com/tldev/posturr](https://github.com/tldev/posturr)
