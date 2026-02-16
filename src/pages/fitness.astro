@@ -5,12 +5,28 @@ import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import FitnessRings from "@/components/FitnessRings.astro";
 import { SITE } from "@/config";
+import { getCollection } from "astro:content";
+import { getPath } from "@/utils/getPath";
+import getSortedPosts from "@/utils/getSortedPosts";
 
 // Import all year files from src/data/fitness/
 const yearFiles = import.meta.glob<{ entries: Array<{ date: string; move: { value: number; goal: number }; exercise: { value: number; goal: number }; stand: { value: number; goal: number } }> }>("@/data/fitness/*.json", { eager: true });
 
 // Merge all entries from all year files
 const entries = Object.values(yearFiles).flatMap(f => f.entries);
+
+// Build a map of date (YYYY-MM-DD) → blog posts published that day
+const allPosts = getSortedPosts(await getCollection("blog", ({ data }) => !data.draft));
+const postsByDate: Record<string, Array<{ title: string; href: string }>> = {};
+for (const post of allPosts) {
+  const date = new Date(post.data.pubDatetime);
+  const dateStr = date.toLocaleDateString("en-CA", { timeZone: SITE.timezone }); // en-CA gives YYYY-MM-DD
+  if (!postsByDate[dateStr]) postsByDate[dateStr] = [];
+  postsByDate[dateStr].push({
+    title: post.data.title,
+    href: getPath(post.id, post.filePath),
+  });
+}
 ---
 
 <Layout title={`Fitness | ${SITE.title}`}>
@@ -41,7 +57,7 @@ const entries = Object.values(yearFiles).flatMap(f => f.entries);
 
         <pre class="bg-yellow-300 py-2 text-center">// TODO: Write a blog post about this setup — Apple Shortcut → GitHub Action → Astro page</pre>
     </div>
-    <FitnessRings entries={entries} />
+    <FitnessRings entries={entries} postsByDate={postsByDate} />
   </Main>
   <Footer />
 </Layout>

@@ -11,16 +11,23 @@ interface FitnessEntry {
   stand: RingData;
 }
 
-interface Props {
-  entries: FitnessEntry[];
+interface BlogPost {
+  title: string;
+  href: string;
 }
 
-const { entries } = Astro.props;
+interface Props {
+  entries: FitnessEntry[];
+  postsByDate: Record<string, BlogPost[]>;
+}
+
+const { entries, postsByDate } = Astro.props;
 ---
 
 <div
   id="fitness-rings"
   data-entries={JSON.stringify(entries)}
+  data-posts={JSON.stringify(postsByDate)}
 >
   <!-- Month navigation -->
   <div class="flex items-center justify-between mb-6">
@@ -82,6 +89,10 @@ const { entries } = Astro.props;
         <span id="fitness-detail-stand-unit" class="text-xs text-foreground/50">hrs</span>
       </div>
     </div>
+    <div id="fitness-detail-posts" class="mt-4 pt-4 border-t border-border/40 hidden">
+      <span class="text-xs font-semibold uppercase tracking-widest text-foreground/40 mb-2 block">Published</span>
+      <ul id="fitness-detail-posts-list" class="space-y-1"></ul>
+    </div>
   </div>
 
   <!-- Empty state -->
@@ -105,6 +116,9 @@ const { entries } = Astro.props;
       exercise: { value: number; goal: number };
       stand: { value: number; goal: number };
     }> = JSON.parse(container.dataset.entries || "[]");
+
+    const postsByDate: Record<string, Array<{ title: string; href: string }>> =
+      JSON.parse(container.dataset.posts || "{}");
 
     // Index entries by date
     const entryMap = new Map<string, (typeof entries)[0]>();
@@ -309,6 +323,20 @@ const { entries } = Astro.props;
         `${Math.round(entry.exercise.value)} / ${Math.round(entry.exercise.goal)}`;
       document.getElementById("fitness-detail-stand-val")!.textContent =
         `${Math.round(entry.stand.value)} / ${Math.round(entry.stand.goal)}`;
+
+      // Blog posts for this day
+      const postsContainer = document.getElementById("fitness-detail-posts")!;
+      const postsList = document.getElementById("fitness-detail-posts-list")!;
+      const posts = postsByDate[selectedDate];
+      if (posts && posts.length > 0) {
+        postsContainer.classList.remove("hidden");
+        postsList.innerHTML = posts.map(p =>
+          `<li><a href="${p.href}" class="text-sm text-accent hover:underline">${p.title}</a></li>`
+        ).join("");
+      } else {
+        postsContainer.classList.add("hidden");
+        postsList.innerHTML = "";
+      }
     }
 
     function ringsSvgSingle(
