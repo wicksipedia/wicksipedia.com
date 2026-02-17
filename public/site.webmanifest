@@ -27,7 +27,9 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity"],
+  "categories": [
+    "productivity"
+  ],
   "lang": "en",
   "dir": "ltr"
 }

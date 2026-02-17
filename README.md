@@ -33,15 +33,15 @@ bun run dev
 
 ### Other Commands
 
-| Command                | Action                                         |
-| :--------------------- | :--------------------------------------------- |
-| `bun run dev`          | Start dev server at `localhost:4321`           |
-| `bun run build`        | Type-check, build, and generate Pagefind index |
-| `bun run preview`      | Build and preview with Wrangler                |
-| `bun run deploy`       | Deploy to Cloudflare Workers                   |
-| `bun run format:check` | Check formatting with Prettier                 |
-| `bun run format`       | Format code with Prettier                      |
-| `bun run lint`         | Lint with ESLint                               |
+| Command                | Action                                            |
+| :--------------------- | :------------------------------------------------ |
+| `bun run dev`          | Start dev server at `localhost:4321`               |
+| `bun run build`        | Type-check, build, and generate Pagefind index     |
+| `bun run preview`      | Build and preview with Wrangler                    |
+| `bun run deploy`       | Deploy to Cloudflare Workers                       |
+| `bun run format:check` | Check formatting with Prettier                     |
+| `bun run format`       | Format code with Prettier                          |
+| `bun run lint`         | Lint with ESLint                                   |
 
 > Search requires a build before it works locally, since Pagefind indexes the `dist/` output.
 

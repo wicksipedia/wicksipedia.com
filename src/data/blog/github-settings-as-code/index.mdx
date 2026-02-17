@@ -23,78 +23,78 @@ This has a few benefits:
 - it's easy to see all the settings in one place
 - settings changes are stored as commits making it easy to trace
 - we don't need to hand out admin access - not maintainers can make these changes (delegated through Probot)
-
+  
 ## Steps to get it running
 
 1. Install the [Probot Settings app](https://probot.github.io/apps/settings/)
 2. Create a `.github/settings.yml` file in your repository
 
-   ```yaml
-   repository:
-   # See https://developer.github.com/v3/repos/#edit for all available settings.
+    ``` yaml
+    repository:
+    # See https://developer.github.com/v3/repos/#edit for all available settings.
 
-   # The name of the repository. Changing this will rename the repository
-   name: repo-name
+    # The name of the repository. Changing this will rename the repository
+    name: repo-name
 
-   # A short description of the repository that will show up on GitHub
-   description: description of repo
+    # A short description of the repository that will show up on GitHub
+    description: description of repo
 
-   # A URL with more information about the repository
-   homepage: https://example.github.io/
+    # A URL with more information about the repository
+    homepage: https://example.github.io/
 
-   # Either `true` to make the repository private, or `false` to make it public.
-   private: false
+    # Either `true` to make the repository private, or `false` to make it public.
+    private: false
 
-   # Either `true` to enable issues for this repository, `false` to disable them.
-   has_issues: true
+    # Either `true` to enable issues for this repository, `false` to disable them.
+    has_issues: true
 
-   # Either `true` to enable the wiki for this repository, `false` to disable it.
-   has_wiki: true
+    # Either `true` to enable the wiki for this repository, `false` to disable it.
+    has_wiki: true
 
-   # Either `true` to enable downloads for this repository, `false` to disable them.
-   has_downloads: true
+    # Either `true` to enable downloads for this repository, `false` to disable them.
+    has_downloads: true
 
-   # Updates the default branch for this repository.
-   default_branch: main
+    # Updates the default branch for this repository.
+    default_branch: main
 
-   # Either `true` to allow squash-merging pull requests, or `false` to prevent
-   # squash-merging.
-   allow_squash_merge: true
+    # Either `true` to allow squash-merging pull requests, or `false` to prevent
+    # squash-merging.
+    allow_squash_merge: true
 
-   # Either `true` to allow merging pull requests with a merge commit, or `false`
-   # to prevent merging pull requests with merge commits.
-   allow_merge_commit: true
+    # Either `true` to allow merging pull requests with a merge commit, or `false`
+    # to prevent merging pull requests with merge commits.
+    allow_merge_commit: true
 
-   # Either `true` to allow rebase-merging pull requests, or `false` to prevent
-   # rebase-merging.
-   allow_rebase_merge: true
+    # Either `true` to allow rebase-merging pull requests, or `false` to prevent
+    # rebase-merging.
+    allow_rebase_merge: true
 
-   # Labels: define labels for Issues and Pull Requests
-   labels:
-     - name: bug
-       color: CC0000
-     - name: feature
-       color: 336699
-     - name: first-timers-only
-       # include the old name to rename and existing label
-       oldname: Help Wanted
+    # Labels: define labels for Issues and Pull Requests
+    labels:
+      - name: bug
+        color: CC0000
+      - name: feature
+        color: 336699
+      - name: first-timers-only
+        # include the old name to rename and existing label
+        oldname: Help Wanted
 
-   # Collaborators: give specific users access to this repository.
-   collaborators:
-     - username: bkeepers
-       # Note: Only valid on organization-owned repositories.
-       # The permission to grant the collaborator. Can be one of:
-       # * `pull` - can pull, but not push to or administer this repository.
-       # * `push` - can pull and push, but not administer this repository.
-       # * `admin` - can pull, push and administer this repository.
-       permission: push
+    # Collaborators: give specific users access to this repository.
+    collaborators:
+      - username: bkeepers
+        # Note: Only valid on organization-owned repositories.
+        # The permission to grant the collaborator. Can be one of:
+        # * `pull` - can pull, but not push to or administer this repository.
+        # * `push` - can pull and push, but not administer this repository.
+        # * `admin` - can pull, push and administer this repository.
+        permission: push
 
-     - username: hubot
-       permission: pull
+      - username: hubot
+        permission: pull
 
-     - username:
-       permission: pull
-   ```
+      - username:
+        permission: pull
+    ```
 
 ## Wait a minute
 
@@ -110,7 +110,7 @@ OK, let's assume that this is a a hole that needs to be plugged.
 
 Thankfully we can use the [`CODEOWNERS`](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) file to automatically request specific reviewers when people open pull requests that make changes to files. In this case, we could put in a pattern that like:
 
-```text
+``` text
 .github/settings.yml @org/team-leads
 ```
 
@@ -118,7 +118,7 @@ That way when someone modifies the settings file and opens a PR, the 'team-leads
 
 So we'll go back to the settings yaml and put a little snippet in there to complete the loop.
 
-```yaml
+``` yaml
 branches:
   - name: main
     # https://docs.github.com/en/rest/reference/repos#update-branch-protection

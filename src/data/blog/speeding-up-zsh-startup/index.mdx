@@ -1,10 +1,10 @@
 ---
 pubDatetime: 2026-02-16
 draft: false
-title: "Speeding Up My Zsh Startup by 81%: From 640ms to 120ms"
-description: "My Zsh shell took 640ms to start. After profiling with zprof and migrating from Antigen to Zinit, I cut it down to 120ms. Here is exactly how."
+title: 'Speeding Up My Zsh Startup by 81%: From 640ms to 120ms'
+description: 'My Zsh shell took 640ms to start. After profiling with zprof and migrating from Antigen to Zinit, I cut it down to 120ms. Here is exactly how.'
 ogImage: ./cover.png
-tags: ["MacOS", "Zsh", "productivity", "shell"]
+tags: ['MacOS', 'Zsh', 'productivity', 'shell']
 ---
 
 ## The Problem
@@ -33,13 +33,13 @@ As usual, the results were not what I expected.
 
 Here's what `zprof` revealed:
 
-| Function      | Time (ms) | % of Total | Issue                     |
-| ------------- | --------- | ---------- | ------------------------- |
-| `compinit`    | 444       | 78.87%     | **Called twice!**         |
-| `compdump`    | 181       | 32.20%     | Writing completion cache  |
-| `compdef`     | 123       | 21.78%     | 1,633 calls!              |
-| `antigen`     | 317       | 56.32%     | Slow plugin manager       |
-| `_omz_source` | 53        | 9.33%      | Loading Oh-My-Zsh plugins |
+| Function | Time (ms) | % of Total | Issue |
+|----------|-----------|------------|-------|
+| `compinit` | 444 | 78.87% | **Called twice!** |
+| `compdump` | 181 | 32.20% | Writing completion cache |
+| `compdef` | 123 | 21.78% | 1,633 calls! |
+| `antigen` | 317 | 56.32% | Slow plugin manager |
+| `_omz_source` | 53 | 9.33% | Loading Oh-My-Zsh plugins |
 
 That's nice, but what does it actually mean? I had no idea what `compinit` or `compdef` were doing, and I had no idea why they were taking so long. I just knew that `zoxide` was the last thing I added, so it must be the problem, right?
 
@@ -147,12 +147,12 @@ eval "$(zoxide init zsh)"
 
 **New startup time: 120ms** 🚀
 
-| Metric           | Before         | After        | Improvement    |
-| ---------------- | -------------- | ------------ | -------------- |
-| Plugin manager   | Antigen (slow) | Zinit (fast) | ✅ Upgraded    |
-| ZLE Warnings     | Multiple       | None         | ✅ Fixed       |
-| `compinit` calls | 2              | 1            | ✅ Fixed       |
-| Startup time     | 640ms          | 120ms        | **81% faster** |
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Plugin manager | Antigen (slow) | Zinit (fast) | ✅ Upgraded |
+| ZLE Warnings | Multiple | None | ✅ Fixed |
+| `compinit` calls | 2 | 1 | ✅ Fixed |
+| Startup time | 640ms | 120ms | **81% faster** |
 
 ### New `zprof` breakdown:
 
@@ -166,6 +166,7 @@ num  calls                time                       self            name
  5)    4          43.43    10.86   50.73%      6.23     1.56    7.28%  .zinit-load-plugin
  6)    1           5.07     5.07    5.92%      5.07     5.07    5.92%  _fnm_autoload_hook
 ```
+
 
 ## Cleanup: Removing Old Caches
 
@@ -267,14 +268,13 @@ export PATH="$HOME/.aspire/bin:$PATH"
 # vscode integration
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"
 
-# used for profiling only
+# used for profiling only 
 # zprof
 ```
 
 ## Try It Yourself
 
 1. **First, profile your current setup**:
-
    ```bash
    # Add to top of ~/.zshrc
    zmodload zsh/zprof
@@ -286,7 +286,6 @@ export PATH="$HOME/.aspire/bin:$PATH"
    ```
 
 2. **Measure your startup time**:
-
    ```bash
    for i in {1..5}; do /usr/bin/time zsh -i -c exit 2>&1 | grep real; done
    ```
