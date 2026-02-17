@@ -137,7 +137,9 @@ const navLinks = [
 <script>
   const IS_DEV = import.meta.env.DEV;
 
-  let pagefindModule: { search: (term: string) => Promise<{ results: { data: () => Promise<{ url: string; meta: { title: string }; excerpt: string }> }[] }> } | null = null;
+  interface SubResult { title: string; url: string; excerpt: string }
+  interface PagefindResult { url: string; meta: { title: string }; excerpt: string; sub_results: SubResult[] }
+  let pagefindModule: { search: (term: string) => Promise<{ results: { data: () => Promise<PagefindResult> }[] }> } | null = null;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let activeIndex = -1;
   let currentItems: HTMLElement[] = [];
@@ -260,15 +262,6 @@ const navLinks = [
     showResultsGroup();
     document.getElementById("cmd-k-loading")?.classList.remove("hidden");
 
-    if (IS_DEV) {
-      document.getElementById("cmd-k-loading")?.classList.add("hidden");
-      document.getElementById("cmd-k-results-group")?.classList.add("hidden");
-      document.getElementById("cmd-k-dev-warning")?.classList.remove("hidden");
-      currentItems = [];
-      setActiveIndex(-1);
-      return;
-    }
-
     try {
       const pf = await getPagefind();
       // @ts-expect-error — dynamic API
@@ -287,44 +280,77 @@ const navLinks = [
       }
 
       const sliced = results.slice(0, 8);
-      const dataArr = await Promise.all(sliced.map((r: { data: () => Promise<{ url: string; meta: { title: string }; excerpt: string }> }) => r.data()));
+      const dataArr = await Promise.all(sliced.map((r: { data: () => Promise<PagefindResult> }) => r.data()));
 
       const container = document.getElementById("cmd-k-results");
       if (!container) return;
 
+      let itemIndex = 0;
       container.innerHTML = dataArr
-        .map(
-          (data: { url: string; meta: { title: string }; excerpt: string }, i: number) => `
-          <a
-            href="${data.url}"
-            class="cmd-item group flex flex-col gap-0.5 px-4 py-2.5 text-sm outline-none transition-none"
-            role="option"
-            data-index="${i}"
-            data-url="${data.url}"
-            aria-selected="false"
-          >
-            <span class="flex items-center gap-2.5">
-              <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none shrink-0">→</span>
-              <span class="font-semibold text-foreground/90 group-[.is-active]:text-accent truncate">${data.meta.title}</span>
-            </span>
-            <span class="pl-[1.375rem] text-xs text-foreground/40 line-clamp-1 leading-relaxed">${data.excerpt.replace(/<[^>]+>/g, "")}</span>
-          </a>
-        `
-        )
+        .map((data: PagefindResult) => {
+          // Get sub-results (skip the first one if its title matches the page title, since we already show it)
+          const subs = (data.sub_results || [])
+            .filter(s => s.title !== data.meta.title)
+            .slice(0, 3);
+
+          // Main result item
+          const mainIdx = itemIndex++;
+          const mainItem = `
+            <a
+              href="${data.url}"
+              class="cmd-item group flex flex-col gap-0.5 px-4 py-2.5 text-sm outline-none transition-none"
+              role="option"
+              data-index="${mainIdx}"
+              data-url="${data.url}"
+              aria-selected="false"
+            >
+              <span class="flex items-center gap-2.5">
+                <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none shrink-0">→</span>
+                <span class="font-semibold text-foreground/90 group-[.is-active]:text-accent truncate">${data.meta.title}</span>
+              </span>
+              <span class="pl-[1.375rem] text-xs text-foreground/40 line-clamp-1 leading-relaxed [&_mark]:bg-accent/20 [&_mark]:text-accent [&_mark]:rounded-sm [&_mark]:px-px">${data.excerpt}</span>
+            </a>`;
+
+          // Sub-result items
+          const subItems = subs.map(sub => {
+            const idx = itemIndex++;
+            return `
+              <a
+                href="${sub.url}"
+                class="cmd-item group flex flex-col gap-0.5 px-4 py-2 text-sm outline-none transition-none border-l-2 border-border/30 ml-7"
+                role="option"
+                data-index="${idx}"
+                data-url="${sub.url}"
+                aria-selected="false"
+              >
+                <span class="flex items-center gap-2">
+                  <span class="font-mono text-accent/40 group-[.is-active]:text-accent text-[0.6rem] select-none shrink-0">↳</span>
+                  <span class="text-xs font-medium text-foreground/70 group-[.is-active]:text-accent truncate">${sub.title}</span>
+                </span>
+                <span class="pl-[1.125rem] text-[0.7rem] text-foreground/35 line-clamp-1 leading-relaxed [&_mark]:bg-accent/20 [&_mark]:text-accent [&_mark]:rounded-sm [&_mark]:px-px">${sub.excerpt}</span>
+              </a>`;
+          }).join("");
+
+          return mainItem + subItems;
+        })
         .join("");
 
       currentItems = Array.from(container.querySelectorAll<HTMLElement>(".cmd-item"));
       setActiveIndex(-1);
     } catch {
       document.getElementById("cmd-k-loading")?.classList.add("hidden");
-      document.getElementById("cmd-k-empty")?.classList.remove("hidden");
+      if (IS_DEV) {
+        document.getElementById("cmd-k-results-group")?.classList.add("hidden");
+        document.getElementById("cmd-k-dev-warning")?.classList.remove("hidden");
+      } else {
+        document.getElementById("cmd-k-empty")?.classList.remove("hidden");
+      }
       currentItems = [];
     }
   }
 
   function initCommandPalette() {
     const backdrop = getBackdrop();
-    const overlay = document.getElementById("cmd-k-overlay");
     const input = getInput();
     const trigger = document.getElementById("cmd-k-trigger");
 
@@ -333,11 +359,13 @@ const navLinks = [
     // Open via trigger button
     trigger?.addEventListener("click", openPalette);
 
-    // Close on overlay click
-    overlay?.addEventListener("click", closePalette);
-
-    // Stop modal clicks from bubbling to overlay
-    document.getElementById("cmd-k-modal")?.addEventListener("click", e => e.stopPropagation());
+    // Close on click outside the modal
+    backdrop?.addEventListener("click", e => {
+      const modal = document.getElementById("cmd-k-modal");
+      if (modal && !modal.contains(e.target as Node)) {
+        closePalette();
+      }
+    });
 
     // Input handler with debounce
     input.addEventListener("input", () => {
