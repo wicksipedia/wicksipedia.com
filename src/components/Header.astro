@@ -125,18 +125,19 @@ const iconBtn =
 
           <li class="hidden h-5 w-px bg-border/60 sm:block mx-1" aria-hidden="true"></li>
           <li class="flex items-center justify-center">
-            <LinkButton
-              href="/search"
-              class:list={[
-                iconBtn,
-                { "[&>svg]:stroke-accent": isActive("/search") },
-              ]}
-              title="Search"
-              aria-label="search"
+            <button
+              id="cmd-k-trigger"
+              class="group flex h-9 items-center gap-1 rounded-lg px-2 text-foreground/75 transition-all duration-150 hover:bg-accent/10 hover:text-accent"
+              title="Search (⌘K)"
+              aria-label="Search"
+              aria-keyshortcuts="Meta+k Control+k"
             >
-              <IconSearch />
-              <span class="sr-only">Search</span>
-            </LinkButton>
+              <IconSearch class="size-4 shrink-0" />
+              <span class="hidden sm:flex items-center gap-px">
+                <kbd class="rounded border border-border/60 px-1 py-px font-mono text-[0.6rem] text-foreground/35 transition-colors group-hover:border-accent/30 group-hover:text-accent/60">⌘</kbd>
+                <kbd class="rounded border border-border/60 px-1 py-px font-mono text-[0.6rem] text-foreground/35 transition-colors group-hover:border-accent/30 group-hover:text-accent/60">K</kbd>
+              </span>
+            </button>
           </li>
           {
             SITE.lightAndDarkMode && (
