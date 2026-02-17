@@ -1,14 +1,14 @@
 ---
 pubDatetime: 2020-08-16
 title: Git and diffs
-description: What do you do when you are trying to work out what has happenned over the span of a few commits?
+description: Learn how to diff changes across multiple commits in Git and Azure DevOps. Compare file changes over time with these practical diffing techniques and examples.
 ogImage: ./cover.jpg
 tags: [git]
 ---
 
 Cover image by Ross Findon (@rossf) on [unsplash](https://unsplash.com/photos/mG28olYFgHI)
 
-A while back one of my colleagues was investigating an issue on a project he had just re-joined. There had been a lot of work done on various facets of the solution (from memory there were React and Xamarin front ends and a .NET Core API).
+A while back one of my colleagues was investigating an issue on a project he had just re-joined. There had been a lot of work done on various facets of the codebase (from memory there were React and Xamarin front ends and a .NET Core API).
 
 ## The Problem
 
@@ -24,7 +24,7 @@ He wanted to see all the changes from when he last worked on the Xamarin project
    ![In Azure DevOps you can see the history of commits for a specific folder](./azdo-history.png)
    This lists the specific commits that have changed files under the path but not the **actual** changes which is what he needed (he'd need to click on each commit, find the file(s) and look at the changes -> very time consuming)
 
-2. Unknown choice - I'm sure there's a nice GUI that could do this with a click-click-done, but he didn't have one already so this wasn't a feasible solution
+2. Unknown choice - I'm sure there's a nice GUI that could do this with a click-click-done, but he didn't have one already so this wasn't a feasible option
 
 3. Good choice - Grab the SHA of the last commit he worked on and run a quick git command - here's an example for the repo that creates this site
 
@@ -37,9 +37,9 @@ He wanted to see all the changes from when he last worked on the Xamarin project
 
 After he ran this command, he was able to scroll through and see what had changed on the project - which helped him track down the issue (and when it was introduced).
 
-The advantage of the terminal solution was that:
+The advantage of the terminal approach was that:
 
-- it can work for both folders and files (even wih file globs)
+- it can work for both folders and files (even with file globs)
 - it can be re-scoped by changing the commit range
 - if you have git installed - you can run the command
 

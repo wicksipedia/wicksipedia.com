@@ -27,3 +27,7 @@ pnpm-debug.log*
 # pagefind
 
 public/pagefind
+
+# vale binary
+vale
+vale_*.tar.gz

@@ -1,7 +1,7 @@
 ---
 pubDatetime: 2022-03-13
 title: GitHub settings as code
-description: How/why you should apply code policies to your GitHub repo's settings
+description: Codify your GitHub repository settings to streamline configuration, track changes, and enforce branch protection policies without manual admin access.
 ogImage: ./config-as-code.png
 tags:
   - GitHub
@@ -15,7 +15,7 @@ Usually to make that happen, we give out admin rights and then resind them. 🤮
 - it's hard to keep track of what changed
 - forgetting to remove admin rights is a big risk
 
-Thankfully Probot has a better solution to this dilemma. We update a file stored in the repo (`.github/settings.yml`). After committing and pushing the file, the [Probot Settings app](https://probot.github.io/apps/settings/) kicks in and makes sure that the repository settings match what the file says.
+Thankfully Probot has a better approach to this dilemma. We update a file stored in the repo (`.github/settings.yml`). After committing and pushing the file, the [Probot Settings app](https://probot.github.io/apps/settings/) kicks in and makes sure that the repository settings match what the file says.
 
 This has a few benefits:
 
