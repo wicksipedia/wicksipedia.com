@@ -3,7 +3,7 @@ name: Prose lint
 on:
   pull_request:
     paths:
-      - 'src/data/blog/**/*.mdx'
+      - "src/data/blog/**/*.mdx"
 
 jobs:
   vale:

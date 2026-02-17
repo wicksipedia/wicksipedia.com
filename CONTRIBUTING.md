@@ -42,10 +42,12 @@ This guide explains how to work with this AstroPaper-based blog site. Keep this 
 Store blog posts as markdown files in `src/data/blog/`.
 
 **Directory Organization** (v5.1.0+):
+
 - Subdirectories affect URLs: `src/data/blog/2025/post.md` → `/posts/2025/post`
 - Prefix with `_` to ignore in URL: `src/data/blog/_2026/post.md` → `/posts/post`
 
 Example structure:
+
 ```bash
 src/data/blog/
 ├── my-first-post.md              # /posts/my-first-post
@@ -61,27 +63,28 @@ Every post requires frontmatter in YAML format:
 
 ```yaml
 ---
-title: Your Post Title                    # Required
-description: Post description for SEO     # Required
-pubDatetime: 2024-01-23T10:00:00Z        # Required (ISO 8601)
-modDatetime: 2024-01-24T15:30:00Z        # Optional (add when modified)
-author: Matt Wicks                        # Default from config
-slug: custom-url-slug                     # Optional (auto-generated from filename)
-featured: false                           # Show in featured section
-draft: false                              # Hide from production
-tags:                                     # Array of tags
+title: Your Post Title # Required
+description: Post description for SEO # Required
+pubDatetime: 2024-01-23T10:00:00Z # Required (ISO 8601)
+modDatetime: 2024-01-24T15:30:00Z # Optional (add when modified)
+author: Matt Wicks # Default from config
+slug: custom-url-slug # Optional (auto-generated from filename)
+featured: false # Show in featured section
+draft: false # Hide from production
+tags: # Array of tags
   - technology
   - programming
-ogImage: ../../assets/images/post.jpg    # Optional OG image
-canonicalURL: https://example.com/post   # If reposted from elsewhere
-hideEditPost: false                       # Hide edit button
-timezone: Australia/Sydney                # Override global timezone
+ogImage: ../../assets/images/post.jpg # Optional OG image
+canonicalURL: https://example.com/post # If reposted from elsewhere
+hideEditPost: false # Hide edit button
+timezone: Australia/Sydney # Override global timezone
 ---
 ```
 
 **Getting ISO 8601 datetime:**
+
 ```javascript
-new Date().toISOString()  // Run in browser console
+new Date().toISOString(); // Run in browser console
 ```
 
 ### Content Guidelines
@@ -89,19 +92,22 @@ new Date().toISOString()  // Run in browser console
 1. **Headings**: Use h2-h6 (`##` - `######`). The post title serves as h1.
 
 2. **Table of Contents**: Add automatically by including:
+
    ```markdown
    ## Table of contents
    ```
 
 3. **Images**:
-   
+
    **Recommended**: Store in `src/assets/` (auto-optimized)
+
    ```markdown
    ![Alt text](@/assets/images/example.jpg)
    ![Alt text](../../assets/images/example.jpg)
    ```
-   
+
    **Alternative**: Store in `public/` (unoptimized)
+
    ```markdown
    ![Alt text](/assets/images/example.jpg)
    <img src="/assets/images/example.jpg" alt="Alt text">
@@ -116,11 +122,13 @@ new Date().toISOString()  // Run in browser console
 ### LaTeX Equations
 
 **Inline equations**: Use single dollar signs
+
 ```markdown
 The formula $E = mc^2$ is famous.
 ```
 
 **Block equations**: Use double dollar signs
+
 ```markdown
 $$
 \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
@@ -130,6 +138,7 @@ $$
 ### Syntax Highlighting
 
 Code blocks support:
+
 - Multiple themes (light/dark mode)
 - File names: ` ```js file=example.js `
 - Line highlighting: Add special comments in code
@@ -149,21 +158,21 @@ export const SITE = {
   desc: "Site description for SEO",
   title: "Wicksipedia",
   ogImage: "astropaper-og.jpg",
-  lightAndDarkMode: true,         // Enable dark mode toggle
-  postPerIndex: 4,                // Posts on home page
-  postPerPage: 4,                 // Posts per pagination page
-  scheduledPostMargin: 15 * 60 * 1000,  // Future post margin (15 min)
-  showArchives: true,             // Show archives menu
-  showBackButton: true,           // Show back button in posts
+  lightAndDarkMode: true, // Enable dark mode toggle
+  postPerIndex: 4, // Posts on home page
+  postPerPage: 4, // Posts per pagination page
+  scheduledPostMargin: 15 * 60 * 1000, // Future post margin (15 min)
+  showArchives: true, // Show archives menu
+  showBackButton: true, // Show back button in posts
   editPost: {
     enabled: true,
     text: "Edit page",
     url: "https://github.com/USERNAME/REPO/edit/main/",
   },
-  dynamicOgImage: true,           // Auto-generate OG images
-  dir: "ltr",                     // Text direction (ltr/rtl/auto)
-  lang: "en",                     // HTML lang code
-  timezone: "Australia/Sydney",   // IANA timezone format
+  dynamicOgImage: true, // Auto-generate OG images
+  dir: "ltr", // Text direction (ltr/rtl/auto)
+  lang: "en", // HTML lang code
+  timezone: "Australia/Sydney", // IANA timezone format
 };
 ```
 
@@ -203,7 +212,7 @@ Modify `src/styles/global.css`:
 
 ```css
 @utility max-w-app {
-  @apply max-w-3xl;  /* Default: 768px */
+  @apply max-w-3xl; /* Default: 768px */
   /* Change to max-w-4xl or max-w-5xl */
 }
 ```
@@ -232,6 +241,7 @@ html[data-theme="dark"] {
 ```
 
 **Color Properties**:
+
 - `--background`: Main background color
 - `--foreground`: Text color
 - `--accent`: Links, hover states
@@ -245,6 +255,7 @@ html[data-theme="dark"] {
 Default: Google Sans Code via Astro's experimental fonts API.
 
 **To customize**:
+
 1. Update `astro.config.ts` font configuration
 2. Update `Layout.astro` Font component
 3. Update `--font-app` in `global.css`
@@ -281,6 +292,7 @@ bun run sync
 The project uses Husky for Git hooks. You can set up automated date management:
 
 **Pre-commit hook** for auto-updating dates:
+
 - Updates `modDatetime` when editing published posts (`draft: false`)
 - Sets `pubDatetime` for new posts
 - Use `draft: first` to publish and clean up `modDatetime` automatically
@@ -309,6 +321,7 @@ The project includes VS Code snippets for frontmatter. Type the snippet trigger 
 ### Environment Variables
 
 **Google Site Verification** (optional):
+
 ```bash
 PUBLIC_GOOGLE_SITE_VERIFICATION=your-verification-code
 ```
@@ -316,6 +329,7 @@ PUBLIC_GOOGLE_SITE_VERIFICATION=your-verification-code
 ### Dynamic OG Images
 
 **Trade-off**: Each OG image adds ~1 second to build time.
+
 - 60 posts ≈ 1 minute
 - 600 posts ≈ 10 minutes
 
@@ -351,6 +365,7 @@ ncu -i
 ### Updating AstroPaper Template
 
 **Files to preserve** (likely customized):
+
 - `src/data/blog/` (your posts)
 - `src/config.ts` (your config)
 - `src/pages/about.md` (your about page)
@@ -358,6 +373,7 @@ ncu -i
 - `src/styles/global.css` (if customized)
 
 **Using Git** (advanced):
+
 ```bash
 # Add AstroPaper as remote
 git remote add astro-paper https://github.com/satnaing/astro-paper.git
@@ -376,6 +392,7 @@ git pull astro-paper main --allow-unrelated-histories
 ### Comments (Giscus)
 
 To add comments:
+
 1. Enable GitHub Discussions on repo
 2. Install [Giscus app](https://github.com/apps/giscus)
 3. Configure at [giscus.app](https://giscus.app/)

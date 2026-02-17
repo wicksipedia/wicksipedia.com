@@ -204,4 +204,3 @@ body::before {
   @apply fixed top-0 left-0 right-0 z-45 h-0.75 pointer-events-none;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
 }
-

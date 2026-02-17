@@ -41,7 +41,7 @@ The first question that naturally came to mind was "If I am going to start to wr
 
 Ok, that's odd. From what I gathered, the repo was setup with `main` and a different vendor setup their pipelines with it, but the client wanted to have environment branches instead and just didn't remove `main`. No biggie, just an oversight.
 
-I dug a little deeper and had a look at the commit messages, lots of merge commits in the different branches but it looked like one branch was well ahead of `dev` and it was hard to tell if they had been merged back. 
+I dug a little deeper and had a look at the commit messages, lots of merge commits in the different branches but it looked like one branch was well ahead of `dev` and it was hard to tell if they had been merged back.
 
 > Them: We are working in `test` at the moment, We'll merge it back afterwards, it works for us.
 
@@ -59,7 +59,7 @@ Done - Issue raised with the client, email sent with recommendations.
 
 It was time to roll up my sleeves and dig into the actual task at hand — tweaking their deployment pipeline as initially requested. I got into it, made the necessary changes, and got the Pull Requests (PRs) merged into the respective branches. It felt like a well-earned victory, albeit a small one in the grand scheme of things.
 
-Fast forward a few weeks, my phone buzzed with a call from the client. The news wasn't good. The changes I had made weren't working! 
+Fast forward a few weeks, my phone buzzed with a call from the client. The news wasn't good. The changes I had made weren't working!
 
 Surprised, I opened up the repo, only to discover that my changes weren't there. WTF! They had been reverted! Turns out instead of using PRs to merge changes between environments, the client had used the Git command line to do the merges and then pushed the changes to all the branches. Normally this wouldn't be an issue but in this case some changes were missed.
 

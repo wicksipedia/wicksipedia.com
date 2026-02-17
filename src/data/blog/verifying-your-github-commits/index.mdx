@@ -1,12 +1,12 @@
 ---
 pubDatetime: 2020-08-09
-title: Verifying your GitHub commits
+title: How to Sign and Verify Your GitHub Commits with GPG Keys
 description: Learn to sign your GitHub commits with GPG for verified authenticity. Step-by-step security guide to secure commits and prove they're actually from you.
 ogImage: ./cover.png
 tags: [gitHub, git]
 ---
 
-Have you ever looked a PR in GitHub and noticed that some commits have a *Verified* chip and some don't? And that it's usually the PR merges that do? What gives?
+Have you ever looked a PR in GitHub and noticed that some commits have a _Verified_ chip and some don't? And that it's usually the PR merges that do? What gives?
 
 Well it turns out that you are able to sign your commits with PGP to verify that you actually committed them! It's easy to set different details when authoring a commit:
 
@@ -32,24 +32,24 @@ Old way:
 
 1. Install gnupg2
 
-    ```sh
-    brew install gnupg2
-    brew link --overwrite gnupg
-    ```
+   ```sh
+   brew install gnupg2
+   brew link --overwrite gnupg
+   ```
 
-2. I didn't like the sound of *GPG Suite*, so I went for Pinetry for Mac to store the passphrase of the PGP key in the OS keychain
+2. I didn't like the sound of _GPG Suite_, so I went for Pinetry for Mac to store the passphrase of the PGP key in the OS keychain
 
-    ```sh
-    brew install pinentry-mac
-    echo "pinentry-program /usr/local/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf
-    killall gpg-agent
-    ```
+   ```sh
+   brew install pinentry-mac
+   echo "pinentry-program /usr/local/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf
+   killall gpg-agent
+   ```
 
 3. Now that the tools are installed, we can generate a PGP key that GitHub can use. You will need to enter your name and email address (make sure they match the ones used in your Git config - don't ask why I know 😉)
 
-    ```sh
-    gpg --default-new-key-algo rsa4096 --gen-key
-    ```
+   ```sh
+   gpg --default-new-key-algo rsa4096 --gen-key
+   ```
 
 4. You'll need a passphrase for the PGP key - I recommend using a password manager to generate and store (I use [1Password](https://1password.com/))
 
@@ -58,33 +58,33 @@ Old way:
    - it's using 4096bit RSA
    - the key is 3AA5C34371567BD2
 
-    ```sh
-    $ gpg --list-secret-keys --keyid-format LONG
-    /Users/hubot/.gnupg/secring.gpg
-    ------------------------------------
-    sec   4096R/3AA5C34371567BD2 2016-03-10 [expires: 2017-03-10]
-    uid                          Hubot 
-    ssb   4096R/42B317FD4BA89E7A 2016-03-10
-    ```
+   ```sh
+   $ gpg --list-secret-keys --keyid-format LONG
+   /Users/hubot/.gnupg/secring.gpg
+   ------------------------------------
+   sec   4096R/3AA5C34371567BD2 2016-03-10 [expires: 2017-03-10]
+   uid                          Hubot
+   ssb   4096R/42B317FD4BA89E7A 2016-03-10
+   ```
 
-6. Export and copy the key (make sure to include the *-----BEGIN PGP PUBLIC KEY BLOCK-----* and *-----END PGP PUBLIC KEY BLOCK-----*)
+6. Export and copy the key (make sure to include the _-----BEGIN PGP PUBLIC KEY BLOCK-----_ and _-----END PGP PUBLIC KEY BLOCK-----_)
 
-    ```sh
-    gpg --armor --export 3AA5C34371567BD2
-    ```
+   ```sh
+   gpg --armor --export 3AA5C34371567BD2
+   ```
 
-7. Go to [Github - SSH and GPG Keys](https://github.com/settings/keys) and 
-   1. Click *New GPG Key*
+7. Go to [Github - SSH and GPG Keys](https://github.com/settings/keys) and
+   1. Click _New GPG Key_
    2. Paste the key in the textbox
-   3. Click *Add GPG Key*
-   ![Where to add GPG Keys](./github-keys.png)
+   3. Click _Add GPG Key_
+      ![Where to add GPG Keys](./github-keys.png)
 
 8. Now let's tell Git to sign commits and which PGP key to use
 
-    ```sh
-    git config --global user.signingkey 3AA5C34371567BD2
-    git config --global commit.gpgsign true
-    ```
+   ```sh
+   git config --global user.signingkey 3AA5C34371567BD2
+   git config --global commit.gpgsign true
+   ```
 
 9. You're done! Commit and push your signed commits!
 

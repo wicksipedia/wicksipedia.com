@@ -20,7 +20,9 @@ export default defineConfig({
   output: "static", // Explicitly set to static mode for Cloudflare Workers
 
   integrations: [
-    sitemap({ filter: page => SITE.showArchives || !page.endsWith("/archives"), }),
+    sitemap({
+      filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
+    }),
     react(),
     mdx(),
   ],
