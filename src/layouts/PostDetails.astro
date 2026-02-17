@@ -72,6 +72,11 @@ const layoutProps = {
   canonicalURL,
   ogImage,
   scrollSmooth: true,
+  breadcrumbs: [
+    { name: "Home", url: SITE.website },
+    { name: "Blog", url: `${SITE.website}blog/` },
+    { name: title, url: undefined }, // Current page, no URL needed per schema.org spec
+  ],
 };
 
 /* ========== Formatted date for hero ========== */
