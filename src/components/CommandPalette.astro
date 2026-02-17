@@ -1,0 +1,420 @@
+---
+import { SITE } from "@/config";
+
+const navLinks = [
+  { label: "Blog", url: "/blog", hint: "/blog" },
+  { label: "Tags", url: "/tags", hint: "/tags" },
+  { label: "About", url: "/about", hint: "/about" },
+  ...(SITE.showArchives ? [{ label: "Archives", url: "/archives", hint: "/archives" }] : []),
+  { label: "Search", url: "/search", hint: "/search" },
+];
+---
+
+<div
+  id="cmd-k-backdrop"
+  transition:persist
+  class="fixed inset-0 z-50 hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Command palette"
+>
+  <!-- Backdrop -->
+  <div
+    id="cmd-k-overlay"
+    class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+  ></div>
+
+  <!-- Modal panel -->
+  <div class="relative flex min-h-full items-start justify-center px-3 pt-16 sm:px-6 sm:pt-[15vh]">
+    <div
+      id="cmd-k-modal"
+      class="animate-cmd-in w-full max-w-2xl overflow-hidden rounded-xl border border-border/60 bg-background shadow-2xl"
+    >
+      <!-- Input row -->
+      <div class="flex items-center border-b border-border/50 px-4">
+        <span
+          class="select-none font-mono text-lg font-bold text-accent mr-3 shrink-0"
+          aria-hidden="true"
+        >&gt;</span>
+        <input
+          id="cmd-k-input"
+          type="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          placeholder="search wicksipedia_"
+          class="flex-1 bg-transparent py-4 font-mono text-sm text-foreground placeholder:text-foreground/30 outline-none"
+          aria-label="Search"
+          aria-autocomplete="list"
+          aria-controls="cmd-k-list"
+        />
+        <kbd
+          class="hidden sm:inline-flex items-center rounded border border-border/60 px-1.5 py-0.5 font-mono text-[0.6rem] text-foreground/35 ml-3 shrink-0"
+        >esc</kbd>
+      </div>
+
+      <!-- Results list -->
+      <div
+        id="cmd-k-list"
+        role="listbox"
+        class="overflow-y-auto"
+        style="max-height: min(50vh, calc(100dvh - 12rem));"
+      >
+        <!-- Nav group (shown when input is empty) -->
+        <div id="cmd-k-nav-group" class="py-2">
+          <div class="px-4 pb-1 pt-2 text-[0.65rem] font-semibold uppercase tracking-widest text-foreground/35">
+            Navigate
+          </div>
+          {navLinks.map((link, i) => (
+            <a
+              href={link.url}
+              class="cmd-item group flex items-center justify-between px-4 py-2.5 text-sm text-foreground/75 transition-none outline-none"
+              role="option"
+              data-index={i}
+              data-url={link.url}
+              aria-selected="false"
+            >
+              <span class="flex items-center gap-2.5">
+                <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none">→</span>
+                <span class="group-[.is-active]:text-accent">{link.label}</span>
+              </span>
+              <span class="font-mono text-[0.65rem] text-foreground/30 group-[.is-active]:text-accent/50">
+                {link.hint}
+              </span>
+            </a>
+          ))}
+        </div>
+
+        <!-- Search results group (shown when typing) -->
+        <div id="cmd-k-results-group" class="hidden py-2">
+          <div class="flex items-center justify-between px-4 pb-1 pt-2">
+            <span class="text-[0.65rem] font-semibold uppercase tracking-widest text-foreground/35">Results</span>
+            <span id="cmd-k-count" class="font-mono text-[0.6rem] text-foreground/25"></span>
+          </div>
+          <div id="cmd-k-results"></div>
+        </div>
+
+        <!-- Dev warning (shown in dev mode when typing) -->
+        <div id="cmd-k-dev-warning" class="hidden px-4 py-4">
+          <div class="rounded-lg border border-border/60 bg-muted/50 p-4 font-mono text-xs text-foreground/60">
+            <span class="text-accent font-bold">// DEV MODE</span><br />
+            Run <code class="text-accent">bun run build</code> first to enable search.
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="cmd-k-loading" class="hidden px-4 py-6 text-center font-mono text-xs text-foreground/30">
+          searching...
+        </div>
+
+        <!-- No results state -->
+        <div id="cmd-k-empty" class="hidden px-4 py-6 text-center font-mono text-xs text-foreground/30">
+          no results found
+        </div>
+      </div>
+
+      <!-- Footer strip -->
+      <div class="flex items-center gap-4 border-t border-border/40 px-4 py-2.5 font-mono text-[0.65rem] text-foreground/30">
+        <span class="flex items-center gap-1">
+          <kbd class="rounded border border-border/50 px-1 py-px text-[0.6rem]">↑</kbd>
+          <kbd class="rounded border border-border/50 px-1 py-px text-[0.6rem]">↓</kbd>
+          <span>navigate</span>
+        </span>
+        <span class="flex items-center gap-1">
+          <kbd class="rounded border border-border/50 px-1 py-px text-[0.6rem]">↵</kbd>
+          <span>open</span>
+        </span>
+        <span class="flex items-center gap-1">
+          <kbd class="rounded border border-border/50 px-1 py-px text-[0.6rem]">esc</kbd>
+          <span>close</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const IS_DEV = import.meta.env.DEV;
+
+  let pagefindModule: { search: (term: string) => Promise<{ results: { data: () => Promise<{ url: string; meta: { title: string }; excerpt: string }> }[] }> } | null = null;
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let activeIndex = -1;
+  let currentItems: HTMLElement[] = [];
+
+  async function getPagefind() {
+    if (pagefindModule) return pagefindModule;
+    // Use new Function to make the import completely opaque to Vite/Astro static analysis.
+    // /pagefind/pagefind.js is a runtime-only public file generated by the build step.
+    pagefindModule = await new Function("return import('/pagefind/pagefind.js')")();
+    // @ts-expect-error — dynamic import
+    await pagefindModule.init();
+    return pagefindModule;
+  }
+
+  function getBackdrop() {
+    return document.getElementById("cmd-k-backdrop");
+  }
+  function getInput() {
+    return document.getElementById("cmd-k-input") as HTMLInputElement | null;
+  }
+
+  function openPalette() {
+    const backdrop = getBackdrop();
+    if (!backdrop) return;
+    backdrop.classList.remove("hidden");
+    backdrop.removeAttribute("aria-hidden");
+    document.body.style.overflow = "hidden";
+    // Re-trigger animation by cloning the modal
+    const modal = document.getElementById("cmd-k-modal");
+    if (modal) {
+      modal.classList.remove("animate-cmd-in");
+      // Force reflow
+      void modal.offsetWidth;
+      modal.classList.add("animate-cmd-in");
+    }
+    const input = getInput();
+    if (input) {
+      input.value = "";
+      input.focus();
+    }
+    setActiveIndex(-1);
+    showNavGroup();
+  }
+
+  function closePalette() {
+    const backdrop = getBackdrop();
+    if (!backdrop) return;
+    backdrop.classList.add("hidden");
+    backdrop.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    const input = getInput();
+    if (input) input.value = "";
+    showNavGroup();
+    setActiveIndex(-1);
+  }
+
+  function showNavGroup() {
+    document.getElementById("cmd-k-nav-group")?.classList.remove("hidden");
+    document.getElementById("cmd-k-results-group")?.classList.add("hidden");
+    document.getElementById("cmd-k-dev-warning")?.classList.add("hidden");
+    document.getElementById("cmd-k-loading")?.classList.add("hidden");
+    document.getElementById("cmd-k-empty")?.classList.add("hidden");
+    currentItems = Array.from(document.querySelectorAll<HTMLElement>("#cmd-k-nav-group .cmd-item"));
+  }
+
+  function showResultsGroup() {
+    document.getElementById("cmd-k-nav-group")?.classList.add("hidden");
+    document.getElementById("cmd-k-results-group")?.classList.remove("hidden");
+    document.getElementById("cmd-k-dev-warning")?.classList.add("hidden");
+    document.getElementById("cmd-k-loading")?.classList.add("hidden");
+    document.getElementById("cmd-k-empty")?.classList.add("hidden");
+  }
+
+  function setActiveIndex(index: number) {
+    currentItems.forEach((item, i) => {
+      if (i === index) {
+        item.classList.add("is-active", "bg-accent/10");
+        item.setAttribute("aria-selected", "true");
+        item.scrollIntoView({ block: "nearest" });
+      } else {
+        item.classList.remove("is-active", "bg-accent/10");
+        item.setAttribute("aria-selected", "false");
+      }
+    });
+    activeIndex = index;
+  }
+
+  function navigateUp() {
+    if (currentItems.length === 0) return;
+    const next = activeIndex <= 0 ? currentItems.length - 1 : activeIndex - 1;
+    setActiveIndex(next);
+  }
+
+  function navigateDown() {
+    if (currentItems.length === 0) return;
+    const next = activeIndex >= currentItems.length - 1 ? 0 : activeIndex + 1;
+    setActiveIndex(next);
+  }
+
+  function openSelected() {
+    if (activeIndex >= 0 && currentItems[activeIndex]) {
+      const url = currentItems[activeIndex].dataset.url;
+      if (url) {
+        closePalette();
+        window.location.href = url;
+      }
+    } else {
+      // If nothing selected and we have results, open the first
+      if (currentItems.length > 0) {
+        const url = currentItems[0].dataset.url;
+        if (url) {
+          closePalette();
+          window.location.href = url;
+        }
+      }
+    }
+  }
+
+  async function runSearch(term: string) {
+    showResultsGroup();
+    document.getElementById("cmd-k-loading")?.classList.remove("hidden");
+
+    if (IS_DEV) {
+      document.getElementById("cmd-k-loading")?.classList.add("hidden");
+      document.getElementById("cmd-k-results-group")?.classList.add("hidden");
+      document.getElementById("cmd-k-dev-warning")?.classList.remove("hidden");
+      currentItems = [];
+      setActiveIndex(-1);
+      return;
+    }
+
+    try {
+      const pf = await getPagefind();
+      // @ts-expect-error — dynamic API
+      const { results } = await pf.search(term);
+
+      document.getElementById("cmd-k-loading")?.classList.add("hidden");
+
+      const countEl = document.getElementById("cmd-k-count");
+      if (countEl) countEl.textContent = results.length > 0 ? `${results.length} found` : "";
+
+      if (results.length === 0) {
+        document.getElementById("cmd-k-empty")?.classList.remove("hidden");
+        currentItems = [];
+        setActiveIndex(-1);
+        return;
+      }
+
+      const sliced = results.slice(0, 8);
+      const dataArr = await Promise.all(sliced.map((r: { data: () => Promise<{ url: string; meta: { title: string }; excerpt: string }> }) => r.data()));
+
+      const container = document.getElementById("cmd-k-results");
+      if (!container) return;
+
+      container.innerHTML = dataArr
+        .map(
+          (data: { url: string; meta: { title: string }; excerpt: string }, i: number) => `
+          <a
+            href="${data.url}"
+            class="cmd-item group flex flex-col gap-0.5 px-4 py-2.5 text-sm outline-none transition-none"
+            role="option"
+            data-index="${i}"
+            data-url="${data.url}"
+            aria-selected="false"
+          >
+            <span class="flex items-center gap-2.5">
+              <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none shrink-0">→</span>
+              <span class="font-semibold text-foreground/90 group-[.is-active]:text-accent truncate">${data.meta.title}</span>
+            </span>
+            <span class="pl-[1.375rem] text-xs text-foreground/40 line-clamp-1 leading-relaxed">${data.excerpt.replace(/<[^>]+>/g, "")}</span>
+          </a>
+        `
+        )
+        .join("");
+
+      currentItems = Array.from(container.querySelectorAll<HTMLElement>(".cmd-item"));
+      setActiveIndex(-1);
+    } catch {
+      document.getElementById("cmd-k-loading")?.classList.add("hidden");
+      document.getElementById("cmd-k-empty")?.classList.remove("hidden");
+      currentItems = [];
+    }
+  }
+
+  function initCommandPalette() {
+    const backdrop = getBackdrop();
+    const overlay = document.getElementById("cmd-k-overlay");
+    const input = getInput();
+    const trigger = document.getElementById("cmd-k-trigger");
+
+    if (!backdrop || !input) return;
+
+    // Open via trigger button
+    trigger?.addEventListener("click", openPalette);
+
+    // Close on overlay click
+    overlay?.addEventListener("click", closePalette);
+
+    // Stop modal clicks from bubbling to overlay
+    document.getElementById("cmd-k-modal")?.addEventListener("click", e => e.stopPropagation());
+
+    // Input handler with debounce
+    input.addEventListener("input", () => {
+      const term = input.value.trim();
+      if (!term) {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        showNavGroup();
+        setActiveIndex(-1);
+        return;
+      }
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => runSearch(term), 150);
+    });
+
+    // Keyboard navigation within palette
+    input.addEventListener("keydown", e => {
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          navigateUp();
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          navigateDown();
+          break;
+        case "Enter":
+          e.preventDefault();
+          openSelected();
+          break;
+        case "Escape":
+          e.preventDefault();
+          closePalette();
+          break;
+      }
+    });
+
+    // Result item click (using event delegation on the list)
+    document.getElementById("cmd-k-list")?.addEventListener("click", e => {
+      const item = (e.target as HTMLElement).closest<HTMLElement>(".cmd-item");
+      if (item?.dataset.url) {
+        closePalette();
+      }
+    });
+  }
+
+  // Global keyboard shortcut
+  function handleGlobalKeydown(e: KeyboardEvent) {
+    // ⌘K or Ctrl+K
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      const backdrop = getBackdrop();
+      if (backdrop?.classList.contains("hidden")) {
+        openPalette();
+      } else {
+        closePalette();
+      }
+    }
+    // Escape when palette is open
+    if (e.key === "Escape") {
+      const backdrop = getBackdrop();
+      if (!backdrop?.classList.contains("hidden")) {
+        e.preventDefault();
+        closePalette();
+      }
+    }
+  }
+
+  // Initialize
+  initCommandPalette();
+  document.addEventListener("keydown", handleGlobalKeydown);
+
+  // Close palette before view transitions to avoid stale state
+  document.addEventListener("astro:before-swap", closePalette);
+
+  // Re-attach trigger listener after view transitions (trigger button is in header, gets replaced)
+  document.addEventListener("astro:after-swap", () => {
+    const trigger = document.getElementById("cmd-k-trigger");
+    trigger?.addEventListener("click", openPalette);
+  });
+</script>

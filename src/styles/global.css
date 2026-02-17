@@ -191,6 +191,21 @@ html[data-theme="dark"] {
   animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
 }
 
+@keyframes cmd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@utility animate-cmd-in {
+  animation: cmd-in 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ===== Text Utilities ===== */
 
 @utility text-gradient {
