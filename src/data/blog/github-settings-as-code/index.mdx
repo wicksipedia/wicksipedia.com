@@ -150,11 +150,15 @@ branches:
 
 Branch protection as code is awesome. Given the scenario where I've just added a new pipeline, I can modify the branch protection as well so that future PRs will require that workflow to pass. To me this takes the power of pipelines as code that little step further. 🎉
 
+This approach pairs really well with trunk-based development. If you're struggling with environment branches causing merge conflicts and deployment confusion, check out my post on [the downfalls of environment branching patterns](/blog/downfalls-of-environment-branching-patterns) to see why a simpler branching strategy works better.
+
 OK, so now we have a setup where:
 
 - Settings for the repo are stored as code inside the repo
 - Since files get committed to the repo, we can easily look back at the history to see when/what changed
 - You don't need to be an admin to look or modify the settings (at most the right person needs to review a PR)
+
+To take your GitHub security even further, consider [signing your commits with GPG](/blog/verifying-your-github-commits) so that team members can verify that commits actually came from you.
 
 ## BONUS 1: YAML is hard
 
