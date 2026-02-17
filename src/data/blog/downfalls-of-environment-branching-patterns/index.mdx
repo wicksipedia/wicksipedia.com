@@ -84,4 +84,6 @@ With the change to TBD, the client was able to enjoy the following benefits:
 - Manual promotion of a deployment to `test` and `prod` (for now) - super fast now that the container is already built
 - Same container image is used e.g. promotion to `test` uses the same image that was just on `test` aka binary promotion
 
+With this simpler flow, I also helped them set up [GitHub repository settings as code](/blog/github-settings-as-code) so branch protection rules could be managed via a YAML file, and showed them how to [sign their commits with GPG](/blog/verifying-your-github-commits) to ensure code authenticity.
+
 This incident was a stark reminder of the critical role that clear and repeatable branching strategy plays in software development and deployment lifecycle. And sometimes, it takes a minor hiccup to propel a significant leap towards better practices.
