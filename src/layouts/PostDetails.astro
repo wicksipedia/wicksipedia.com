@@ -13,6 +13,7 @@ import Comments from "@/components/Comments.astro";
 import EditPost from "@/components/EditPost.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
+import RelatedPosts from "@/components/RelatedPosts.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
@@ -258,6 +259,8 @@ const nextPost =
     <BackToTopButton />
 
     <ShareLinks />
+
+    <RelatedPosts currentPost={post} posts={posts} />
 
     <!-- Editorial divider before comments -->
     <div class="flex items-center gap-4 my-8">
