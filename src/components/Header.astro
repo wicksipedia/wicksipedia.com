@@ -6,8 +6,6 @@ import IconSearch from "@/assets/icons/IconSearch.svg";
 import IconSunHigh from "@/assets/icons/IconSunHigh.svg";
 import IconX from "@/assets/icons/IconX.svg";
 import { SITE } from "@/config";
-import LinkButton from "./LinkButton.astro";
-
 const { pathname } = Astro.url;
 
 // Remove trailing slash from current pathname if exists
@@ -104,13 +102,13 @@ const iconBtn =
           {
             SITE.showArchives && (
               <li>
-                <LinkButton
+                <a
                   href="/archives"
                   class:list={[
                     navLink,
-                    "flex items-center justify-center",
+                    "sm:flex sm:items-center sm:justify-center",
                     {
-                      [`${navActive} [&>svg]:stroke-accent`]: isActive("/archives"),
+                      [navActive]: isActive("/archives"),
                     },
                   ]}
                   title="Archives"
@@ -118,7 +116,7 @@ const iconBtn =
                 >
                   <IconArchive class="hidden sm:inline-block" />
                   <span class="sm:sr-only">Archives</span>
-                </LinkButton>
+                </a>
               </li>
             )
           }

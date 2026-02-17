@@ -570,6 +570,10 @@ for (let w = 0; w < graphWeeks.length; w++) {
     grid-column: 1 / -1;
   }
 
+  .graph-card {
+    overflow: hidden;
+  }
+
   .stats-card,
   .langs-card,
   .contribs-card,
@@ -579,6 +583,16 @@ for (let w = 0; w < graphWeeks.length; w++) {
     padding: 1.25rem 1.5rem;
     background: color-mix(in srgb, var(--muted) 20%, transparent);
     transition: all 0.25s ease;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    .stats-card,
+    .langs-card,
+    .contribs-card,
+    .graph-card {
+      padding: 1rem 1rem;
+    }
   }
 
   .stats-card {
@@ -762,6 +776,17 @@ for (let w = 0; w < graphWeeks.length; w++) {
     color: var(--foreground);
     opacity: 0.62;
     margin-top: 0.1rem;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    .contrib-value {
+      font-size: 1.5rem;
+    }
+
+    .contrib-date {
+      font-size: 0.6rem;
+    }
   }
 
   .contrib-divider {
