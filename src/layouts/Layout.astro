@@ -18,6 +18,7 @@ type Props = {
   scrollSmooth?: boolean;
   isHomepage?: boolean;
   breadcrumbs?: Array<{ name: string; url?: string }>;
+  noindex?: boolean;
 };
 
 const {
@@ -32,6 +33,7 @@ const {
   scrollSmooth = false,
   isHomepage = false,
   breadcrumbs,
+  noindex = false,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.url);
@@ -134,6 +136,7 @@ const breadcrumbData = breadcrumbs
     <meta name="title" content={title} />
     <meta name="description" content={description} />
     <meta name="author" content={author} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     <!-- Open Graph / Facebook -->
