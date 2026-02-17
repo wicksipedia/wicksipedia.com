@@ -1,32 +1,32 @@
 ---
-import IconX from "@/assets/icons/IconX.svg";
+import IconArchive from "@/assets/icons/IconArchive.svg";
+import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
 import IconMoon from "@/assets/icons/IconMoon.svg";
 import IconSearch from "@/assets/icons/IconSearch.svg";
-import IconArchive from "@/assets/icons/IconArchive.svg";
 import IconSunHigh from "@/assets/icons/IconSunHigh.svg";
-import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
-import LinkButton from "./LinkButton.astro";
+import IconX from "@/assets/icons/IconX.svg";
 import { SITE } from "@/config";
+import LinkButton from "./LinkButton.astro";
 
 const { pathname } = Astro.url;
 
 // Remove trailing slash from current pathname if exists
 const currentPath =
-  pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
+	pathname.endsWith("/") && pathname !== "/" ? pathname.slice(0, -1) : pathname;
 
 const isActive = (path: string) => {
-  const currentPathArray = currentPath.split("/").filter(p => p.trim());
-  const pathArray = path.split("/").filter(p => p.trim());
+	const currentPathArray = currentPath.split("/").filter((p) => p.trim());
+	const pathArray = path.split("/").filter((p) => p.trim());
 
-  return currentPath === path || currentPathArray[0] === pathArray[0];
+	return currentPath === path || currentPathArray[0] === pathArray[0];
 };
 
 const navLink =
-  "block px-3 py-2 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-foreground/75 rounded-lg transition-all duration-150 hover:text-accent hover:bg-accent/8 max-sm:text-center max-sm:py-3";
+	"block px-3 py-2 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-foreground/75 rounded-lg transition-all duration-150 hover:text-accent hover:bg-accent/8 max-sm:text-center max-sm:py-3";
 const navActive =
-  "text-accent after:content-[''] after:block after:h-0.5 after:mt-0.5 after:rounded-full after:bg-accent";
+	"text-accent after:content-[''] after:block after:h-0.5 after:mt-0.5 after:rounded-full after:bg-accent";
 const iconBtn =
-  "flex items-center justify-center size-9 rounded-lg text-foreground/75 transition-all duration-150 hover:text-accent hover:bg-accent/10";
+	"flex items-center justify-center size-9 rounded-lg text-foreground/75 transition-all duration-150 hover:text-accent hover:bg-accent/10";
 ---
 
 <a

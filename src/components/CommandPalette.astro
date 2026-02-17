@@ -2,11 +2,13 @@
 import { SITE } from "@/config";
 
 const navLinks = [
-  { label: "Blog", url: "/blog", hint: "/blog" },
-  { label: "Tags", url: "/tags", hint: "/tags" },
-  { label: "About", url: "/about", hint: "/about" },
-  ...(SITE.showArchives ? [{ label: "Archives", url: "/archives", hint: "/archives" }] : []),
-  { label: "Search", url: "/search", hint: "/search" },
+	{ label: "Blog", url: "/blog", hint: "/blog" },
+	{ label: "Tags", url: "/tags", hint: "/tags" },
+	{ label: "About", url: "/about", hint: "/about" },
+	...(SITE.showArchives
+		? [{ label: "Archives", url: "/archives", hint: "/archives" }]
+		: []),
+	{ label: "Search", url: "/search", hint: "/search" },
 ];
 ---
 

@@ -25,9 +25,9 @@ bun run dev          # Dev server at localhost:4321
 bun run build        # Type check (astro check) + build + pagefind index
 bun run preview      # Build + preview with wrangler dev
 bun run deploy       # Deploy to Cloudflare Workers via wrangler
-bun run format:check # Prettier check
-bun run format       # Prettier write
-bun run lint         # ESLint (note: console.log is an error)
+bun run format:check # Biome format check
+bun run format       # Biome format write
+bun run lint         # Biome check: lint + assist (organize imports) + format (note: console.log is an error)
 vale src/data/blog/  # Prose linting (banned words/phrases)
 ```
 

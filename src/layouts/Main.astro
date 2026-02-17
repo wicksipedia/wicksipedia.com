@@ -5,7 +5,10 @@ import { SITE } from "@/config";
 type StringTitle = { pageTitle: string };
 type ArrayTitle = { pageTitle: [string, string]; titleTransition: string };
 
-type Props = (StringTitle | ArrayTitle) & { pageDesc?: string; sectionLabel?: string };
+type Props = (StringTitle | ArrayTitle) & {
+	pageDesc?: string;
+	sectionLabel?: string;
+};
 
 const { props } = Astro;
 

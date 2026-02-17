@@ -1,13 +1,13 @@
 ---
-import type { CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
-import { slugifyStr } from "@/utils/slugify";
-import { getPath } from "@/utils/getPath";
-import Datetime from "./Datetime.astro";
+import type { CollectionEntry } from "astro:content";
 import IconHash from "@/assets/icons/IconHash.svg";
+import { getPath } from "@/utils/getPath";
+import { slugifyStr } from "@/utils/slugify";
+import Datetime from "./Datetime.astro";
 
 type Props = {
-  variant?: "h2" | "h3";
+	variant?: "h2" | "h3";
 } & CollectionEntry<"blog">;
 
 const { variant: Heading = "h2", id, data, filePath } = Astro.props;

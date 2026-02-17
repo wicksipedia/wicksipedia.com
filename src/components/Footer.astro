@@ -1,24 +1,24 @@
 ---
+import { execSync } from "node:child_process";
 import type { HTMLAttributes } from "astro/types";
-import Socials from "./Socials.astro";
 import IconRss from "@/assets/icons/IconRss.svg";
-import LinkButton from "./LinkButton.astro";
 import { SITE } from "@/config";
-import { execSync } from "child_process";
+import LinkButton from "./LinkButton.astro";
+import Socials from "./Socials.astro";
 
 const currentYear = new Date().getFullYear();
 
 let commitSha = "";
 let commitShort = "";
 try {
-  commitSha = execSync("git rev-parse HEAD").toString().trim();
-  commitShort = execSync("git rev-parse --short HEAD").toString().trim();
+	commitSha = execSync("git rev-parse HEAD").toString().trim();
+	commitShort = execSync("git rev-parse --short HEAD").toString().trim();
 } catch {
-  // If git command fails, commit info will be empty
+	// If git command fails, commit info will be empty
 }
 
 type Props = {
-  noMarginTop?: boolean;
+	noMarginTop?: boolean;
 } & HTMLAttributes<"footer">;
 
 const { noMarginTop = false, class: className, ...attrs } = Astro.props;

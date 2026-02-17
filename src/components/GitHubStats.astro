@@ -2,246 +2,249 @@
 const username = "wicksipedia";
 
 interface GitHubUser {
-  public_repos: number;
-  followers: number;
-  following: number;
-  created_at: string;
+	public_repos: number;
+	followers: number;
+	following: number;
+	created_at: string;
 }
 
 interface GitHubRepo {
-  stargazers_count: number;
-  fork: boolean;
-  language: string | null;
+	stargazers_count: number;
+	fork: boolean;
+	language: string | null;
 }
 
 let stats = {
-  publicRepos: 0,
-  followers: 0,
-  totalStars: 0,
-  topLanguages: [] as { name: string; count: number }[],
+	publicRepos: 0,
+	followers: 0,
+	totalStars: 0,
+	topLanguages: [] as { name: string; count: number }[],
 };
 
 let contribs = {
-  total: 0,
-  currentStreak: 0,
-  currentStreakStart: "",
-  currentStreakEnd: "",
-  longestStreak: 0,
-  longestStreakStart: "",
-  longestStreakEnd: "",
-  accountCreated: "2011-02-04",
+	total: 0,
+	currentStreak: 0,
+	currentStreakStart: "",
+	currentStreakEnd: "",
+	longestStreak: 0,
+	longestStreakStart: "",
+	longestStreakEnd: "",
+	accountCreated: "2011-02-04",
 };
 
 const allDays = new Map<string, number>();
 
 // Parse contribution tooltips from a GitHub contributions HTML page
 function parseDailyContributions(html: string): Map<string, number> {
-  const days = new Map<string, number>();
-  // Match tooltips: "N contributions on Month Day." or "No contributions on Month Day."
-  const tooltipRegex = /(\d+) contributions? on [^<]+|No contributions on [^<]+/g;
-  // Match data-date to associate with tooltips
-  const dateRegex = /data-date="(\d{4}-\d{2}-\d{2})"/g;
+	const days = new Map<string, number>();
+	// Match tooltips: "N contributions on Month Day." or "No contributions on Month Day."
+	const tooltipRegex =
+		/(\d+) contributions? on [^<]+|No contributions on [^<]+/g;
+	// Match data-date to associate with tooltips
+	const dateRegex = /data-date="(\d{4}-\d{2}-\d{2})"/g;
 
-  const dates: string[] = [];
-  let dateMatch;
-  while ((dateMatch = dateRegex.exec(html)) !== null) {
-    dates.push(dateMatch[1]);
-  }
+	const dates: string[] = [];
+	let dateMatch: RegExpExecArray | null;
+	// biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop
+	while ((dateMatch = dateRegex.exec(html)) !== null) {
+		dates.push(dateMatch[1]);
+	}
 
-  const counts: number[] = [];
-  let tooltipMatch;
-  while ((tooltipMatch = tooltipRegex.exec(html)) !== null) {
-    const full = tooltipMatch[0];
-    if (full.startsWith("No ")) {
-      counts.push(0);
-    } else {
-      counts.push(parseInt(tooltipMatch[1], 10));
-    }
-  }
+	const counts: number[] = [];
+	let tooltipMatch: RegExpExecArray | null;
+	// biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop
+	while ((tooltipMatch = tooltipRegex.exec(html)) !== null) {
+		const full = tooltipMatch[0];
+		if (full.startsWith("No ")) {
+			counts.push(0);
+		} else {
+			counts.push(parseInt(tooltipMatch[1], 10));
+		}
+	}
 
-  for (let i = 0; i < Math.min(dates.length, counts.length); i++) {
-    days.set(dates[i], counts[i]);
-  }
-  return days;
+	for (let i = 0; i < Math.min(dates.length, counts.length); i++) {
+		days.set(dates[i], counts[i]);
+	}
+	return days;
 }
 
 function formatStreakDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const d = new Date(dateStr + "T00:00:00Z");
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+	if (!dateStr) return "";
+	const d = new Date(`${dateStr}T00:00:00Z`);
+	return d.toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		timeZone: "UTC",
+	});
 }
 
 try {
-  // Fetch user info + repos
-  const [userRes, reposRes] = await Promise.all([
-    fetch(`https://api.github.com/users/${username}`, {
-      headers: { "User-Agent": "wicksipedia-site" },
-    }),
-    fetch(
-      `https://api.github.com/users/${username}/repos?per_page=100&sort=pushed&type=owner`,
-      {
-        headers: { "User-Agent": "wicksipedia-site" },
-      }
-    ),
-  ]);
+	// Fetch user info + repos
+	const [userRes, reposRes] = await Promise.all([
+		fetch(`https://api.github.com/users/${username}`, {
+			headers: { "User-Agent": "wicksipedia-site" },
+		}),
+		fetch(
+			`https://api.github.com/users/${username}/repos?per_page=100&sort=pushed&type=owner`,
+			{
+				headers: { "User-Agent": "wicksipedia-site" },
+			},
+		),
+	]);
 
-  if (userRes.ok && reposRes.ok) {
-    const user: GitHubUser = await userRes.json();
-    const repos: GitHubRepo[] = await reposRes.json();
+	if (userRes.ok && reposRes.ok) {
+		const user: GitHubUser = await userRes.json();
+		const repos: GitHubRepo[] = await reposRes.json();
 
-    contribs.accountCreated = user.created_at.split("T")[0];
+		contribs.accountCreated = user.created_at.split("T")[0];
 
-    const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0);
+		const totalStars = repos.reduce((sum, r) => sum + r.stargazers_count, 0);
 
-    const langCounts: Record<string, number> = {};
-    for (const repo of repos) {
-      if (repo.language && !repo.fork) {
-        langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
-      }
-    }
-    const topLanguages = Object.entries(langCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([name, count]) => ({ name, count }));
+		const langCounts: Record<string, number> = {};
+		for (const repo of repos) {
+			if (repo.language && !repo.fork) {
+				langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
+			}
+		}
+		const topLanguages = Object.entries(langCounts)
+			.sort(([, a], [, b]) => b - a)
+			.slice(0, 5)
+			.map(([name, count]) => ({ name, count }));
 
-    stats = {
-      publicRepos: user.public_repos,
-      followers: user.followers,
-      totalStars,
-      topLanguages,
-    };
-  }
+		stats = {
+			publicRepos: user.public_repos,
+			followers: user.followers,
+			totalStars,
+			topLanguages,
+		};
+	}
 
-  // Fetch contribution data for all years
-  const startYear = new Date(contribs.accountCreated).getFullYear();
-  const currentYear = new Date().getFullYear();
-  const years = Array.from(
-    { length: currentYear - startYear + 1 },
-    (_, i) => startYear + i
-  );
+	// Fetch contribution data for all years
+	const startYear = new Date(contribs.accountCreated).getFullYear();
+	const currentYear = new Date().getFullYear();
+	const years = Array.from(
+		{ length: currentYear - startYear + 1 },
+		(_, i) => startYear + i,
+	);
 
-  const yearPages = await Promise.all(
-    years.map(async year => {
-      const res = await fetch(
-        `https://github.com/users/${username}/contributions?from=${year}-01-01`,
-        { headers: { "User-Agent": "wicksipedia-site" } }
-      );
-      return res.ok ? res.text() : "";
-    })
-  );
+	const yearPages = await Promise.all(
+		years.map(async (year) => {
+			const res = await fetch(
+				`https://github.com/users/${username}/contributions?from=${year}-01-01`,
+				{ headers: { "User-Agent": "wicksipedia-site" } },
+			);
+			return res.ok ? res.text() : "";
+		}),
+	);
 
-  // Parse yearly totals and daily data
-  let totalContribs = 0;
+	// Parse yearly totals and daily data
+	let totalContribs = 0;
 
-  for (const html of yearPages) {
-    if (!html) continue;
+	for (const html of yearPages) {
+		if (!html) continue;
 
-    // Extract yearly total from header
-    const totalMatch = html.match(/([\d,]+)\s*\n\s*contributions/);
-    if (totalMatch) {
-      totalContribs += parseInt(totalMatch[1].replace(/,/g, ""), 10);
-    }
+		// Extract yearly total from header
+		const totalMatch = html.match(/([\d,]+)\s*\n\s*contributions/);
+		if (totalMatch) {
+			totalContribs += parseInt(totalMatch[1].replace(/,/g, ""), 10);
+		}
 
-    // Parse daily data
-    const days = parseDailyContributions(html);
-    for (const [date, count] of days) {
-      allDays.set(date, count);
-    }
-  }
+		// Parse daily data
+		const days = parseDailyContributions(html);
+		for (const [date, count] of days) {
+			allDays.set(date, count);
+		}
+	}
 
-  contribs.total = totalContribs;
+	contribs.total = totalContribs;
 
-  // Sort dates and calculate streaks
-  const sortedDates = [...allDays.keys()].sort();
-  const today = new Date().toISOString().split("T")[0];
+	// Sort dates and calculate streaks
+	const sortedDates = [...allDays.keys()].sort();
+	const today = new Date().toISOString().split("T")[0];
 
-  let longestStreak = 0;
-  let longestStart = "";
-  let longestEnd = "";
-  let currentStreak = 0;
-  let currentStart = "";
-  let currentEnd = "";
-  let tempStreak = 0;
-  let tempStart = "";
+	let longestStreak = 0;
+	let longestStart = "";
+	let longestEnd = "";
+	let currentStreak = 0;
+	let currentStart = "";
+	let currentEnd = "";
+	let tempStreak = 0;
+	let tempStart = "";
 
-  for (const date of sortedDates) {
-    const count = allDays.get(date) || 0;
-    if (count > 0) {
-      if (tempStreak === 0) tempStart = date;
-      tempStreak++;
+	for (const date of sortedDates) {
+		const count = allDays.get(date) || 0;
+		if (count > 0) {
+			if (tempStreak === 0) tempStart = date;
+			tempStreak++;
 
-      if (tempStreak > longestStreak) {
-        longestStreak = tempStreak;
-        longestStart = tempStart;
-        longestEnd = date;
-      }
-    } else {
-      // Before resetting, check if this was the current streak
-      if (tempStreak > 0) {
-        currentStreak = tempStreak;
-        currentStart = tempStart;
-        currentEnd = sortedDates[sortedDates.indexOf(date) - 1] || tempStart;
-      }
-      tempStreak = 0;
-    }
-  }
+			if (tempStreak > longestStreak) {
+				longestStreak = tempStreak;
+				longestStart = tempStart;
+				longestEnd = date;
+			}
+		} else {
+			// Before resetting, check if this was the current streak
+			if (tempStreak > 0) {
+				currentStreak = tempStreak;
+				currentStart = tempStart;
+				currentEnd = sortedDates[sortedDates.indexOf(date) - 1] || tempStart;
+			}
+			tempStreak = 0;
+		}
+	}
 
-  // If the last day in the data has contributions, the streak is still active
-  if (tempStreak > 0) {
-    currentStreak = tempStreak;
-    currentStart = tempStart;
-    currentEnd = sortedDates[sortedDates.length - 1];
-  }
+	// If the last day in the data has contributions, the streak is still active
+	if (tempStreak > 0) {
+		currentStreak = tempStreak;
+		currentStart = tempStart;
+		currentEnd = sortedDates[sortedDates.length - 1];
+	}
 
-  // If the current streak ended before yesterday, it's no longer "current"
-  if (currentEnd && currentEnd < today) {
-    const endDate = new Date(currentEnd + "T00:00:00Z");
-    const todayDate = new Date(today + "T00:00:00Z");
-    const diffDays = Math.floor(
-      (todayDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (diffDays > 1) {
-      currentStreak = 0;
-      currentStart = "";
-      currentEnd = "";
-    }
-  }
+	// If the current streak ended before yesterday, it's no longer "current"
+	if (currentEnd && currentEnd < today) {
+		const endDate = new Date(`${currentEnd}T00:00:00Z`);
+		const todayDate = new Date(`${today}T00:00:00Z`);
+		const diffDays = Math.floor(
+			(todayDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24),
+		);
+		if (diffDays > 1) {
+			currentStreak = 0;
+			currentStart = "";
+			currentEnd = "";
+		}
+	}
 
-  contribs.currentStreak = currentStreak;
-  contribs.currentStreakStart = currentStart;
-  contribs.currentStreakEnd = currentEnd;
-  contribs.longestStreak = longestStreak;
-  contribs.longestStreakStart = longestStart;
-  contribs.longestStreakEnd = longestEnd;
+	contribs.currentStreak = currentStreak;
+	contribs.currentStreakStart = currentStart;
+	contribs.currentStreakEnd = currentEnd;
+	contribs.longestStreak = longestStreak;
+	contribs.longestStreakStart = longestStart;
+	contribs.longestStreakEnd = longestEnd;
 } catch {
-  // Stats will show zeros if API fails — fine for a static build
+	// Stats will show zeros if API fails — fine for a static build
 }
 
 const langColors: Record<string, string> = {
-  TypeScript: "#3178c6",
-  JavaScript: "#f1e05a",
-  "C#": "#178600",
-  Python: "#3572A5",
-  HTML: "#e34c26",
-  CSS: "#563d7c",
-  Shell: "#89e051",
-  Bicep: "#519aba",
-  PowerShell: "#012456",
-  Rust: "#dea584",
-  Go: "#00ADD8",
-  Java: "#b07219",
-  Ruby: "#701516",
-  Vue: "#41b883",
-  Svelte: "#ff3e00",
-  Astro: "#ff5a03",
-  MDX: "#fcb32c",
-  Dockerfile: "#384d54",
-  HCL: "#844fba",
+	TypeScript: "#3178c6",
+	JavaScript: "#f1e05a",
+	"C#": "#178600",
+	Python: "#3572A5",
+	HTML: "#e34c26",
+	CSS: "#563d7c",
+	Shell: "#89e051",
+	Bicep: "#519aba",
+	PowerShell: "#012456",
+	Rust: "#dea584",
+	Go: "#00ADD8",
+	Java: "#b07219",
+	Ruby: "#701516",
+	Vue: "#41b883",
+	Svelte: "#ff3e00",
+	Astro: "#ff5a03",
+	MDX: "#fcb32c",
+	Dockerfile: "#384d54",
+	HCL: "#844fba",
 };
 
 const totalLangRepos = stats.topLanguages.reduce((s, l) => s + l.count, 0);
@@ -261,7 +264,7 @@ startDate.setUTCDate(startDate.getUTCDate() - 52 * 7 + 1);
 
 // Find the max contribution count for level scaling
 const recentDays = [...allDays.entries()].filter(
-  ([d]) => d >= startDate.toISOString().split("T")[0]
+	([d]) => d >= startDate.toISOString().split("T")[0],
 );
 const maxCount = Math.max(1, ...recentDays.map(([, c]) => c));
 
@@ -269,28 +272,28 @@ let cursor = new Date(startDate);
 let currentWeek: { date: string; count: number; level: number }[] = [];
 
 while (cursor <= endDate) {
-  const dateStr = cursor.toISOString().split("T")[0];
-  const count = allDays.get(dateStr) || 0;
-  const isFuture = dateStr > todayStr;
+	const dateStr = cursor.toISOString().split("T")[0];
+	const count = allDays.get(dateStr) || 0;
+	const isFuture = dateStr > todayStr;
 
-  let level = 0;
-  if (!isFuture && count > 0) {
-    const ratio = count / maxCount;
-    if (ratio <= 0.25) level = 1;
-    else if (ratio <= 0.5) level = 2;
-    else if (ratio <= 0.75) level = 3;
-    else level = 4;
-  }
-  if (isFuture) level = -1; // Mark future days
+	let level = 0;
+	if (!isFuture && count > 0) {
+		const ratio = count / maxCount;
+		if (ratio <= 0.25) level = 1;
+		else if (ratio <= 0.5) level = 2;
+		else if (ratio <= 0.75) level = 3;
+		else level = 4;
+	}
+	if (isFuture) level = -1; // Mark future days
 
-  currentWeek.push({ date: dateStr, count, level });
+	currentWeek.push({ date: dateStr, count, level });
 
-  if (cursor.getUTCDay() === 6) {
-    graphWeeks.push(currentWeek);
-    currentWeek = [];
-  }
+	if (cursor.getUTCDay() === 6) {
+		graphWeeks.push(currentWeek);
+		currentWeek = [];
+	}
 
-  cursor.setUTCDate(cursor.getUTCDate() + 1);
+	cursor.setUTCDate(cursor.getUTCDate() + 1);
 }
 if (currentWeek.length > 0) graphWeeks.push(currentWeek);
 
@@ -298,20 +301,20 @@ if (currentWeek.length > 0) graphWeeks.push(currentWeek);
 const monthLabels: { label: string; col: number }[] = [];
 let lastMonth = -1;
 for (let w = 0; w < graphWeeks.length; w++) {
-  const firstDay = graphWeeks[w][0];
-  if (firstDay) {
-    const month = new Date(firstDay.date + "T00:00:00Z").getUTCMonth();
-    if (month !== lastMonth) {
-      monthLabels.push({
-        label: new Date(firstDay.date + "T00:00:00Z").toLocaleDateString(
-          "en-US",
-          { month: "short", timeZone: "UTC" }
-        ),
-        col: w,
-      });
-      lastMonth = month;
-    }
-  }
+	const firstDay = graphWeeks[w][0];
+	if (firstDay) {
+		const month = new Date(`${firstDay.date}T00:00:00Z`).getUTCMonth();
+		if (month !== lastMonth) {
+			monthLabels.push({
+				label: new Date(`${firstDay.date}T00:00:00Z`).toLocaleDateString(
+					"en-US",
+					{ month: "short", timeZone: "UTC" },
+				),
+				col: w,
+			});
+			lastMonth = month;
+		}
+	}
 }
 ---
 

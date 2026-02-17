@@ -1,95 +1,95 @@
 ---
 import { Font } from "astro:assets";
-import { ClientRouter } from "astro:transitions";
 import { PUBLIC_GOOGLE_SITE_VERIFICATION } from "astro:env/client";
+import { ClientRouter } from "astro:transitions";
 import { SITE } from "@/config";
 import "@/styles/global.css";
 import CommandPalette from "@/components/CommandPalette.astro";
 
 type Props = {
-  title?: string;
-  author?: string;
-  profile?: string;
-  description?: string;
-  ogImage?: string;
-  canonicalURL?: string;
-  pubDatetime?: Date;
-  modDatetime?: Date | null;
-  scrollSmooth?: boolean;
-  isHomepage?: boolean;
-  breadcrumbs?: Array<{ name: string; url?: string }>;
-  noindex?: boolean;
+	title?: string;
+	author?: string;
+	profile?: string;
+	description?: string;
+	ogImage?: string;
+	canonicalURL?: string;
+	pubDatetime?: Date;
+	modDatetime?: Date | null;
+	scrollSmooth?: boolean;
+	isHomepage?: boolean;
+	breadcrumbs?: Array<{ name: string; url?: string }>;
+	noindex?: boolean;
 };
 
 const {
-  title = SITE.title,
-  author = SITE.author,
-  profile = SITE.profile,
-  description = SITE.desc,
-  ogImage = SITE.ogImage ? `/${SITE.ogImage}` : "/og.png",
-  canonicalURL = new URL(Astro.url.pathname, Astro.url),
-  pubDatetime,
-  modDatetime,
-  scrollSmooth = false,
-  isHomepage = false,
-  breadcrumbs,
-  noindex = false,
+	title = SITE.title,
+	author = SITE.author,
+	profile = SITE.profile,
+	description = SITE.desc,
+	ogImage = SITE.ogImage ? `/${SITE.ogImage}` : "/og.png",
+	canonicalURL = new URL(Astro.url.pathname, Astro.url),
+	pubDatetime,
+	modDatetime,
+	scrollSmooth = false,
+	isHomepage = false,
+	breadcrumbs,
+	noindex = false,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.url);
 
 // Structured data: WebSite schema for homepage, BlogPosting for blog posts
 const structuredData = isHomepage
-  ? {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      name: SITE.title,
-      url: SITE.website,
-      author: {
-        "@type": "Person",
-        name: SITE.author,
-        jobTitle: SITE.jobTitle,
-        worksFor: {
-          "@type": "Organization",
-          name: SITE.organization,
-        },
-        url: SITE.profile,
-      },
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${SITE.website}search?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
-      },
-    }
-  : {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      headline: `${title}`,
-      image: `${socialImageURL}`,
-      datePublished: `${pubDatetime?.toISOString()}`,
-      ...(modDatetime && { dateModified: modDatetime.toISOString() }),
-      author: [
-        {
-          "@type": "Person",
-          name: `${author}`,
-          ...(profile && { url: profile }),
-        },
-      ],
-    };
+	? {
+			"@context": "https://schema.org",
+			"@type": "WebSite",
+			name: SITE.title,
+			url: SITE.website,
+			author: {
+				"@type": "Person",
+				name: SITE.author,
+				jobTitle: SITE.jobTitle,
+				worksFor: {
+					"@type": "Organization",
+					name: SITE.organization,
+				},
+				url: SITE.profile,
+			},
+			potentialAction: {
+				"@type": "SearchAction",
+				target: `${SITE.website}search?q={search_term_string}`,
+				"query-input": "required name=search_term_string",
+			},
+		}
+	: {
+			"@context": "https://schema.org",
+			"@type": "BlogPosting",
+			headline: `${title}`,
+			image: `${socialImageURL}`,
+			datePublished: `${pubDatetime?.toISOString()}`,
+			...(modDatetime && { dateModified: modDatetime.toISOString() }),
+			author: [
+				{
+					"@type": "Person",
+					name: `${author}`,
+					...(profile && { url: profile }),
+				},
+			],
+		};
 
 // Breadcrumb structured data for blog posts
 const breadcrumbData = breadcrumbs
-  ? {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: breadcrumbs.map((crumb, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: crumb.name,
-        ...(crumb.url && { item: crumb.url }),
-      })),
-    }
-  : null;
+	? {
+			"@context": "https://schema.org",
+			"@type": "BreadcrumbList",
+			itemListElement: breadcrumbs.map((crumb, index) => ({
+				"@type": "ListItem",
+				position: index + 1,
+				name: crumb.name,
+				...(crumb.url && { item: crumb.url }),
+			})),
+		}
+	: null;
 ---
 
 <!doctype html>
