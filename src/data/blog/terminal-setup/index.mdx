@@ -53,13 +53,13 @@ To get it working with Monaspice in VSCode:
 
 ### Installing Oh My Zsh
 
-This has been covered in a previous blog post, but the command is just a shell script.
+This has been covered in [my Mac setup guide](/blog/setting-up-a-new-mac), but the command is just a shell script.
 
 ```shell
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-There are a few ways of adding OMZ plugins, most of them tend to be cloning git repos - which makes things a little hard to update/manage. Why Antigen? It makes it easy to add themes/plugins since I just need to reference them (using antigen) in my config file, and antigen does the rest. It will auto install anything missing, so it makes it easy to transplant settings from one machine to another.
+There are a few ways of adding OMZ plugins, most of them tend to be cloning git repos - which makes things a little hard to update/manage. Why Antigen? It makes it easy to add themes/plugins since I just need to reference them (using antigen) in my config file, and antigen does the rest. It will auto install anything missing, so it makes it easy to transplant settings from one machine to another. (Note: I later [optimized my terminal startup](/blog/speeding-up-zsh-startup) by moving from Antigen to Zinit, cutting load time by 81%.)
 
 ### Install Antigen
 
