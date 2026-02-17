@@ -21,4 +21,6 @@ export const SITE = {
   dir: "ltr", // "rtl" | "auto"
   lang: "en", // html lang code. Set this empty and default will be "en"
   timezone: "Australia/Sydney", // Default global timezone (IANA format) https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  jobTitle: "Solution Architect",
+  organization: "SSW",
 } as const;
