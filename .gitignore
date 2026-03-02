@@ -13,6 +13,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.plans
 
 # environment variables
 .env
@@ -25,7 +26,6 @@ pnpm-debug.log*
 .idea/
 
 # pagefind
-
 public/pagefind
 
 # vale binary

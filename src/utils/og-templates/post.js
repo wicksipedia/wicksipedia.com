@@ -1,217 +1,143 @@
 import satori from "satori";
-// import { html } from "satori-html";
 import { SITE } from "@/config";
 import loadGoogleFonts from "../loadGoogleFont";
 
-// const markup = html`<div
-//       style={{
-//         background: "#fefbfb",
-//         width: "100%",
-//         height: "100%",
-//         display: "flex",
-//         alignItems: "center",
-//         justifyContent: "center",
-//       }}
-//     >
-//       <div
-//         style={{
-//           position: "absolute",
-//           top: "-1px",
-//           right: "-1px",
-//           border: "4px solid #000",
-//           background: "#ecebeb",
-//           opacity: "0.9",
-//           borderRadius: "4px",
-//           display: "flex",
-//           justifyContent: "center",
-//           margin: "2.5rem",
-//           width: "88%",
-//           height: "80%",
-//         }}
-//       />
-
-//       <div
-//         style={{
-//           border: "4px solid #000",
-//           background: "#fefbfb",
-//           borderRadius: "4px",
-//           display: "flex",
-//           justifyContent: "center",
-//           margin: "2rem",
-//           width: "88%",
-//           height: "80%",
-//         }}
-//       >
-//         <div
-//           style={{
-//             display: "flex",
-//             flexDirection: "column",
-//             justifyContent: "space-between",
-//             margin: "20px",
-//             width: "90%",
-//             height: "90%",
-//           }}
-//         >
-//           <p
-//             style={{
-//               fontSize: 72,
-//               fontWeight: "bold",
-//               maxHeight: "84%",
-//               overflow: "hidden",
-//             }}
-//           >
-//             {post.data.title}
-//           </p>
-//           <div
-//             style={{
-//               display: "flex",
-//               justifyContent: "space-between",
-//               width: "100%",
-//               marginBottom: "8px",
-//               fontSize: 28,
-//             }}
-//           >
-//             <span>
-//               by{" "}
-//               <span
-//                 style={{
-//                   color: "transparent",
-//                 }}
-//               >
-//                 "
-//               </span>
-//               <span style={{ overflow: "hidden", fontWeight: "bold" }}>
-//                 {post.data.author}
-//               </span>
-//             </span>
-
-//             <span style={{ overflow: "hidden", fontWeight: "bold" }}>
-//               {SITE.title}
-//             </span>
-//           </div>
-//         </div>
-//       </div>
-//     </div>`;
-
 export default async (post) => {
+	const title = post.data.title;
+	const tags = post.data.tags || [];
+	const fontSize = title.length > 60 ? 48 : title.length > 40 ? 56 : 64;
+
+	const tagPills = tags.map((tag) => ({
+		type: "span",
+		props: {
+			style: {
+				fontSize: 16,
+				fontWeight: 400,
+				color: "#ff7a1a",
+				border: "2px solid rgba(255,122,26,0.4)",
+				borderRadius: "6px",
+				padding: "4px 12px",
+				marginRight: "8px",
+			},
+			children: tag,
+		},
+	}));
+
 	return satori(
 		{
 			type: "div",
 			props: {
 				style: {
-					background: "#fefbfb",
 					width: "100%",
 					height: "100%",
+					background: "#0f1117",
 					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
+					flexDirection: "row",
+					alignItems: "stretch",
 				},
 				children: [
+					// Orange left accent bar
 					{
 						type: "div",
 						props: {
 							style: {
-								position: "absolute",
-								top: "-1px",
-								right: "-1px",
-								border: "4px solid #000",
-								background: "#ecebeb",
-								opacity: "0.9",
+								width: "8px",
+								background: "#ff7a1a",
+								marginTop: "60px",
+								marginBottom: "60px",
+								marginLeft: "60px",
 								borderRadius: "4px",
-								display: "flex",
-								justifyContent: "center",
-								margin: "2.5rem",
-								width: "88%",
-								height: "80%",
 							},
 						},
 					},
+					// Content area
 					{
 						type: "div",
 						props: {
 							style: {
-								border: "4px solid #000",
-								background: "#fefbfb",
-								borderRadius: "4px",
 								display: "flex",
-								justifyContent: "center",
-								margin: "2rem",
-								width: "88%",
-								height: "80%",
+								flexDirection: "column",
+								justifyContent: "space-between",
+								padding: "60px 60px 50px 40px",
+								flex: 1,
 							},
-							children: {
-								type: "div",
-								props: {
-									style: {
-										display: "flex",
-										flexDirection: "column",
-										justifyContent: "space-between",
-										margin: "20px",
-										width: "90%",
-										height: "90%",
+							children: [
+								// Title
+								{
+									type: "h1",
+									props: {
+										style: {
+											fontSize,
+											fontWeight: 700,
+											color: "#e8e6e3",
+											lineHeight: 1.15,
+											margin: 0,
+											maxHeight: "400px",
+											overflow: "hidden",
+										},
+										children: title,
 									},
-									children: [
-										{
-											type: "p",
-											props: {
-												style: {
-													fontSize: 72,
-													fontWeight: "bold",
-													maxHeight: "84%",
-													overflow: "hidden",
-												},
-												children: post.data.title,
-											},
-										},
-										{
-											type: "div",
-											props: {
-												style: {
-													display: "flex",
-													justifyContent: "space-between",
-													width: "100%",
-													marginBottom: "8px",
-													fontSize: 28,
-												},
-												children: [
-													{
-														type: "span",
-														props: {
-															children: [
-																"by ",
-																{
-																	type: "span",
-																	props: {
-																		style: { color: "transparent" },
-																		children: '"',
-																	},
-																},
-																{
-																	type: "span",
-																	props: {
-																		style: {
-																			overflow: "hidden",
-																			fontWeight: "bold",
-																		},
-																		children: post.data.author,
-																	},
-																},
-															],
-														},
-													},
-													{
-														type: "span",
-														props: {
-															style: { overflow: "hidden", fontWeight: "bold" },
-															children: SITE.title,
-														},
-													},
-												],
-											},
-										},
-									],
 								},
-							},
+								// Bottom row: tags + site branding
+								{
+									type: "div",
+									props: {
+										style: {
+											display: "flex",
+											justifyContent: "space-between",
+											alignItems: "flex-end",
+											width: "100%",
+										},
+										children: [
+											// Tags
+											{
+												type: "div",
+												props: {
+													style: {
+														display: "flex",
+														flexWrap: "wrap",
+													},
+													children: tagPills,
+												},
+											},
+											// Site branding
+											{
+												type: "div",
+												props: {
+													style: {
+														display: "flex",
+														alignItems: "center",
+														fontSize: 20,
+														fontWeight: 700,
+														color: "#e8e6e3",
+													},
+													children: [
+														"wicksipedia",
+														{
+															type: "span",
+															props: {
+																style: {
+																	color: "#ff7a1a",
+																	marginLeft: "2px",
+																	fontSize: 24,
+																},
+																children: ".",
+															},
+														},
+														{
+															type: "span",
+															props: {
+																style: { color: "#e8e6e3" },
+																children: "com",
+															},
+														},
+													],
+												},
+											},
+										],
+									},
+								},
+							],
 						},
 					},
 				],
@@ -222,7 +148,7 @@ export default async (post) => {
 			height: 630,
 			embedFont: true,
 			fonts: await loadGoogleFonts(
-				`${post.data.title + post.data.author + SITE.title}by`,
+				`${title}${tags.join("")}wicksipedia.com`,
 			),
 		},
 	);

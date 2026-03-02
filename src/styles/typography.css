@@ -82,6 +82,11 @@
       @apply border-s-[3px] border-s-accent rounded-e-lg bg-accent/5 px-4 py-1 italic wrap-break-word;
     }
 
+    blockquote p:first-of-type::before,
+    blockquote p:last-of-type::after {
+      content: none;
+    }
+
     details {
       @apply inline-block cursor-pointer text-foreground select-none [&_p]:hidden [&_ul]:my-0!;
     }
