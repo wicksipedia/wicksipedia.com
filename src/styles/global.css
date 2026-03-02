@@ -213,6 +213,25 @@ html[data-theme="dark"] {
   -webkit-text-fill-color: var(--accent);
 }
 
+/* ===== Heading anchor links (added via JS at runtime) ===== */
+.heading-link {
+  margin-inline-start: 0.5rem;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+@media (min-width: 768px) {
+  .heading-link {
+    opacity: 0;
+  }
+  .group:hover .heading-link {
+    opacity: 1;
+  }
+  .heading-link:focus {
+    opacity: 1;
+  }
+}
+
 /* ===== Accent line at top of viewport ===== */
 body::before {
   content: "";
