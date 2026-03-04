@@ -9,6 +9,7 @@ tags:
   - CI/CD
   - DevOps
   - Branching
+  - git
 ---
 
 Working for a software consultancy is fun, I get to see various client setups, coding standards, and branching strategies. Sometimes these are setup before I get there, I didn't get a chance to help shape them; sometimes they are fine, sometimes they have issues (every decision has a tradeoff). Either way, it's a fun challenge to see how I can help improve the process.
@@ -51,7 +52,7 @@ Given that I'd have to make changes in all 3 of their branches (and not squash a
 
 - Any pipeline changes would have to be replicated in each branch. This would be a manual process and prone to human error.
 - Since the pipelines were triggered on any branch, it was possible to have different versions of the pipeline in each branch.
-- The merge commits made it hard to tell what had been merged back and what hadn't. This would make it hard to know what was deployed to each environment.
+- The merge commits made it hard to tell what had been merged back and what hadn't. This would make it hard to know what was deployed to each environment. Understanding [how git diffs work](/blog/git-and-diffs) really helps when untangling these kinds of situations.
 
 ## Let's get... stuff done
 
