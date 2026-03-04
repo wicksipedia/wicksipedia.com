@@ -22,7 +22,14 @@ export default defineConfig({
 
 	integrations: [
 		sitemap({
-			filter: (page) => SITE.showArchives || !page.endsWith("/archives"),
+			filter: (page) => {
+				if (!SITE.showArchives && page.endsWith("/archives")) return false;
+				if (page.includes("/tags")) return false;
+				if (page.endsWith("/search")) return false;
+				// Exclude blog pagination pages (e.g. /blog/2, /blog/3)
+				if (/\/blog\/\d+$/.test(page)) return false;
+				return true;
+			},
 		}),
 		react(),
 		mdx(),
