@@ -17,6 +17,7 @@ import { transformerFileName } from "./src/utils/transformers/fileName";
 // https://astro.build/config
 export default defineConfig({
 	site: SITE.website,
+	trailingSlash: "never",
 	output: "static", // Explicitly set to static mode for Cloudflare Workers
 
 	integrations: [
