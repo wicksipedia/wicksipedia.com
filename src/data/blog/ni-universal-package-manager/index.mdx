@@ -72,6 +72,15 @@ globalAgent=bun
 
 `defaultAgent` is what ni falls back to when there's no lockfile to detect. I set mine to bun because if I'm starting something from scratch, that's what I want. `globalAgent` controls what runs when you pass the `-g` flag.
 
+One gotcha with the bun install route: you don't get shell completions. Homebrew's formula generates them automatically, but it also pulls in node as a dependency, which defeats the purpose if you're using fnm to manage node versions. To get zsh completions with the bun install, generate them yourself:
+
+```bash
+nr --completion-zsh > $(brew --prefix)/share/zsh/site-functions/_nr
+ni --completion-zsh > $(brew --prefix)/share/zsh/site-functions/_ni
+```
+
+Open a new terminal and `nr<tab>` will autocomplete your package.json scripts.
+
 ## The preview trick
 
 One thing I really like: add `?` to any command and ni shows you what it *would* run without actually running it.
