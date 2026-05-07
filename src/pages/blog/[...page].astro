@@ -22,7 +22,7 @@ const isFirstPage = !page.currentPage || page.currentPage === 1;
 
 <Layout title={`Posts | ${SITE.title}`} noindex={!isFirstPage}>
   <Header />
-  <Main pageTitle="Posts" pageDesc="All the articles I've posted." sectionLabel="The Archive">
+  <Main pageTitle="Posts" pageDesc="All the articles I've posted.">
     <ul>
       {page.data.map(data => <Card {...data} />)}
     </ul>

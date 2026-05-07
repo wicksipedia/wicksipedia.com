@@ -206,13 +206,6 @@ html[data-theme="dark"] {
   animation: cmd-in 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ===== Text Utilities ===== */
-
-@utility text-gradient {
-  color: var(--accent);
-  -webkit-text-fill-color: var(--accent);
-}
-
 /* ===== Heading anchor links (added via JS at runtime) ===== */
 .heading-link {
   margin-inline-start: 0.5rem;
@@ -237,5 +230,19 @@ body::before {
   content: "";
   @apply fixed top-0 left-0 right-0 z-45 h-0.75 pointer-events-none;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+/* ===== Reduced motion ===== */
+/* The bouncing dot runs an infinite keyframe; honour user OS preference.
+   Snaps every animation/transition to its resting state in 0.01ms. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 

@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-04T00:00:00Z",
+  "title": "Design System: Wicksipedia",
+  "extensions": {
+    "colorMeta": {
+      "cursor-blink-orange": {
+        "role": "primary",
+        "displayName": "Cursor-Blink Orange (light theme)",
+        "canonical": "#ae4508",
+        "tonalRamp": ["#2a1102", "#451c04", "#612806", "#7d3407", "#984009", "#b44c0b", "#cf650f", "#e88a3f"]
+      },
+      "cursor-blink-orange-dark": {
+        "role": "primary",
+        "displayName": "Cursor-Blink Orange (dark theme)",
+        "canonical": "#ff7a1a",
+        "tonalRamp": ["#3a1c00", "#582a00", "#763800", "#944600", "#b25400", "#d06200", "#ee7a14", "#ff9d52"]
+      },
+      "paper-warm": {
+        "role": "neutral",
+        "displayName": "Paper Warm",
+        "canonical": "#faf9f6",
+        "tonalRamp": ["#1c1b18", "#36342f", "#504c45", "#6a655c", "#847e72", "#9e988a", "#c4bdac", "#faf9f6"]
+      },
+      "deep-dock": {
+        "role": "neutral",
+        "displayName": "Deep Dock",
+        "canonical": "#0f1117",
+        "tonalRamp": ["#0a0c10", "#0f1117", "#161924", "#1e2130", "#272b3c", "#363b50", "#4d5266", "#7c8197"]
+      },
+      "ink-graphite": {
+        "role": "neutral",
+        "displayName": "Ink Graphite",
+        "canonical": "#1a1a1a",
+        "tonalRamp": ["#0a0a0a", "#1a1a1a", "#2e2e2e", "#444444", "#5d5d5d", "#7a7a7a", "#9c9c9c", "#c4c4c4"]
+      },
+      "ink-bone": {
+        "role": "neutral",
+        "displayName": "Ink Bone",
+        "canonical": "#e8e6e3",
+        "tonalRamp": ["#15140f", "#2c2a25", "#46433d", "#615c54", "#7d776e", "#9c958b", "#c0b9af", "#e8e6e3"]
+      },
+      "surface-ash": {
+        "role": "neutral",
+        "displayName": "Surface Ash",
+        "canonical": "#e8e5df",
+        "tonalRamp": ["#171612", "#2f2c25", "#48443c", "#615c52", "#7d7669", "#9c9485", "#c0b9aa", "#e8e5df"]
+      },
+      "surface-midnight": {
+        "role": "neutral",
+        "displayName": "Surface Midnight",
+        "canonical": "#1e2130",
+        "tonalRamp": ["#0a0b10", "#13151c", "#1e2130", "#2c3045", "#3d425e", "#52587a", "#6e7598", "#9099b8"]
+      },
+      "rule-stone": {
+        "role": "neutral",
+        "displayName": "Rule Stone",
+        "canonical": "#d6d3cc",
+        "tonalRamp": ["#1f1d18", "#3b372f", "#575248", "#736d61", "#8f897b", "#aaa494", "#c4beae", "#d6d3cc"]
+      },
+      "rule-slate": {
+        "role": "neutral",
+        "displayName": "Rule Slate",
+        "canonical": "#2a2d3a",
+        "tonalRamp": ["#0f1015", "#181a22", "#2a2d3a", "#3a3e51", "#4d5269", "#666c87", "#848ba6", "#a8aec5"]
+      },
+      "hero-fog-light": {
+        "role": "neutral",
+        "displayName": "Hero Fog (light)",
+        "canonical": "#dad9db",
+        "tonalRamp": ["#1f1f20", "#3b3a3c", "#575659", "#727275", "#8d8d90", "#a8a8ab", "#c2c2c5", "#dad9db"]
+      },
+      "hero-fog-dark": {
+        "role": "neutral",
+        "displayName": "Hero Fog (dark)",
+        "canonical": "#1a1d2a",
+        "tonalRamp": ["#0a0b10", "#13141d", "#1a1d2a", "#2a2e40", "#3c4159", "#525a78", "#6e7798", "#8e98ba"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Post detail title only. Source Serif 4 bold, fluid clamp." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings inside the chrome. Mono, bold." },
+      "title": { "displayName": "Title", "purpose": "Card titles. Source Serif 4. Lifts to accent on hover." },
+      "body": { "displayName": "Body", "purpose": "Default body text outside the article. Mono." },
+      "prose": { "displayName": "Prose", "purpose": "Long-form article body. Source Serif 4. 65-75ch." },
+      "label": { "displayName": "Label", "purpose": "Nav, metadata, kbd hints. Mono uppercase, tracked." }
+    },
+    "shadows": [
+      { "name": "card-hover-glow", "value": "0 10px 15px -3px color-mix(in srgb, var(--accent) 5%, transparent)", "purpose": "Accent-tinted glow under post cards on hover. The only branded shadow in the system." },
+      { "name": "code-block-separator", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "Subtle ambient shadow on .astro-code blocks to lift them off the prose surface." }
+    ],
+    "motion": [
+      { "name": "ease-reveal", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Ease-out-quart used for fade-in-up reveals on page load and the cmd-in animation." },
+      { "name": "ease-state", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default ease for hover state transitions on cards, nav links, icon buttons." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Hover state transitions on chrome (nav, icon buttons, tag pills)." },
+      { "name": "duration-base", "value": "300ms", "purpose": "Card hover transitions (background, border, shadow, lift)." },
+      { "name": "duration-reveal", "value": "500ms", "purpose": "Page-load fade-in-up reveals." },
+      { "name": "dot-squish-loop", "value": "0.8s infinite", "purpose": "Bouncing dot after the wordmark. The only ambient motion." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Post Card",
+      "kind": "card",
+      "refersTo": "card-post",
+      "description": "The signature list item: post title, datetime, description, tag pills, faded OG image bleeding from the right.",
+      "html": "<li class=\"ds-card-post\"><div class=\"ds-card-post__inner\"><a href=\"#\" class=\"ds-card-post__link\"><h2 class=\"ds-card-post__title\">A blog post about the thing</h2></a><p class=\"ds-card-post__date\">14 Mar 2026</p><p class=\"ds-card-post__desc\">A short description that gets clamped after three lines so the card stays a predictable height.</p><ul class=\"ds-card-post__tags\"><li><a class=\"ds-tag\" href=\"#\"># devops</a></li><li><a class=\"ds-tag\" href=\"#\"># ci-cd</a></li></ul></div></li>",
+      "css": ".ds-card-post { list-style: none; position: relative; overflow: hidden; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--border) 40%, transparent); background: color-mix(in srgb, var(--muted) 20%, transparent); transition: background 300ms cubic-bezier(0.4,0,0.2,1), border-color 300ms cubic-bezier(0.4,0,0.2,1), transform 300ms cubic-bezier(0.4,0,0.2,1), box-shadow 300ms cubic-bezier(0.4,0,0.2,1); margin: 1rem 0; } .ds-card-post:hover { background: color-mix(in srgb, var(--muted) 40%, transparent); border-color: color-mix(in srgb, var(--border) 70%, transparent); transform: translateY(-2px); box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--accent) 5%, transparent); } .ds-card-post__inner { position: relative; z-index: 1; padding: 20px; } .ds-card-post__title { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.25rem; font-weight: 700; line-height: 1.3; color: var(--foreground); transition: color 200ms cubic-bezier(0.4,0,0.2,1); margin: 0; } .ds-card-post:hover .ds-card-post__title { color: var(--accent); } .ds-card-post__date { font-family: 'Google Sans Code', ui-monospace, monospace; font-size: 0.8rem; color: color-mix(in srgb, var(--foreground) 60%, transparent); margin: 12px 0 0; } .ds-card-post__desc { font-family: 'Source Serif 4', Georgia, serif; font-size: 0.875rem; line-height: 1.6; color: color-mix(in srgb, var(--foreground) 70%, transparent); margin: 8px 0 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; } .ds-card-post__tags { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; padding: 0; }"
+    },
+    {
+      "name": "Tag Pill",
+      "kind": "chip",
+      "refersTo": "tag-pill",
+      "description": "Always carries a hash glyph. Border + low-alpha fill in the accent. Lifts on hover.",
+      "html": "<a class=\"ds-tag\" href=\"#\"><svg class=\"ds-tag__hash\" viewBox=\"0 0 24 24\" width=\"12\" height=\"12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 9h14M5 15h14M11 4 7 20M17 4l-4 16\"/></svg>devops</a>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; gap: 2px; border-radius: 9999px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); background: color-mix(in srgb, var(--accent) 5%, transparent); padding: 2px 10px; font-family: 'Google Sans Code', ui-monospace, monospace; font-size: 0.75rem; color: var(--accent); text-decoration: none; transition: border-color 150ms cubic-bezier(0.4,0,0.2,1), background 150ms cubic-bezier(0.4,0,0.2,1); } .ds-tag:hover { border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 15%, transparent); } .ds-tag__hash { opacity: 0.7; }"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Mono uppercase, tracked. Lifts to accent + accent/8 background on hover. Active state draws a 2px accent underline via ::after.",
+      "html": "<a class=\"ds-nav-link ds-nav-link--active\" href=\"#\">Blog</a>",
+      "css": ".ds-nav-link { display: inline-block; padding: 8px 12px; font-family: 'Google Sans Code', ui-monospace, monospace; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: color-mix(in srgb, var(--foreground) 75%, transparent); border-radius: 8px; text-decoration: none; transition: color 150ms cubic-bezier(0.4,0,0.2,1), background 150ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-link:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); } .ds-nav-link--active { color: var(--accent); position: relative; } .ds-nav-link--active::after { content: ''; display: block; height: 2px; margin-top: 2px; border-radius: 9999px; background: var(--accent); }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "icon-button",
+      "description": "36px square utility button. Hover tints with accent.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m21 21-4.3-4.3\"/></svg></button>",
+      "css": ".ds-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: transparent; color: color-mix(in srgb, var(--foreground) 75%, transparent); border: none; cursor: pointer; transition: color 150ms cubic-bezier(0.4,0,0.2,1), background 150ms cubic-bezier(0.4,0,0.2,1); } .ds-icon-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); } .ds-icon-btn:focus-visible { outline: 2px dashed var(--accent); outline-offset: 1px; }"
+    },
+    {
+      "name": "Inline Code",
+      "kind": "custom",
+      "refersTo": "code-inline",
+      "description": "Code references inside prose. Mono, accent-coloured, low-alpha muted background. Every inline-code is a small flash of cursor-blink.",
+      "html": "<code class=\"ds-code-inline\">git rebase -i HEAD~3</code>",
+      "css": ".ds-code-inline { display: inline; padding: 2px 6px; border-radius: 6px; background: color-mix(in srgb, var(--muted) 80%, transparent); color: var(--accent); font-family: 'Google Sans Code', ui-monospace, monospace; font-size: 0.9em; word-wrap: break-word; }"
+    },
+    {
+      "name": "Wordmark with Bouncing Dot",
+      "kind": "custom",
+      "refersTo": "card-post",
+      "description": "The brand mark. Italic Source Serif 4, plus a 2-unit orange dot that runs an infinite squish-and-bounce. The only ambient motion in the entire system.",
+      "html": "<a class=\"ds-wordmark\" href=\"#\"><span class=\"ds-wordmark__name\">Wicksipedia</span><span class=\"ds-wordmark__dot\"></span></a>",
+      "css": ".ds-wordmark { display: inline-flex; align-items: baseline; gap: 6px; text-decoration: none; white-space: nowrap; } .ds-wordmark__name { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.5rem; font-weight: 700; font-style: italic; letter-spacing: -0.01em; color: var(--foreground); } .ds-wordmark__dot { position: relative; display: inline-block; width: 8px; height: 8px; margin-bottom: 2px; border-radius: 9999px; background: var(--accent); will-change: transform; animation: ds-dot-squish 0.8s infinite; } .ds-wordmark__dot::after { content: ''; position: absolute; left: 50%; bottom: -3px; width: 6px; height: 2px; border-radius: 9999px; background: color-mix(in srgb, var(--foreground) 15%, transparent); transform: translateX(-50%); animation: ds-dot-shadow-squish 0.8s infinite; } @keyframes ds-dot-squish { 0%, 100% { transform: translateY(0) scale(1, 1); } 15% { transform: translateY(0) scale(1.3, 0.7); } 30% { transform: translateY(-10px) scale(0.85, 1.15); } 50% { transform: translateY(-14px) scale(1, 1); } 70% { transform: translateY(-10px) scale(0.85, 1.15); } 85% { transform: translateY(0) scale(1.25, 0.75); } } @keyframes ds-dot-shadow-squish { 0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.3; } 15% { transform: translateX(-50%) scaleX(1.4); opacity: 0.35; } 50% { transform: translateX(-50%) scaleX(0.4); opacity: 0.05; } 85% { transform: translateX(-50%) scaleX(1.4); opacity: 0.35; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Lit Console",
+    "overview": "Wicksipedia inherits the lineage of the terminal, then warms it. Monospace is the voice of the interface; Source Serif 4 is the voice of the writing. The single committed accent (Cursor-Blink Orange) is the only thing that raises its volume on the page, and it raises it for the same reason a cursor blinks: here, look. Surfaces are flat at rest. Depth appears only as a response to a hover, a click, a focus.\n\nThe aesthetic philosophy is editorial restraint with a developer's wink. Whitespace is generous because the writing is dense. The wordmark is followed by a small orange dot that bounces and squishes; that dot is the entire personality budget of the chrome. Everything else holds still.\n\nThe system explicitly rejects: the default AstroPaper / Hugo / Substack chrome, the Tailwind-template lookalike, corporate SaaS hero-metric layouts, and performative dev-blog weirdness. Authority comes from substance, not from polish.",
+    "keyCharacteristics": [
+      "Mono-forward chrome, serif-driven prose. The split is deliberate.",
+      "One accent (Cursor-Blink Orange). No second colour. No gradients on the accent.",
+      "Flat surfaces at rest. Hover-lift (-2px translate) and accent-tinted glow are the only depth signals.",
+      "Twin themes (paper-warm light, deep-dock dark) are first-class, not an afterthought.",
+      "The bouncing dot after the wordmark is the only ambient motion. Everything else is state-driven."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Cursor-Blink Orange is the only accent. Tailwind's --accent-2 (green) is defined for legacy reasons and must not be used in any UI. Introducing a second colour breaks the brand.", "section": "colors" },
+      { "name": "The Tinted-Neutral Rule", "body": "Never #fff. Never #000. Every neutral tilts toward warmth (light theme) or deep-dock navy (dark theme). Pure neutrals are forbidden.", "section": "colors" },
+      { "name": "The Low-Alpha Accent Rule", "body": "When the accent is used as a background fill (tag pills, hover states, code-inline), it is always low-alpha (accent/5 to accent/15). The accent at full opacity is reserved for text, borders at intent, and the one-pixel top-of-viewport line.", "section": "colors" },
+      { "name": "The Mono-Chrome / Serif-Prose Rule", "body": "Monospace for everything outside the article body; serif for everything inside. Headings inside prose flip to monospace because they're chrome-of-the-article. Do not collapse this split.", "section": "typography" },
+      { "name": "The 65-75ch Rule", "body": "Article body line length sits between 65 and 75 characters.", "section": "typography" },
+      { "name": "The Italic-as-Voice Rule", "body": "Italic is reserved for the wordmark, h3 inside prose, and blockquote prose. It is not used decoratively elsewhere.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Every surface is flat in its default state. No ambient cards, no decorative shadows, no glassmorphism on idle elements.", "section": "elevation" },
+      { "name": "The Accent-Tinted-Glow Rule", "body": "When a hover state generates a shadow, the shadow is tinted with the accent (typically accent/5). Generic black shadows are forbidden.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Cursor-Blink Orange (#ae4508 / #ff7a1a) for every interactive, every emphasis, every brand mark. Use it sparingly: on text, borders at intent, low-alpha tints. Never as a full-opacity background fill.",
+      "Do keep every surface flat at rest. The only elevation is hover-state on cards (accent-tinted glow + -2px lift) and the small shadow-sm on code blocks.",
+      "Do keep the Mono-Chrome / Serif-Prose rule. Monospace (Google Sans Code) for chrome and headings; serif (Source Serif 4) for article body.",
+      "Do tint every neutral toward warmth (light) or deep-dock navy (dark). Never #fff or #000.",
+      "Do cap article body line length at 65-75ch via max-w-app and prose font sizing.",
+      "Do carry the bouncing-dot motif when introducing new homepage sections that need a personality beat. It is the system's signature.",
+      "Do test every UI change in both light and dark themes before shipping. Twin themes are first-class.",
+      "Do respect prefers-reduced-motion for the bouncing dot, card lift, and reveal animations. WCAG 2.1 AA is the floor."
+    ],
+    "donts": [
+      "Don't introduce a second accent colour. The --accent-2 (green) variable exists for legacy reasons and must not be used in any UI.",
+      "Don't use side-stripe borders greater than 1px as a coloured accent on cards, callouts, alerts, or list items. The current blockquote (border-s-[3px] border-s-accent) violates this and is on the to-fix list.",
+      "Don't use gradient text (background-clip: text on a gradient background). Cursor-Blink Orange at full opacity carries emphasis.",
+      "Don't use glassmorphism decoratively. The header uses backdrop blur because it is sticky over scrolling content; that is structural.",
+      "Don't ship hero-metric templates (big number + small label + supporting stats + gradient accent). The site is editorial, not marketing.",
+      "Don't ship identical card grids (icon + heading + text, repeated). The post-card pattern is the only card pattern.",
+      "Don't introduce stock illustrations, mascots, or 'Trusted by' bars. The voice is dry; the chrome should be dry too.",
+      "Don't add ambient shadows, decorative gradients, or 'alive at rest' effects to surfaces. The bouncing dot is the entire personality budget.",
+      "Don't rebrand toward a Substack / Medium look (big author photo at top of post, sidebar metadata, generic serif).",
+      "Don't introduce performative weirdness (random emojis in chrome, ironic Comic Sans, gratuitous wobbles) as a substitute for personality."
+    ]
+  }
+}

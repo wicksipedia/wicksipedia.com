@@ -1,5 +1,4 @@
 ---
-import IconArchive from "@/assets/icons/IconArchive.svg";
 import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
 import IconMoon from "@/assets/icons/IconMoon.svg";
 import IconSearch from "@/assets/icons/IconSearch.svg";
@@ -99,28 +98,6 @@ const iconBtn =
               About
             </a>
           </li>
-          {
-            SITE.showArchives && (
-              <li>
-                <a
-                  href="/archives"
-                  class:list={[
-                    navLink,
-                    "sm:flex sm:items-center sm:justify-center",
-                    {
-                      [navActive]: isActive("/archives"),
-                    },
-                  ]}
-                  title="Archives"
-                  aria-label="archives"
-                >
-                  <IconArchive class="hidden sm:inline-block" />
-                  <span class="sm:sr-only">Archives</span>
-                </a>
-              </li>
-            )
-          }
-
           <li class="hidden h-5 w-px bg-border/60 sm:block mx-1" aria-hidden="true"></li>
           <li class="flex items-center justify-center">
             <button

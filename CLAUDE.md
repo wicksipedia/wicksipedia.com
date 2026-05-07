@@ -159,16 +159,17 @@ Use these on homepage sections for orchestrated page-load reveals. Apply to the 
 
 ### CSS Class Conventions
 
-Custom classes are defined in `global.css` (not as Tailwind plugins):
-- `.header-wrap`, `.header-nav-link`, `.header-nav-active`, `.header-icon-btn` — header system
-- `.footer-band`, `.footer-dot`, `.footer-icon-btn` — footer system
-- `.card-hover-lift`, `.card-border-left` — card interaction effects
-- `.post-hero-banner`, `.post-header` — post detail page
-- `.post-nav-link` — prev/next post navigation
-- `.hero-section`, `.hero-avatar`, `.hero-avatar-wrap` — homepage hero
-- `.btn-glow` — accent button with hover glow shadow
-- `.section-heading` — heading with 3rem orange underline bar
-- `.text-gradient` — solid accent color text
+Styling is composed inline via Tailwind utility classes on each component, not via centralised `.class` rules. Only a small set of reusable layers exists:
+
+- `@utility max-w-app`, `@utility app-layout` (`src/styles/global.css`) — page-width containers.
+- `@utility animate-reveal` and `animate-reveal-delay-1..3` (`src/styles/global.css`) — page-load fade-in-up reveals.
+- `@utility animate-cmd-in` (`src/styles/global.css`) — cmd-K palette open animation.
+- `.app-prose` (`src/styles/typography.css`) — long-form article body overrides on top of `@tailwindcss/typography`.
+- `.heading-link` (`src/styles/global.css`) — runtime-injected `#` anchors on headings.
+- `body::before` (`src/styles/global.css`) — accent gradient line at the top of the viewport.
+- `@media (prefers-reduced-motion: reduce)` block (`src/styles/global.css`) — snaps every animation/transition to 0.01ms; honours OS preference.
+
+Component-specific look (header, footer, card, post hero, etc.) lives inline in each `.astro` file as Tailwind class strings, not as named classes here. If you find yourself wanting a `.btn-glow` or `.section-heading` shortcut, write it as a Tailwind composition first and only promote to `@utility` if it repeats three or more times.
 
 ### Aesthetic Direction
 

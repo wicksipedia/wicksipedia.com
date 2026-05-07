@@ -27,7 +27,7 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
 <footer class:list={[{ "mt-auto": !noMarginTop }, className]} {...attrs}>
   <div class="bg-muted/40 border-t border-border/60">
     <div class="app-layout">
-      <!-- Editorial section label -->
+      <!-- Wordmark echo of the header brand mark -->
       <div class="flex items-center gap-4 py-4">
         <div class="flex items-baseline gap-1.5">
           <span
@@ -47,7 +47,7 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
           <div class="flex items-center gap-2 text-xs text-foreground/65">
             <span>&copy; {currentYear}</span>
             <span aria-hidden="true" class="text-border">|</span>
-            <span>All rights reserved</span>
+            <span>words mine. typos also mine.</span>
             {
               commitShort && (
                 <>

@@ -38,17 +38,8 @@ const relatedPosts = posts
 
 {
 	relatedPosts.length > 0 && (
-		<div data-pagefind-ignore>
-			{/* Editorial divider */}
-			<div class="flex items-center gap-4 my-8">
-				<span
-					class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap"
-					style="font-variant: small-caps;"
-				>
-					Related
-				</span>
-				<span class="flex-1 h-px bg-border/60" />
-			</div>
+		<div data-pagefind-ignore class="my-8">
+			<h2 class="sr-only">Related posts</h2>
 
 			<ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{relatedPosts.map((p) => {

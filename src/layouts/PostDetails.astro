@@ -137,12 +137,6 @@ const nextPost =
         {/* Metadata overlaid on image */}
         <div class="relative z-10 flex h-full min-h-[50vh] max-h-[75vh] flex-col justify-end">
           <div class="app-layout pb-8 sm:pb-10 lg:pb-12">
-            {/* Dispatch label */}
-            <div class="animate-reveal flex items-center gap-3 mb-4">
-              <span class="inline-block w-8 h-px bg-accent/70"></span>
-              <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Dispatch</span>
-            </div>
-
             {/* Title */}
             <h1
               transition:name={slugifyStr(title.replaceAll(".", "-"))}
@@ -190,12 +184,6 @@ const nextPost =
       <div class="relative w-full overflow-hidden bg-muted">
         <div class="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-accent/5"></div>
         <div class="relative z-10 app-layout py-12 sm:py-16 lg:py-20">
-          {/* Dispatch label */}
-          <div class="animate-reveal flex items-center gap-3 mb-6">
-            <span class="inline-block w-8 h-px bg-accent/40"></span>
-            <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Dispatch</span>
-          </div>
-
           {/* Title */}
           <h1
             transition:name={slugifyStr(title.replaceAll(".", "-"))}
@@ -270,11 +258,7 @@ const nextPost =
 
     <Comments />
 
-    <!-- Editorial divider before nav -->
-    <div class="flex items-center gap-4 my-8">
-      <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Continue Reading</span>
-      <span class="flex-1 h-px bg-border/60"></span>
-    </div>
+    <h2 class="sr-only">More posts</h2>
 
     <!-- Previous/Next Post Buttons -->
     <div data-pagefind-ignore class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -286,7 +270,7 @@ const nextPost =
           >
             <IconChevronLeft class="mt-1 inline-block flex-none text-accent/50 transition-colors group-hover:text-accent rtl:rotate-180" />
             <div>
-              <span class="text-xs font-bold uppercase tracking-[0.2em] text-foreground/60" style="font-variant: small-caps;">Previous</span>
+              <span class="text-xs text-foreground/55">Previous</span>
               <div class="font-prose text-sm font-bold leading-snug text-foreground/80 transition-colors group-hover:text-accent">{prevPost.title}</div>
             </div>
           </a>
@@ -299,7 +283,7 @@ const nextPost =
             class="group flex w-full justify-end gap-3 text-end sm:col-start-2 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5"
           >
             <div>
-              <span class="text-xs font-bold uppercase tracking-[0.2em] text-foreground/60" style="font-variant: small-caps;">Next</span>
+              <span class="text-xs text-foreground/55">Next</span>
               <div class="font-prose text-sm font-bold leading-snug text-foreground/80 transition-colors group-hover:text-accent">{nextPost.title}</div>
             </div>
             <IconChevronRight class="mt-1 inline-block flex-none text-accent/50 transition-colors group-hover:text-accent rtl:rotate-180" />

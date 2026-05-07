@@ -16,11 +16,6 @@ const { frontmatter } = Astro.props;
   <Breadcrumb />
   <main id="main-content" class="app-layout pb-12">
     <div class="animate-reveal pt-8 pb-6 mb-2 border-b border-border/50">
-      <!-- Editorial section header -->
-      <div class="flex items-center gap-4 mb-6">
-        <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">About the Author</span>
-        <span class="flex-1 h-px bg-border/60"></span>
-      </div>
       <h1 class="font-prose text-3xl font-bold italic tracking-tight text-foreground sm:text-4xl lg:text-5xl">
         {frontmatter.title}
       </h1>
