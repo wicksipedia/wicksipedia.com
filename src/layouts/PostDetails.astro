@@ -140,13 +140,13 @@ const nextPost =
             {/* Title */}
             <h1
               transition:name={slugifyStr(title.replaceAll(".", "-"))}
-              class="animate-reveal font-prose text-3xl font-bold italic leading-tight tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl max-w-4xl"
+              class="animate-reveal font-prose text-3xl font-bold italic leading-tight tracking-tight text-overlay-ink sm:text-4xl md:text-5xl lg:text-6xl max-w-4xl"
             >
               {title}
             </h1>
 
             {/* Description */}
-            <p class="animate-reveal-delay-1 mt-4 max-w-2xl font-prose text-base leading-relaxed italic text-white/85 sm:text-lg">
+            <p class="animate-reveal-delay-1 mt-4 max-w-2xl font-prose text-base leading-relaxed italic text-overlay-ink/85 sm:text-lg">
               {description}
             </p>
 
@@ -154,19 +154,19 @@ const nextPost =
             <div class="animate-reveal-delay-2 mt-5 flex flex-wrap items-center gap-3">
               <time
                 datetime={heroDatetime.toISOString()}
-                class="text-xs font-bold uppercase tracking-[0.15em] text-white/75"
+                class="text-xs font-bold uppercase tracking-[0.15em] text-overlay-ink/75"
               >
                 {isModified ? `Updated: ${heroDate}` : heroDate}
               </time>
               {tags.length > 0 && (
                 <>
-                  <span class="inline-block w-4 h-px bg-white/25"></span>
+                  <span class="inline-block w-4 h-px bg-overlay-ink/25"></span>
                   <ul class="flex flex-wrap gap-1.5">
                     {tags.map((tag: string) => (
                       <li>
                         <a
                           href={`/tags/${slugifyStr(tag)}`}
-                          class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs text-white/80 no-underline backdrop-blur-sm transition-all duration-150 hover:border-accent/60 hover:bg-accent/20 hover:text-accent"
+                          class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-overlay-ink/20 bg-overlay-ink/10 px-2.5 py-0.5 text-xs text-overlay-ink/80 no-underline backdrop-blur-sm transition-all duration-150 hover:border-accent/60 hover:bg-accent/20 hover:text-accent"
                         >
                           <IconHash class="size-3 opacity-70" />{tag}
                         </a>

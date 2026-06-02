@@ -30,6 +30,14 @@ html[data-theme="dark"] {
   --hero-social: rgba(232, 230, 227, 0.75);
 }
 
+/* Theme-independent tokens for content sitting over media. These must NOT
+   flip with the theme: text on a photo hero stays light in both themes,
+   and the modal scrim stays a deep dim in both themes. */
+:root {
+  --overlay-ink: #faf9f6;
+  --scrim: #0f1117;
+}
+
 @theme inline {
   --font-app: var(--font-google-sans-code);
   --font-prose: var(--font-source-serif);
@@ -43,6 +51,8 @@ html[data-theme="dark"] {
   --color-hero-text-muted: var(--hero-text-muted);
   --color-hero-accent: var(--hero-accent);
   --color-hero-social: var(--hero-social);
+  --color-overlay-ink: var(--overlay-ink);
+  --color-scrim: var(--scrim);
 }
 
 @layer base {

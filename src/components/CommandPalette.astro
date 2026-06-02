@@ -20,12 +20,11 @@ const navLinks = [
   aria-modal="true"
   aria-label="Command palette"
 >
-  <!-- Backdrop. Theme-agnostic darkening: deep-dock hex used directly so
-       both light and dark themes get a darkening overlay (a token-bound
-       --background would invert in light theme). -->
+  <!-- Backdrop. Uses the theme-independent --scrim token so both themes
+       get the same deep-dock darkening (a theme-bound token would invert). -->
   <div
     id="cmd-k-overlay"
-    class="absolute inset-0 bg-[#0f1117]/55 backdrop-blur-sm"
+    class="absolute inset-0 bg-scrim/55 backdrop-blur-sm"
   ></div>
 
   <!-- Modal panel -->
