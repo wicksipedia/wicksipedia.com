@@ -150,7 +150,7 @@ A two-temperature palette: warm paper for daylight, deep dock for late nights. T
 
 ### Named Rules
 
-**The One Accent Rule.** Cursor-Blink Orange is the only accent. Tailwind's `--accent-2` (green) is defined for legacy reasons and must not be used in any UI. Introducing a second colour breaks the brand.
+**The One Accent Rule.** Cursor-Blink Orange is the only accent. Introducing a second colour breaks the brand. One sanctioned exception: the `GitHubStats` "Top Languages" bar uses GitHub's canonical per-language colours, because there the colour is meaningful data (it matches GitHub's own language hues), not decorative brand colour. The rule holds everywhere else.
 
 **The Tinted-Neutral Rule.** Never `#fff`. Never `#000`. Every neutral tilts toward warmth (light theme) or deep-dock navy (dark theme). Pure neutrals are forbidden.
 
@@ -163,7 +163,7 @@ A two-temperature palette: warm paper for daylight, deep dock for late nights. T
 **Prose Font:** Source Serif 4 (with Georgia fallback)
 **Label / Mono Font:** Google Sans Code (same as body; case-treated for labels)
 
-**Character:** The chrome speaks in monospace; the writing speaks in serif. That split is the entire typographic personality. Mono carries the developer-craft signal in the navigation, headings, and UI; serif carries the long-form-reading-is-the-point signal inside the article body. Italic (Source Serif 4 italic) appears on h3 inside prose and on the wordmark itself.
+**Character:** Two voices, split by role. Source Serif 4 is the *editorial display* voice (the wordmark, post titles, card titles, and the article body); Google Sans Code is the *functional* voice (navigation, labels, metadata, descriptions, and structural headings inside prose). The serif says the writing is the point; the mono says the author reads code. Italic (Source Serif 4 italic) appears on h3 inside prose and on the wordmark itself.
 
 ### Hierarchy
 
@@ -176,9 +176,9 @@ A two-temperature palette: warm paper for daylight, deep dock for late nights. T
 
 ### Named Rules
 
-**The Mono-Chrome / Serif-Prose Rule.** Monospace for everything outside the article body; serif for everything inside. Headings inside prose flip to monospace because they're chrome-of-the-article (h1-h4 in `.app-prose` use `font-app`, not `font-prose`). Do not collapse this split.
+**The Display-Serif / Functional-Mono Rule.** The split is by *role*, not by location. Source Serif 4 carries editorial display type wherever it appears: the wordmark, post titles, card titles, and the article body. Google Sans Code carries the functional layer: nav, labels, metadata, datetimes, descriptions, section labels. The one twist: headings *inside* prose (h1–h4 in `.app-prose`) flip to mono (`font-app`, not `font-prose`) so they read as structural markers within the serif body, not as more display type. Do not collapse this split, and do not assume "chrome = mono": the most prominent chrome element, the wordmark, is serif.
 
-**The 65-75ch Rule.** Article body line length sits between 65 and 75 characters. Prose sets `font-prose`; the layout container caps at `max-w-app` (64rem) which, at the prose font size, lands inside the rule.
+**The Full-Measure Rule.** The article body spans the full page shell (`max-w-app`, up to 64rem / 1024px), the same width as every other section on the page. At the prose font size this runs wider than the classic 65–75ch measure (closer to ~100ch on large screens); a single consistent column width down the page is the deliberate trade, chosen over a narrower reading column that left the prose visibly out of step with the full-width hero, share row, and related-posts grid.
 
 **The Italic-as-Voice Rule.** Italic is reserved for: the wordmark, h3 inside prose, blockquote prose. It is not used decoratively elsewhere.
 
@@ -243,9 +243,9 @@ The site uses one search input (inside the command palette / Pagefind dialog). I
 - `bg-muted/80`, `text-accent`, `font-app` (Google Sans Code), `rounded-md`, `px-1.5 py-0.5`, `text-[0.9em]`.
 - The accent-coloured code text is part of the brand: every code reference inside prose is a small flash of the cursor-blink colour.
 
-### Blockquote (current pattern, needs revision)
+### Blockquote
 
-Current: `border-s-[3px] border-s-accent rounded-e-lg bg-accent/5 px-4 py-1 italic`. **This violates the system's own ban on side-stripe borders > 1px.** Documented as the current state; expected to be revised. See Do's and Don'ts below.
+`rounded-lg border border-accent/25 bg-accent/5 px-5 py-3 italic`. A full ghost border plus a low-alpha accent tint, not a side stripe. This deliberately satisfies the system's own ban on side-stripe borders > 1px (an earlier `border-s-[3px]` version violated it and was replaced).
 
 ### Bouncing Dot (signature)
 
@@ -257,17 +257,17 @@ The orange dot after the "Wicksipedia" wordmark runs an infinite squish-and-boun
 
 - **Do** use Cursor-Blink Orange (`#ae4508` / `#ff7a1a`) for every interactive, every emphasis, every brand mark. Use it sparingly: on text, borders at intent, low-alpha tints. Never as a full-opacity background fill.
 - **Do** keep every surface flat at rest. The only "elevation" is hover-state on cards (accent-tinted glow + -2px lift) and the small `shadow-sm` on code blocks.
-- **Do** keep the Mono-Chrome / Serif-Prose rule. Monospace (Google Sans Code) for chrome and headings; serif (Source Serif 4) for article body.
+- **Do** keep the Display-Serif / Functional-Mono rule. Source Serif 4 for editorial display type (wordmark, post & card titles, article body); Google Sans Code for the functional layer (nav, labels, metadata) and for headings inside prose.
 - **Do** tint every neutral toward warmth (light) or deep-dock navy (dark). Never `#fff` or `#000`.
-- **Do** cap article body line length at 65-75ch via `max-w-app` and prose font sizing.
+- **Do** size the article body to the full `max-w-app` shell, matching every other section's width. The single consistent column is preferred over a narrower reading measure.
 - **Do** carry the bouncing-dot motif when introducing new homepage sections that need a personality beat. It is the system's signature.
 - **Do** test every UI change in both light and dark themes before shipping. Twin themes are first-class.
 - **Do** respect `prefers-reduced-motion` for the bouncing dot, card lift, and reveal animations. WCAG 2.1 AA is the floor.
 
 ### Don't:
 
-- **Don't** introduce a second accent colour. The `--accent-2` (green) variable exists for legacy reasons and must not be used in any UI. Introducing a second colour breaks the One Accent Rule.
-- **Don't** use side-stripe borders greater than 1px as a coloured accent on cards, callouts, alerts, or list items. The current blockquote (`border-s-[3px] border-s-accent`) violates this and is on the to-fix list. Replace with full borders, background tints, or leading marks.
+- **Don't** introduce a second accent colour. (The legacy `--accent-2` green token has been removed.) The only sanctioned non-accent colour is the `GitHubStats` language bar, where the colours carry meaning. Introducing a second colour anywhere else breaks the One Accent Rule.
+- **Don't** use side-stripe borders greater than 1px as a coloured accent on cards, callouts, alerts, or list items. Replace with full borders, background tints, or leading marks. (The blockquote that once violated this now uses a full border + tint.)
 - **Don't** use gradient text (`background-clip: text` on a gradient background). Cursor-Blink Orange at full opacity carries emphasis. Weight, size, and italic carry the rest.
 - **Don't** use glassmorphism decoratively. The header uses backdrop blur because it is sticky over scrolling content; that is structural. New decorative blur is forbidden.
 - **Don't** ship hero-metric templates (big number + small label + supporting stats + gradient accent). The site is editorial, not marketing.

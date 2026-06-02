@@ -8,7 +8,6 @@ html[data-theme="light"] {
   --background: #faf9f6;
   --foreground: #1a1a1a;
   --accent: #ae4508;
-  --accent-2: #16a34a;
   --muted: #e8e5df;
   --border: #d6d3cc;
   --hero-bg: #dad9db;
@@ -22,7 +21,6 @@ html[data-theme="dark"] {
   --background: #0f1117;
   --foreground: #e8e6e3;
   --accent: #ff7a1a;
-  --accent-2: #34d399;
   --muted: #1e2130;
   --border: #2a2d3a;
   --hero-bg: #1a1d2a;
@@ -38,7 +36,6 @@ html[data-theme="dark"] {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
-  --color-accent-2: var(--accent-2);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-hero-bg: var(--hero-bg);
