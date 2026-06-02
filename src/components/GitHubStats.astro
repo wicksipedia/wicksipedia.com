@@ -248,74 +248,6 @@ const langColors: Record<string, string> = {
 };
 
 const totalLangRepos = stats.topLanguages.reduce((s, l) => s + l.count, 0);
-
-// Build contribution graph data for the last year
-// We need 53 columns (weeks) x 7 rows (days, Sun=0 to Sat=6)
-const graphWeeks: { date: string; count: number; level: number }[][] = [];
-const now = new Date();
-const todayStr = now.toISOString().split("T")[0];
-
-// Find the most recent Sunday to end on (or today if Sunday)
-const endDate = new Date(now);
-endDate.setUTCDate(endDate.getUTCDate() + (6 - endDate.getUTCDay()));
-// Start 52 weeks before that Sunday
-const startDate = new Date(endDate);
-startDate.setUTCDate(startDate.getUTCDate() - 52 * 7 + 1);
-
-// Find the max contribution count for level scaling
-const recentDays = [...allDays.entries()].filter(
-	([d]) => d >= startDate.toISOString().split("T")[0],
-);
-const maxCount = Math.max(1, ...recentDays.map(([, c]) => c));
-
-let cursor = new Date(startDate);
-let currentWeek: { date: string; count: number; level: number }[] = [];
-
-while (cursor <= endDate) {
-	const dateStr = cursor.toISOString().split("T")[0];
-	const count = allDays.get(dateStr) || 0;
-	const isFuture = dateStr > todayStr;
-
-	let level = 0;
-	if (!isFuture && count > 0) {
-		const ratio = count / maxCount;
-		if (ratio <= 0.25) level = 1;
-		else if (ratio <= 0.5) level = 2;
-		else if (ratio <= 0.75) level = 3;
-		else level = 4;
-	}
-	if (isFuture) level = -1; // Mark future days
-
-	currentWeek.push({ date: dateStr, count, level });
-
-	if (cursor.getUTCDay() === 6) {
-		graphWeeks.push(currentWeek);
-		currentWeek = [];
-	}
-
-	cursor.setUTCDate(cursor.getUTCDate() + 1);
-}
-if (currentWeek.length > 0) graphWeeks.push(currentWeek);
-
-// Month labels for the graph
-const monthLabels: { label: string; col: number }[] = [];
-let lastMonth = -1;
-for (let w = 0; w < graphWeeks.length; w++) {
-	const firstDay = graphWeeks[w][0];
-	if (firstDay) {
-		const month = new Date(`${firstDay.date}T00:00:00Z`).getUTCMonth();
-		if (month !== lastMonth) {
-			monthLabels.push({
-				label: new Date(`${firstDay.date}T00:00:00Z`).toLocaleDateString(
-					"en-US",
-					{ month: "short", timeZone: "UTC" },
-				),
-				col: w,
-			});
-			lastMonth = month;
-		}
-	}
-}
 ---
 
 <div class="github-stats-grid">
@@ -422,30 +354,7 @@ for (let w = 0; w < graphWeeks.length; w++) {
       <div class="contrib-divider"></div>
 
       <div class="contrib-item">
-        <div class="streak-ring-wrap">
-          <svg class="streak-ring" viewBox="0 0 80 80">
-            <circle
-              cx="40"
-              cy="40"
-              r="34"
-              fill="none"
-              stroke="var(--border)"
-              stroke-width="4"
-            />
-            <circle
-              cx="40"
-              cy="40"
-              r="34"
-              fill="none"
-              stroke="var(--accent)"
-              stroke-width="4"
-              stroke-linecap="round"
-              stroke-dasharray={`${Math.min(contribs.currentStreak / 30, 1) * 213.6} 213.6`}
-              transform="rotate(-90 40 40)"
-            />
-          </svg>
-          <span class="streak-ring-value">{contribs.currentStreak}</span>
-        </div>
+        <span class="contrib-value">{contribs.currentStreak}</span>
         <span class="contrib-label">Current Streak</span>
         {
           contribs.currentStreakStart ? (
@@ -477,78 +386,6 @@ for (let w = 0; w < graphWeeks.length; w++) {
       </div>
     </div>
   </div>
-
-  <!-- Contribution Graph -->
-  <div class="graph-card">
-    <div class="graph-header">
-      <span class="graph-title">Contribution Activity</span>
-    </div>
-    <div class="graph-scroll">
-      <svg
-        class="graph-svg"
-        viewBox={`0 0 ${graphWeeks.length * 15 + 30} ${7 * 15 + 20}`}
-        role="img"
-        aria-label="GitHub contribution graph for the last year"
-      >
-        {/* Month labels */}
-        {
-          monthLabels.map(m => (
-            <text
-              x={m.col * 15 + 30}
-              y={10}
-              class="graph-month-label"
-              font-size="10"
-            >
-              {m.label}
-            </text>
-          ))
-        }
-        {/* Day labels */}
-        <text x="0" y={2 * 15 + 26} class="graph-day-label" font-size="9">
-          Mon
-        </text>
-        <text x="0" y={4 * 15 + 26} class="graph-day-label" font-size="9">
-          Wed
-        </text>
-        <text x="0" y={6 * 15 + 26} class="graph-day-label" font-size="9">
-          Fri
-        </text>
-        {/* Grid cells */}
-        {
-          graphWeeks.map((week, wi) =>
-            week.map((day, di) => (
-              <rect
-                x={wi * 15 + 30}
-                y={di * 15 + 16}
-                width="11"
-                height="11"
-                rx="2"
-                class={
-                  day.level === -1
-                    ? "graph-cell-future"
-                    : `graph-cell graph-cell-${day.level}`
-                }
-              >
-                <title>
-                  {day.count} contribution{day.count !== 1 ? "s" : ""} on{" "}
-                  {day.date}
-                </title>
-              </rect>
-            ))
-          )
-        }
-      </svg>
-    </div>
-    <div class="graph-legend">
-      <span class="graph-legend-label">Less</span>
-      <div class="graph-cell graph-cell-0 graph-legend-cell"></div>
-      <div class="graph-cell graph-cell-1 graph-legend-cell"></div>
-      <div class="graph-cell graph-cell-2 graph-legend-cell"></div>
-      <div class="graph-cell graph-cell-3 graph-legend-cell"></div>
-      <div class="graph-cell graph-cell-4 graph-legend-cell"></div>
-      <span class="graph-legend-label">More</span>
-    </div>
-  </div>
 </div>
 
 <style>
@@ -565,19 +402,13 @@ for (let w = 0; w < graphWeeks.length; w++) {
     }
   }
 
-  .contribs-card,
-  .graph-card {
+  .contribs-card {
     grid-column: 1 / -1;
-  }
-
-  .graph-card {
-    overflow: hidden;
   }
 
   .stats-card,
   .langs-card,
-  .contribs-card,
-  .graph-card {
+  .contribs-card {
     border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
     border-radius: 0.75rem;
     padding: 1.25rem 1.5rem;
@@ -589,8 +420,7 @@ for (let w = 0; w < graphWeeks.length; w++) {
   @media (max-width: 640px) {
     .stats-card,
     .langs-card,
-    .contribs-card,
-    .graph-card {
+    .contribs-card {
       padding: 1rem 1rem;
     }
   }
@@ -796,30 +626,6 @@ for (let w = 0; w < graphWeeks.length; w++) {
     flex-shrink: 0;
   }
 
-  .streak-ring-wrap {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .streak-ring {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  .streak-ring-value {
-    font-size: 1.75rem;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--accent);
-    position: relative;
-  }
-
   @media (max-width: 640px) {
     .contribs-grid {
       flex-direction: column;
@@ -830,87 +636,5 @@ for (let w = 0; w < graphWeeks.length; w++) {
       width: 3rem;
       height: 1px;
     }
-  }
-
-  /* Contribution Graph */
-  .graph-header {
-    margin-bottom: 0.75rem;
-  }
-
-  .graph-title {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: var(--foreground);
-    opacity: 0.65;
-  }
-
-  .graph-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .graph-svg {
-    display: block;
-    width: 100%;
-    min-width: 720px;
-    height: auto;
-  }
-
-  .graph-month-label,
-  .graph-day-label {
-    fill: var(--foreground);
-    opacity: 0.55;
-    font-family: var(--font-app);
-  }
-
-  .graph-cell {
-    shape-rendering: geometricPrecision;
-  }
-
-  .graph-cell-future {
-    fill: transparent;
-  }
-
-  .graph-cell-0 {
-    fill: color-mix(in srgb, var(--foreground) 8%, transparent);
-  }
-
-  .graph-cell-1 {
-    fill: color-mix(in srgb, var(--accent) 35%, transparent);
-  }
-
-  .graph-cell-2 {
-    fill: color-mix(in srgb, var(--accent) 55%, transparent);
-  }
-
-  .graph-cell-3 {
-    fill: color-mix(in srgb, var(--accent) 75%, transparent);
-  }
-
-  .graph-cell-4 {
-    fill: var(--accent);
-  }
-
-  .graph-legend {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
-  }
-
-  .graph-legend-label {
-    font-size: 0.6rem;
-    color: var(--foreground);
-    opacity: 0.65;
-    padding: 0 0.25rem;
-  }
-
-  .graph-legend-cell {
-    width: 11px;
-    height: 11px;
-    border-radius: 2px;
   }
 </style>
