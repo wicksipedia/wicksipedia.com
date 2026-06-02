@@ -274,27 +274,29 @@ export PATH="$HOME/.aspire/bin:$PATH"
 
 ## Try It Yourself
 
-1. **First, profile your current setup**:
-   ```bash
-   # Add to top of ~/.zshrc
-   zmodload zsh/zprof
+**1. First, profile your current setup:**
 
-   ...
+```bash
+# Add to top of ~/.zshrc
+zmodload zsh/zprof
 
-   # Add to bottom of ~/.zshrc
-   zprof
-   ```
+...
 
-2. **Measure your startup time**:
-   ```bash
-   for i in {1..5}; do /usr/bin/time zsh -i -c exit 2>&1 | grep real; done
-   ```
+# Add to bottom of ~/.zshrc
+zprof
+```
 
-3. **Review the `zprof` output** to identify your actual bottlenecks (don't guess like I did!)
+**2. Measure your startup time:**
 
-4. **Optimize based on what the data shows**
+```bash
+for i in {1..5}; do /usr/bin/time zsh -i -c exit 2>&1 | grep real; done
+```
 
-5. **Measure again** to verify your improvements
+**3. Review the `zprof` output** to identify your actual bottlenecks (don't guess like I did!)
+
+**4. Optimize based on what the data shows**
+
+**5. Measure again** to verify your improvements
 
 ## Wrapping Up
 

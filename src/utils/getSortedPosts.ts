@@ -1,7 +1,7 @@
-import type { CollectionEntry } from "astro:content";
+import type { PostEntry } from "@/lib/tina/posts";
 import postFilter from "./postFilter";
 
-const getSortedPosts = (posts: CollectionEntry<"blog">[]) => {
+const getSortedPosts = (posts: PostEntry[]) => {
 	return posts
 		.filter(postFilter)
 		.sort(

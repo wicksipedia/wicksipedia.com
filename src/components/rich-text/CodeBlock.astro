@@ -1,0 +1,75 @@
+---
+import { createHighlighter, type Highlighter } from "shiki";
+import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
+
+/**
+ * `code_block` override for <TinaMarkdown>. Tina's AST gives us only `{ value, lang }`
+ * (fence meta like `title=` is dropped by the parser), so we re-highlight here with
+ * the same dual-theme Shiki config the MDX pipeline used — min-light / night-owl with
+ * `defaultColor: false`, which emits the `--shiki-light` / `--shiki-dark` CSS variables
+ * typography.css targets. The `astro-code` class makes those rules apply (without it the
+ * block falls back to inline-`code` pills).
+ *
+ * Engine: the JavaScript regex engine, NOT the default Oniguruma WASM one. This same
+ * component renders inside Astro's container for the on-demand /tina-island route, a
+ * sandbox that forbids `WebAssembly.instantiate` — the WASM engine throws there and
+ * takes down visual editing. The JS engine is pure JS and works in both contexts.
+ */
+interface Props {
+	value: string;
+	lang?: string;
+}
+
+const { value, lang } = Astro.props;
+
+// Languages used across posts (+ a few common ones); unknown langs fall back to text.
+const LANGS = [
+	"bash",
+	"shell",
+	"zsh",
+	"sh",
+	"ini",
+	"json",
+	"typescript",
+	"ts",
+	"js",
+	"yaml",
+	"diff",
+];
+const THEMES = ["min-light", "night-owl"] as const;
+
+// Reuse one highlighter across every code block in the render.
+let highlighterPromise: Promise<Highlighter> | undefined = (
+	globalThis as { __shikiHl?: Promise<Highlighter> }
+).__shikiHl;
+if (!highlighterPromise) {
+	highlighterPromise = createHighlighter({
+		themes: [...THEMES],
+		langs: LANGS,
+		engine: createJavaScriptRegexEngine(),
+	});
+	(globalThis as { __shikiHl?: Promise<Highlighter> }).__shikiHl =
+		highlighterPromise;
+}
+const highlighter = await highlighterPromise;
+
+const resolvedLang =
+	lang && highlighter.getLoadedLanguages().includes(lang) ? lang : "text";
+
+const html = highlighter.codeToHtml(value ?? "", {
+	lang: resolvedLang,
+	themes: { light: "min-light", dark: "night-owl" },
+	defaultColor: false,
+	transformers: [
+		{
+			name: "astro-code-class",
+			pre(node) {
+				const cls = (node.properties.class as string | undefined) ?? "";
+				node.properties.class = `astro-code ${cls}`.trim();
+			},
+		},
+	],
+});
+---
+
+<Fragment set:html={html} />

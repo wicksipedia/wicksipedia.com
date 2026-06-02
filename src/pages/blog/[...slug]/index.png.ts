@@ -1,6 +1,6 @@
-import { type CollectionEntry, getCollection } from "astro:content";
 import type { APIRoute } from "astro";
 import { SITE } from "@/config";
+import { getAllPosts, type PostEntry } from "@/lib/tina/posts";
 import { generateOgImageForPost } from "@/utils/generateOgImages";
 import { getPath } from "@/utils/getPath";
 
@@ -9,10 +9,8 @@ export async function getStaticPaths() {
 		return [];
 	}
 
-	const posts = await getCollection("blog").then((p) =>
-		p.filter(
-			({ data }) => (!data.draft || import.meta.env.DEV) && !data.ogImage,
-		),
+	const posts = (await getAllPosts()).filter(
+		({ data }) => (!data.draft || import.meta.env.DEV) && !data.ogImage,
 	);
 
 	return posts.map((post) => ({
@@ -29,7 +27,7 @@ export const GET: APIRoute = async ({ props }) => {
 		});
 	}
 
-	const buffer = await generateOgImageForPost(props as CollectionEntry<"blog">);
+	const buffer = await generateOgImageForPost(props as PostEntry);
 	return new Response(new Uint8Array(buffer), {
 		headers: { "Content-Type": "image/png" },
 	});

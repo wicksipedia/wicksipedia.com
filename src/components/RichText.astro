@@ -1,0 +1,61 @@
+---
+import { getImage } from "astro:assets";
+import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
+import type {
+	CustomComponentsMap,
+	TinaRichTextContent,
+} from "@tinacms/astro/types";
+import CodeBlock from "@/components/rich-text/CodeBlock.astro";
+import { resolveBlogImage } from "@/lib/tina/images";
+
+/**
+ * Renders a Tina rich-text body with <TinaMarkdown>. Two pipeline features are
+ * reproduced here that the AST/default renderer would otherwise drop:
+ *   - code blocks → dual-theme Shiki via the CodeBlock override.
+ *   - colocated `./img.png` body images → optimised (webp) via getImage(), by
+ *     rewriting each img node's `url` before rendering. Remote/public refs pass
+ *     through untouched.
+ */
+interface Props {
+	content: TinaRichTextContent | null;
+	/** Post slug, so `./`-relative image refs resolve to the right folder. */
+	slug: string;
+}
+
+const { content, slug } = Astro.props;
+
+type AstNode = {
+	type?: string;
+	url?: string;
+	children?: AstNode[];
+	[key: string]: unknown;
+};
+
+async function resolveImages(node: AstNode): Promise<AstNode> {
+	let next = node;
+	if (node.type === "img" && typeof node.url === "string") {
+		const resolved = resolveBlogImage(slug, node.url);
+		if (resolved && typeof resolved !== "string") {
+			const optimised = await getImage({ src: resolved, format: "webp" });
+			next = { ...node, url: optimised.src };
+		}
+	}
+	if (next.children?.length) {
+		next = {
+			...next,
+			children: await Promise.all(next.children.map(resolveImages)),
+		};
+	}
+	return next;
+}
+
+const resolved = content
+	? ((await resolveImages(content as AstNode)) as TinaRichTextContent)
+	: null;
+
+const components: CustomComponentsMap = {
+	code_block: CodeBlock,
+};
+---
+
+{resolved && <TinaMarkdown content={resolved} components={components} />}

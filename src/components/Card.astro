@@ -1,14 +1,14 @@
 ---
 import { Image } from "astro:assets";
-import type { CollectionEntry } from "astro:content";
 import IconHash from "@/assets/icons/IconHash.svg";
+import type { PostEntry } from "@/lib/tina/posts";
 import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
 import Datetime from "./Datetime.astro";
 
 type Props = {
 	variant?: "h2" | "h3";
-} & CollectionEntry<"blog">;
+} & PostEntry;
 
 const { variant: Heading = "h2", id, data, filePath } = Astro.props;
 

@@ -1,8 +1,13 @@
 {
 	"name": "wicksipedia-dot-com",
+	// @astrojs/cloudflare supplies the Worker entrypoint during build (no `main`
+	// here). Static pages serve from the assets binding; only /tina-island/* runs
+	// on the Worker.
 	"compatibility_date": "2026-01-26",
+	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
 		"directory": "./dist",
+		"binding": "ASSETS",
 		"not_found_handling": "404-page"
 	},
 	"observability": {

@@ -1,3 +1,4 @@
+import cloudflare from "@astrojs/cloudflare";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
@@ -20,7 +21,18 @@ import { transformerFileName } from "./src/utils/transformers/fileName";
 export default defineConfig({
 	site: SITE.website,
 	trailingSlash: "never",
-	output: "static", // Explicitly set to static mode for Cloudflare Workers
+	// Static by default; the Cloudflare adapter serves the few on-demand routes
+	// (Tina's /tina-island/[name] island-refresh endpoint) as a Worker.
+	output: "static",
+	// imageService "compile": Sharp-optimise images at build time (our prerendered
+	// pages keep their /_astro webp output); pass through at runtime on the Worker.
+	// prerenderEnvironment "node": prerender static pages in Node (not workerd) so
+	// the build-time OG pipeline (satori + resvg native addon) can run. The
+	// on-demand /tina-island route still executes on workerd at runtime.
+	adapter: cloudflare({
+		imageService: "compile",
+		prerenderEnvironment: "node",
+	}),
 
 	integrations: [
 		sitemap({
@@ -57,11 +69,37 @@ export default defineConfig({
 	},
 
 	vite: {
-		// tinaAdminDevRedirect: makes a bare /admin reachable during `astro dev`
-		// (the SPA is served from public/admin which Vite won't index otherwise).
-		plugins: [tailwindcss(), basicSsl(), tinaAdminDevRedirect()],
+		// tinaAdminDevRedirect: makes a bare /admin reachable during `astro dev`.
+		// externalizeResvgForWorker: the Cloudflare adapter hardcodes
+		// rollupOptions.external = ["sharp"] and forces ssr.noExternal = true, so
+		// resvg's native `.node` binary would be parsed into the Worker bundle and
+		// break it. resvg is only used at build time (prerendered OG routes), so we
+		// append it to the externals after the adapter has set its own.
+		plugins: [
+			tailwindcss(),
+			basicSsl(),
+			tinaAdminDevRedirect(),
+			{
+				name: "externalize-resvg-for-worker",
+				enforce: "post",
+				config(cfg) {
+					cfg.build ??= {};
+					cfg.build.rollupOptions ??= {};
+					const ext = cfg.build.rollupOptions.external;
+					const extras = ["@resvg/resvg-js"];
+					cfg.build.rollupOptions.external = Array.isArray(ext)
+						? [...ext, ...extras]
+						: extras;
+				},
+			},
+		],
 		optimizeDeps: {
 			exclude: ["@resvg/resvg-js"],
+		},
+		// Dev SSR of the island route needs Tina's bridge bundled (the Cloudflare
+		// adapter forces this for the Worker build too).
+		ssr: {
+			noExternal: ["@tinacms/astro", "@tinacms/bridge"],
 		},
 		server: {
 			cors: true, // Allow cross-origin requests (giscus iframe fetches theme CSS)

@@ -54,12 +54,12 @@ type Query {
   collections: [Collection!]!
   node(id: String): Node!
   document(collection: String, relativePath: String): DocumentNode!
-  page(relativePath: String): Page!
-  pageConnection(before: String, after: String, first: Float, last: Float, sort: String, filter: PageFilter): PageConnection!
+  blog(relativePath: String): Blog!
+  blogConnection(before: String, after: String, first: Float, last: Float, sort: String, filter: BlogFilter): BlogConnection!
 }
 
 input DocumentFilter {
-  page: PageFilter
+  blog: BlogFilter
 }
 
 type DocumentConnectionEdges {
@@ -85,10 +85,22 @@ type Collection {
   documents(before: String, after: String, first: Float, last: Float, sort: String, filter: DocumentFilter, folder: String): DocumentConnection!
 }
 
-union DocumentNode = Page | Folder
+union DocumentNode = Blog | Folder
 
-type Page implements Node & Document {
+type Blog implements Node & Document {
   title: String!
+  description: String!
+  pubDatetime: String!
+  modDatetime: String
+  author: String
+  ogImage: String
+  tags: [String]
+  featured: Boolean
+  draft: Boolean
+  canonicalURL: String
+  hideEditPost: Boolean
+  timezone: String
+  noindex: Boolean
   body: JSON
   id: ID!
   _sys: SystemInfo!
@@ -102,26 +114,58 @@ input StringFilter {
   in: [String]
 }
 
+input DatetimeFilter {
+  after: String
+  before: String
+  eq: String
+  exists: Boolean
+  in: [String]
+}
+
+input ImageFilter {
+  startsWith: String
+  eq: String
+  exists: Boolean
+  in: [String]
+}
+
+input BooleanFilter {
+  eq: Boolean
+  exists: Boolean
+}
+
 input RichTextFilter {
   startsWith: String
   eq: String
   exists: Boolean
 }
 
-input PageFilter {
+input BlogFilter {
   title: StringFilter
+  description: StringFilter
+  pubDatetime: DatetimeFilter
+  modDatetime: DatetimeFilter
+  author: StringFilter
+  ogImage: ImageFilter
+  tags: StringFilter
+  featured: BooleanFilter
+  draft: BooleanFilter
+  canonicalURL: StringFilter
+  hideEditPost: BooleanFilter
+  timezone: StringFilter
+  noindex: BooleanFilter
   body: RichTextFilter
 }
 
-type PageConnectionEdges {
+type BlogConnectionEdges {
   cursor: String!
-  node: Page
+  node: Blog
 }
 
-type PageConnection implements Connection {
+type BlogConnection implements Connection {
   pageInfo: PageInfo!
   totalCount: Float!
-  edges: [PageConnectionEdges]
+  edges: [BlogConnectionEdges]
 }
 
 type Mutation {
@@ -130,21 +174,33 @@ type Mutation {
   deleteDocument(collection: String, relativePath: String!): DocumentNode!
   createDocument(collection: String, relativePath: String!, params: DocumentMutation!): DocumentNode!
   createFolder(collection: String, relativePath: String!): DocumentNode!
-  updatePage(relativePath: String!, params: PageMutation!): Page!
-  createPage(relativePath: String!, params: PageMutation!): Page!
+  updateBlog(relativePath: String!, params: BlogMutation!): Blog!
+  createBlog(relativePath: String!, params: BlogMutation!): Blog!
 }
 
 input DocumentUpdateMutation {
-  page: PageMutation
+  blog: BlogMutation
   relativePath: String
 }
 
 input DocumentMutation {
-  page: PageMutation
+  blog: BlogMutation
 }
 
-input PageMutation {
+input BlogMutation {
   title: String
+  description: String
+  pubDatetime: String
+  modDatetime: String
+  author: String
+  ogImage: String
+  tags: [String]
+  featured: Boolean
+  draft: Boolean
+  canonicalURL: String
+  hideEditPost: Boolean
+  timezone: String
+  noindex: Boolean
   body: JSON
 }
 

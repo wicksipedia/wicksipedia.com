@@ -1,6 +1,6 @@
 ---
 import { Image } from "astro:assets";
-import { type CollectionEntry, render } from "astro:content";
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
@@ -13,10 +13,13 @@ import Comments from "@/components/Comments.astro";
 import EditPost from "@/components/EditPost.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
+import BlogBody from "@/components/islands/BlogBody.astro";
 import RelatedPosts from "@/components/RelatedPosts.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
+import { islands } from "@/lib/islands";
+import { getBlogRaw, type PostEntry } from "@/lib/tina/posts";
 import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
 
@@ -24,11 +27,16 @@ dayjs.extend(utc);
 dayjs.extend(tz);
 
 type Props = {
-	post: CollectionEntry<"blog">;
-	posts: CollectionEntry<"blog">[];
+	post: PostEntry;
+	posts: PostEntry[];
 };
 
 const { post, posts } = Astro.props;
+
+// Raw, metadata-tagged copy of the post for the visual-editing island. The body
+// renders through BlogBody both here (statically) and via /tina-island/blog.
+const tinaResult = await getBlogRaw(post.slug);
+const tinaPost = tinaResult.data?.blog;
 
 const {
 	title,
@@ -43,8 +51,6 @@ const {
 	hideEditPost,
 	noindex,
 } = post.data;
-
-const { Content } = await render(post);
 
 let ogImageUrl: string | undefined;
 
@@ -237,7 +243,14 @@ const nextPost =
       id="article"
       class="animate-reveal-delay-1 app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
     >
-      <Content />
+      <TinaIsland
+        name="blog"
+        wrapper={islands.blog.wrapper}
+        params={{ slug: post.slug }}
+        primary
+      >
+        <BlogBody post={tinaPost} />
+      </TinaIsland>
     </article>
 
     <div class="border-0 border-t border-border/40 my-8"></div>
@@ -346,6 +359,15 @@ const nextPost =
     );
     for (const heading of headings) {
       heading.classList.add("group");
+      // TinaMarkdown doesn't emit heading ids; derive a slug from the text so
+      // anchor links (and deep links) work the way the MDX pipeline provided.
+      if (!heading.id) {
+        heading.id = (heading.textContent || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, "")
+          .replace(/\s+/g, "-");
+      }
       const link = document.createElement("a");
       link.className = "heading-link";
       link.href = "#" + heading.id;

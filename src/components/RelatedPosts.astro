@@ -1,13 +1,13 @@
 ---
-import type { CollectionEntry } from "astro:content";
 import IconHash from "@/assets/icons/IconHash.svg";
+import type { PostEntry } from "@/lib/tina/posts";
 import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
 import Datetime from "./Datetime.astro";
 
 type Props = {
-	currentPost: CollectionEntry<"blog">;
-	posts: CollectionEntry<"blog">[];
+	currentPost: PostEntry;
+	posts: PostEntry[];
 };
 
 const { currentPost, posts } = Astro.props;

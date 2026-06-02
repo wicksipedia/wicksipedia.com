@@ -54,7 +54,8 @@ Saying it has near-zero marginal cost? That's honestly pretty superficial. It co
 The developer's role hasn't really changed. You still need a person who understands the system, can rationalize trade offs, identify novel improvements, and understands how to identify business value.
 
 > Maybe we'll be called builders instead of developers, but the core skills remain the same.
-> - Me
+
+— Me
 
 AI's effect on software engineering? It's just history repeating itself:
 
@@ -71,7 +72,8 @@ Spreadsheets let financial people do more complex financial analysis.. rather th
 ### Slowing Down to Go Fast... to 10x or to 0.1x
 
 > You are absolutely right...
-> - GPT-4, Jan 2024
+
+— GPT-4, Jan 2024
 
 There's no 2 ways about it, AI is sycophantic AF. What's worse is that it'll use overly confident language to agree with a terrible idea just to please you. Which means you now have the ability to ruin things much faster than before. Fun, right?
 

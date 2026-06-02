@@ -1,6 +1,5 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection } from "astro:content";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import IconHash from "@/assets/icons/IconHash.svg";
 import avatarImage from "@/assets/images/avatar.png";
@@ -10,11 +9,12 @@ import Socials from "@/components/Socials.astro";
 import { SITE } from "@/config";
 import { SOCIALS } from "@/constants";
 import Layout from "@/layouts/Layout.astro";
+import { getAllPosts } from "@/lib/tina/posts";
 import { getPath } from "@/utils/getPath";
 import getSortedPosts from "@/utils/getSortedPosts";
 import { slugifyStr } from "@/utils/slugify";
 
-const posts = await getCollection("blog");
+const posts = await getAllPosts();
 
 const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);

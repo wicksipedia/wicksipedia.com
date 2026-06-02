@@ -1,5 +1,17 @@
-fragment PageParts on Page {
+fragment BlogParts on Blog {
   __typename
   title
+  description
+  pubDatetime
+  modDatetime
+  author
+  ogImage
+  tags
+  featured
+  draft
+  canonicalURL
+  hideEditPost
+  timezone
+  noindex
   body
 }

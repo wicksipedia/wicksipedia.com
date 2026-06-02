@@ -28,10 +28,10 @@ This has a few benefits:
 ## Steps to get it running
 
 1. Install the [Probot Settings app](https://probot.github.io/apps/settings/)
-2. Create a `.github/settings.yml` file in your repository
+2. Create a `.github/settings.yml` file in your repository.
 
-    ``` yaml
-    repository:
+``` yaml
+repository:
     # See https://developer.github.com/v3/repos/#edit for all available settings.
 
     # The name of the repository. Changing this will rename the repository
@@ -95,7 +95,7 @@ This has a few benefits:
 
       - username:
         permission: pull
-    ```
+```
 
 ## Wait a minute
 

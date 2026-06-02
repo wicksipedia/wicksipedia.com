@@ -5,16 +5,28 @@ export function gql(strings, ...args) {
   });
   return str;
 }
-export const PagePartsFragmentDoc = gql`
-    fragment PageParts on Page {
+export const BlogPartsFragmentDoc = gql`
+    fragment BlogParts on Blog {
   __typename
   title
+  description
+  pubDatetime
+  modDatetime
+  author
+  ogImage
+  tags
+  featured
+  draft
+  canonicalURL
+  hideEditPost
+  timezone
+  noindex
   body
 }
     `;
-export const PageDocument = gql`
-    query page($relativePath: String!) {
-  page(relativePath: $relativePath) {
+export const BlogDocument = gql`
+    query blog($relativePath: String!) {
+  blog(relativePath: $relativePath) {
     ... on Document {
       _sys {
         filename
@@ -27,13 +39,13 @@ export const PageDocument = gql`
       }
       id
     }
-    ...PageParts
+    ...BlogParts
   }
 }
-    ${PagePartsFragmentDoc}`;
-export const PageConnectionDocument = gql`
-    query pageConnection($before: String, $after: String, $first: Float, $last: Float, $sort: String, $filter: PageFilter) {
-  pageConnection(
+    ${BlogPartsFragmentDoc}`;
+export const BlogConnectionDocument = gql`
+    query blogConnection($before: String, $after: String, $first: Float, $last: Float, $sort: String, $filter: BlogFilter) {
+  blogConnection(
     before: $before
     after: $after
     first: $first
@@ -63,19 +75,19 @@ export const PageConnectionDocument = gql`
           }
           id
         }
-        ...PageParts
+        ...BlogParts
       }
     }
   }
 }
-    ${PagePartsFragmentDoc}`;
+    ${BlogPartsFragmentDoc}`;
 export function getSdk(requester) {
   return {
-    page(variables, options) {
-      return requester(PageDocument, variables, options);
+    blog(variables, options) {
+      return requester(BlogDocument, variables, options);
     },
-    pageConnection(variables, options) {
-      return requester(PageConnectionDocument, variables, options);
+    blogConnection(variables, options) {
+      return requester(BlogConnectionDocument, variables, options);
     }
   };
 }

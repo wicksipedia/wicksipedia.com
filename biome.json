@@ -33,6 +33,7 @@
 			"!**/dist",
 			"!**/.astro",
 			"!**/.claude",
+			"!**/.wrangler",
 			"!**/public/pagefind",
 			"!**/public/admin",
 			"!**/tina/__generated__",

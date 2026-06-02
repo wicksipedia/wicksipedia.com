@@ -31,6 +31,9 @@ pnpm-debug.log*
 # pagefind
 public/pagefind
 
+# cloudflare / wrangler build state
+.wrangler/
+
 # tinacms (admin SPA + datalayer cache are rebuilt by `tinacms build`;
 # the generated client under tina/__generated__ is committed so astro check
 # and the IDE resolve imports without a prior build)
