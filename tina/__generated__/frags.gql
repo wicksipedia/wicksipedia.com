@@ -1,0 +1,5 @@
+fragment PageParts on Page {
+  __typename
+  title
+  body
+}

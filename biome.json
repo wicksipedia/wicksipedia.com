@@ -32,7 +32,11 @@
 			"**",
 			"!**/dist",
 			"!**/.astro",
+			"!**/.claude",
 			"!**/public/pagefind",
+			"!**/public/admin",
+			"!**/tina/__generated__",
+			"!**/tina/tina-lock.json",
 			"!**/node_modules",
 			"!**/*.html"
 		]

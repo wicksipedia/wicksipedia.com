@@ -25,8 +25,17 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+# claude code local state (worktrees, plans, settings)
+.claude/
+
 # pagefind
 public/pagefind
+
+# tinacms (admin SPA + datalayer cache are rebuilt by `tinacms build`;
+# the generated client under tina/__generated__ is committed so astro check
+# and the IDE resolve imports without a prior build)
+public/admin
+tina/__generated__/.cache
 
 # vale binary
 vale

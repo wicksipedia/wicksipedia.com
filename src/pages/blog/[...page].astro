@@ -3,13 +3,13 @@ import { getCollection } from "astro:content";
 import type { GetStaticPaths } from "astro";
 import Card from "@/components/Card.astro";
 import Footer from "@/components/Footer.astro";
-import postFilter from "@/utils/postFilter";
 import Header from "@/components/Header.astro";
 import Pagination from "@/components/Pagination.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
 import Main from "@/layouts/Main.astro";
 import getSortedPosts from "@/utils/getSortedPosts";
+import postFilter from "@/utils/postFilter";
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const posts = await getCollection("blog", postFilter);

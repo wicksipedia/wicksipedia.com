@@ -7,6 +7,8 @@ import {
 	transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import tailwindcss from "@tailwindcss/vite";
+import tina from "@tinacms/astro/integration";
+import { tinaAdminDevRedirect } from "@tinacms/astro/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import { defineConfig, envField, fontProviders } from "astro/config";
 import remarkCollapse from "remark-collapse";
@@ -33,6 +35,9 @@ export default defineConfig({
 		}),
 		react(),
 		mdx(),
+		// Auto-wires Tina's edit-mode middleware and stages /admin/bridge.js.
+		// No-ops on prerendered pages, so the static build is unaffected.
+		tina(),
 	],
 
 	markdown: {
@@ -52,9 +57,9 @@ export default defineConfig({
 	},
 
 	vite: {
-		// This will be fixed in Astro 6 with Vite 7 support
-		// See: https://github.com/withastro/astro/issues/14030
-		plugins: [tailwindcss(), basicSsl()],
+		// tinaAdminDevRedirect: makes a bare /admin reachable during `astro dev`
+		// (the SPA is served from public/admin which Vite won't index otherwise).
+		plugins: [tailwindcss(), basicSsl(), tinaAdminDevRedirect()],
 		optimizeDeps: {
 			exclude: ["@resvg/resvg-js"],
 		},
@@ -84,25 +89,23 @@ export default defineConfig({
 		},
 	},
 
-	experimental: {
-		preserveScriptOrder: true,
-		fonts: [
-			{
-				name: "Google Sans Code",
-				cssVariable: "--font-google-sans-code",
-				provider: fontProviders.google(),
-				fallbacks: ["monospace"],
-				weights: [300, 400, 500, 600, 700],
-				styles: ["normal", "italic"],
-			},
-			{
-				name: "Source Serif 4",
-				cssVariable: "--font-source-serif",
-				provider: fontProviders.google(),
-				fallbacks: ["Georgia", "serif"],
-				weights: [400, 600, 700],
-				styles: ["normal", "italic"],
-			},
-		],
-	},
+	// Astro 6: `fonts` and script-order are now stable (was `experimental`)
+	fonts: [
+		{
+			name: "Google Sans Code",
+			cssVariable: "--font-google-sans-code",
+			provider: fontProviders.google(),
+			fallbacks: ["monospace"],
+			weights: [300, 400, 500, 600, 700],
+			styles: ["normal", "italic"],
+		},
+		{
+			name: "Source Serif 4",
+			cssVariable: "--font-source-serif",
+			provider: fontProviders.google(),
+			fallbacks: ["Georgia", "serif"],
+			weights: [400, 600, 700],
+			styles: ["normal", "italic"],
+		},
+	],
 });
