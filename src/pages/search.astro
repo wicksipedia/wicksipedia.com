@@ -137,5 +137,14 @@ const backUrl = SITE.showBackButton ? `${Astro.url.pathname}` : "/";
     .pagefind-ui__result-nested .pagefind-ui__result-link:before {
       font-family: system-ui;
     }
+
+    /* Make the "no results" / count message legible instead of a faint
+       near-invisible line. */
+    .pagefind-ui__message {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: color-mix(in srgb, var(--foreground) 80%, transparent);
+      padding: 0.5rem 0;
+    }
   }
 </style>

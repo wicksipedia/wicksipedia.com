@@ -137,28 +137,48 @@ const iconBtn =
 </header>
 
 <script>
-  function toggleNav() {
+  function isNavOpen() {
+    return (
+      document.querySelector("#menu-btn")?.getAttribute("aria-expanded") ===
+      "true"
+    );
+  }
+
+  function setNavOpen(open: boolean) {
     const menuBtn = document.querySelector("#menu-btn");
     const menuItems = document.querySelector("#menu-items");
     const menuIcon = document.querySelector("#menu-icon");
     const closeIcon = document.querySelector("#close-icon");
-
     if (!menuBtn || !menuItems || !menuIcon || !closeIcon) return;
 
-    menuBtn.addEventListener("click", () => {
-      const openMenu = menuBtn.getAttribute("aria-expanded") === "true";
-
-      menuBtn.setAttribute("aria-expanded", openMenu ? "false" : "true");
-      menuBtn.setAttribute("aria-label", openMenu ? "Open Menu" : "Close Menu");
-
-      menuItems.classList.toggle("max-sm:hidden");
-      menuIcon.classList.toggle("hidden");
-      closeIcon.classList.toggle("hidden");
-    });
+    menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    menuBtn.setAttribute("aria-label", open ? "Close Menu" : "Open Menu");
+    menuItems.classList.toggle("max-sm:hidden", !open);
+    menuIcon.classList.toggle("hidden", open);
+    closeIcon.classList.toggle("hidden", !open);
   }
 
-  toggleNav();
+  // Re-bound after every view-transition swap (the button is a fresh node).
+  function bindMenuButton() {
+    document
+      .querySelector("#menu-btn")
+      ?.addEventListener("click", () => setNavOpen(!isNavOpen()));
+  }
 
-  // Runs on view transitions navigation
-  document.addEventListener("astro:after-swap", toggleNav);
+  // Dismissals bound once for the session; handlers query the live DOM so
+  // they keep working across swaps without accumulating listeners.
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && isNavOpen()) {
+      setNavOpen(false);
+      (document.querySelector("#menu-btn") as HTMLElement | null)?.focus();
+    }
+  });
+  document.addEventListener("click", e => {
+    if (!isNavOpen()) return;
+    const nav = document.querySelector("#nav-menu");
+    if (nav && !nav.contains(e.target as Node)) setNavOpen(false);
+  });
+
+  bindMenuButton();
+  document.addEventListener("astro:after-swap", bindMenuButton);
 </script>
