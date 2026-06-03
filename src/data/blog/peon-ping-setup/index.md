@@ -3,7 +3,7 @@ pubDatetime: 2026-02-15
 draft: false
 title: 'Stop Babysitting Your Terminal: Audio Notifications for AI Coding Agents'
 description: 'Context switching kills productivity. When AI agents need permissions, that time is wasted. Peon-ping brings Warcraft nostalgia to your terminal with audio notifications that let you know when work is done.'
-ogImage: ./cover.png
+ogImage: /blog/peon-ping-setup/cover.png
 tags: ['productivity', 'Claude Code', 'terminal', 'VSCode', 'developer-setup', 'ai']
 ---
 

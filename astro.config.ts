@@ -1,4 +1,5 @@
 import cloudflare from "@astrojs/cloudflare";
+import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
@@ -11,7 +12,12 @@ import tailwindcss from "@tailwindcss/vite";
 import tina from "@tinacms/astro/integration";
 import { tinaAdminDevRedirect } from "@tinacms/astro/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
-import { defineConfig, envField, fontProviders } from "astro/config";
+import {
+	defineConfig,
+	envField,
+	fontProviders,
+	sessionDrivers,
+} from "astro/config";
 import remarkCollapse from "remark-collapse";
 import remarkToc from "remark-toc";
 import { SITE } from "./src/config";
@@ -34,6 +40,12 @@ export default defineConfig({
 		prerenderEnvironment: "node",
 	}),
 
+	// This site doesn't use Astro sessions. Setting any non-KV driver stops the
+	// Cloudflare adapter from injecting a `SESSION` KV binding (which would
+	// otherwise need a provisioned KV namespace at deploy). `memory` is never
+	// actually invoked since nothing calls Astro.session.
+	session: { driver: sessionDrivers.lruCache() },
+
 	integrations: [
 		sitemap({
 			filter: (page) => {
@@ -53,7 +65,18 @@ export default defineConfig({
 	],
 
 	markdown: {
-		remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
+		// Astro 6: remark plugins + gfm/smartypants moved onto a `unified()`
+		// processor (the top-level `markdown.remarkPlugins`/`gfm`/`smartypants`
+		// options are deprecated). Only about.mdx still uses Astro's markdown
+		// pipeline — posts render via Tina (see src/components/RichText.astro).
+		processor: unified({
+			gfm: true,
+			smartypants: true,
+			remarkPlugins: [
+				remarkToc,
+				[remarkCollapse, { test: "Table of contents" }],
+			],
+		}),
 		shikiConfig: {
 			// For more themes, visit https://shiki.style/themes
 			themes: { light: "min-light", dark: "night-owl" },
@@ -95,6 +118,10 @@ export default defineConfig({
 		],
 		optimizeDeps: {
 			exclude: ["@resvg/resvg-js"],
+			// Pre-bundle Tina's middleware in the first optimize pass so Vite doesn't
+			// discover it late and re-optimize (which logs "file does not exist"
+			// warnings for the now-stale dep chunks on dev startup).
+			include: ["@tinacms/astro/middleware"],
 		},
 		// Dev SSR of the island route needs Tina's bridge bundled (the Cloudflare
 		// adapter forces this for the Worker build too).

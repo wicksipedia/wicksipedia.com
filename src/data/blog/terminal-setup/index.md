@@ -3,7 +3,7 @@ pubDatetime: 2023-12-02
 draft: false
 title: 'Setting up my terminal for productivity and enjoyment with Oh My Zsh'
 description: "Boost your terminal productivity with Oh My Zsh, powerlevel10k theme, and essential tools. Learn to manage Node versions and enhance your workflow efficiency."
-ogImage: ./cover.png
+ogImage: /blog/terminal-setup/cover.png
 tags: ['MacOS', 'Setup', 'Terminal', 'developer-setup', 'productivity']
 ---
 

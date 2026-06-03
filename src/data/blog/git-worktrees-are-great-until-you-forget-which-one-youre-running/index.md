@@ -3,7 +3,7 @@ pubDatetime: 2026-03-06
 draft: false
 title: "Git Worktrees Are Great Until You Forget Which One You're Running"
 description: "My code changes weren't showing up. Turns out I was running the app from the wrong worktree. So I built a fzf plugin to fix that."
-ogImage: ./cover.png
+ogImage: /blog/git-worktrees-are-great-until-you-forget-which-one-youre-running/cover.png
 tags: [git, Zsh, shell, developer-setup, Claude Code]
 ---
 

@@ -2,7 +2,7 @@
 pubDatetime: 2026-01-22
 title: The Future of Software Engineering Is Not What You Think
 description: Explore how AI is reshaping software engineering in 2026 and why developer roles are changing, not disappearing. The "RIP SWEs" narrative misses the mark.
-ogImage: ./cover.png
+ogImage: /blog/the-future-of-software-engineering-is-not-what-you-think/cover.png
 tags: [ai, software-engineering, career]
 ---
 
@@ -10,7 +10,7 @@ So [Adam Cogan](https://adamcogan.com) sent me this post on LinkedIn the other d
 
 ## The LinkedIn Post
 
-![Screenshot of LinkedIn post discussing AI impact on software engineering with 'RIP SWEs' headline and comments about Anthropic CEO's predictions](./linkedin-post.png)
+![Screenshot of LinkedIn post discussing AI impact on software engineering with 'RIP SWEs' headline and comments about Anthropic CEO's predictions](/blog/the-future-of-software-engineering-is-not-what-you-think/linkedin-post.png)
 https://www.linkedin.com/posts/linasbeliunas_rip-swes-anthropic-ceo-dario-amodei-activity-7419778520974983168-vgJ8
 
 ## My Thoughts

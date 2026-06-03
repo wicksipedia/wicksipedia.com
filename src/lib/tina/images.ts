@@ -20,9 +20,19 @@ export function resolveBlogImage(
 	ref?: string | null,
 ): ImageMetadata | string | undefined {
 	if (!ref) return undefined;
-	// Remote or already-public (Tina media manager) — serve verbatim.
+
+	// Posts store colocated images as `/blog/<slug>/<file>` (so the Tina editor
+	// can load them). Map those back to the source file so Astro still optimises
+	// them on the site; the raw URL is only used by the editor / dev middleware.
+	const blogRef = ref.match(/^\/blog\/(.+\.\w+)$/);
+	if (blogRef) {
+		return blogImages[`/src/data/blog/${blogRef[1]}`]?.default ?? ref;
+	}
+
+	// Remote or other public/media-manager paths — serve verbatim.
 	if (/^https?:\/\//i.test(ref) || ref.startsWith("/")) return ref;
+
+	// Legacy `./file.png` relative refs (resolved against the post's folder).
 	const file = ref.replace(/^\.?\//, "");
-	const key = `/src/data/blog/${slug}/${file}`;
-	return blogImages[key]?.default ?? ref;
+	return blogImages[`/src/data/blog/${slug}/${file}`]?.default ?? ref;
 }

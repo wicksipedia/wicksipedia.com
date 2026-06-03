@@ -2,7 +2,7 @@
 pubDatetime: 2026-03-05
 title: 'One CLI to Rule npm, yarn, pnpm, and bun'
 description: "Juggling npm, yarn, pnpm, and bun across projects? ni detects your package manager and runs the right command. Here's my setup."
-ogImage: ./cover.png
+ogImage: /blog/ni-universal-package-manager/cover.png
 tags: ['productivity', 'developer-setup', 'terminal', 'javascript']
 ---
 
@@ -105,7 +105,7 @@ Now I type `nr `, tab, fzf kicks in, I pick the script, and hit enter.
 
 `nr` without arguments gives you an interactive picker for scripts, which is nice in projects where `package.json` has 30 scripts and you can't remember the exact name. `nci` maps to clean install (`npm ci`, `pnpm install --frozen-lockfile`, etc.), which is what you actually want in CI pipelines, and it saves you from remembering that pnpm's flag is `--frozen-lockfile` while npm's is just `ci` as a separate command entirely.
 
-![ni interactive picker demo](./interactive-picker.png)
+![ni interactive picker demo](/blog/ni-universal-package-manager/interactive-picker.png)
 
 And if you're [setting up a new machine](/blog/setting-up-a-new-mac), ni is one of those tools I'd put in the "install on day one" category. It pays for itself the first time you context-switch between projects and don't have to think about which package manager you're in.
 

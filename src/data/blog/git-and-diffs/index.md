@@ -2,7 +2,7 @@
 pubDatetime: 2020-08-16
 title: How to Compare Git Diffs Across Multiple Commits in Git
 description: Learn how to diff changes across multiple commits in Git and Azure DevOps. Compare file changes over time with these practical diffing techniques and examples.
-ogImage: ./cover.jpg
+ogImage: /blog/git-and-diffs/cover.jpg
 tags: [git]
 ---
 
@@ -21,7 +21,7 @@ He wanted to see all the changes from when he last worked on the Xamarin project
 ## The Potential Solutions
 
 1. Bad choice - Go to the *File* view for the repo in Azure DevOps and see the list of commits
-   ![In Azure DevOps you can see the history of commits for a specific folder](./azdo-history.png)
+   ![In Azure DevOps you can see the history of commits for a specific folder](/blog/git-and-diffs/azdo-history.png)
    This lists the specific commits that have changed files under the path but not the **actual** changes which is what he needed (he'd need to click on each commit, find the file(s) and look at the changes -> very time consuming)
 
 2. Unknown choice - I'm sure there's a nice GUI that could do this with a click-click-done, but he didn't have one already so this wasn't a feasible option
@@ -33,7 +33,7 @@ git diff 741d760 df32e83b -- gatsby-*.js
 ```
 
 If we break this command down, it looks like: `sh•git diff <start commitish> <end commitish> -- <folder/file filter>` (the -- is there to separate the commits and the path)
-![This will produce a diff with all the interim changes squashed down](./git-diff.png)
+![This will produce a diff with all the interim changes squashed down](/blog/git-and-diffs/git-diff.png)
 
 After he ran this command, he was able to scroll through and see what had changed on the project - which helped him track down the issue (and when it was introduced).
 

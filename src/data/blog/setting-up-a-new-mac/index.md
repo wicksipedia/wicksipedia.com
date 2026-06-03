@@ -3,7 +3,7 @@ pubDatetime: 2023-11-25
 draft: false
 title: 'Optimizing Your New Mac Setup: Essential Tools and Apps'
 description: 'Set up your new Mac with essential tools and apps. Start with Homebrew, discover productivity boosters, and enhance your MacOS workflow with efficiency.'
-ogImage: ./cover.png
+ogImage: /blog/setting-up-a-new-mac/cover.png
 tags: ['MacOS', 'Setup', 'Applications', 'developer-setup', 'productivity']
 ---
 
@@ -16,11 +16,11 @@ Yesterday, I was chatting with [Gordon](https://twitter.com/GordonBeeming) - he 
 I like to have the same experience everywhere, so I like having laptops, so in the end, I give priority to how hot it (the laptop) gets, do I hear the fans, and "where's the charger?" (battery anxiety) over other areas.
 
 I guess this helped convince him 😅
-![Screenshot of Gordon Beeming's Twitter post announcing he bought a MacBook Pro for .NET development](./gordon-bought-a-mac.png)
+![Screenshot of Gordon Beeming's Twitter post announcing he bought a MacBook Pro for .NET development](/blog/setting-up-a-new-mac/gordon-bought-a-mac.png)
 
 I got a teams message from Gordon, later that night he wanted some advice on setting it up and what to install.
 
-![Chat conversation saying that cataloging something to a url is better than random chat messages](./make-a-post.png)
+![Chat conversation saying that cataloging something to a url is better than random chat messages](/blog/setting-up-a-new-mac/make-a-post.png)
 
 Time to save some keystrokes and capture my current setup as a blog post.
 
@@ -68,7 +68,7 @@ sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.
 
 Oh My Zsh has a great plugin model, my favourite is turning on aliases for many common Git operations. It translates to less typing and more doing. For example, `gst` stands for `git status`, `gswm` for `git switch main`, and `gpr` for `git pull --rebase`.
 
-![Preview of the Spaceship theme in Oh my zsh](./omz-spaceship.webp)
+![Preview of the Spaceship theme in Oh my zsh](/blog/setting-up-a-new-mac/omz-spaceship.webp)
 🔥 Hot tip: install the [Spaceship theme](https://github.com/pascaldevink/spaceship-zsh-theme)
 
 **[Nerd Fonts](https://github.com/ryanoasis/nerd-fonts)** - Tap into the Nerd Fonts repository to access a variety of developer-friendly fonts that include Powerline symbols pre-baked, enhancing the terminal and code editor aesthetics.
