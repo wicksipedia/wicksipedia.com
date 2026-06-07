@@ -1,0 +1,74 @@
+---
+pubDatetime: 2026-06-07
+draft: false
+title: "Aspire led me to the pit of success (but things were broken on the first deploy)"
+description: "A 5-minute prod 500 fix that taught me why doing the boring observability work upfront is always worth it, and where .NET Aspire's managed-identity story still has a gap."
+ogImage: ./cover.png
+tags: ['dotnet', 'azure', 'aspire', 'debugging', 'software-engineering']
+---
+
+My wife makes tools and accessories for fibre crafters. Handmade, eco-conscious gear for knitters, crocheters, and other fibre artists, the practical bits and the pretty bits that make the craft nicer to do, plus a small jewellery line on the side. She designs them, makes them, photographs them, and ships them herself through her Wix store, [EleventyOne Windmills](https://eleventyonewindmills.com.au) (an Australian Yarn Awards finalist, no less). She is not a dropshipper. She is a maker running the full sales lifecycle from a home studio, which means the off-the-shelf platforms that work fine for a reseller start showing sharp edges pretty quickly at scale.
+
+One of those edges: Wix's "back in stock notification requests." Customers can sign up to be notified when a product comes back. That's great! But the Wix UI gives you... basically nothing useful. No ranking by demand. No export. No way to look at the list and say "make the Flannel Flower shawl pins next because 40 people are waiting for them." So I built her a small internal tool that reads the Wix API, groups notification requests by product, sorts by demand, and lets her export the email list. Not glamorous software, but it matters to one person in a real way.
+
+The stack: TanStack Start on the frontend (React 19, running on Bun), a .NET backend talking to Azure SQL as the source of truth, orchestrated by .NET Aspire, deployed to Azure Container Apps via GitHub Actions.
+
+It worked great locally. The first production deploy, though, came back with a 500.
+
+## The Error
+
+App Insights had the full stack trace within about 30 seconds of me opening the dashboard:
+
+```
+System.ArgumentException: Cannot find an authentication provider for 'ActiveDirectoryDefault'. Install the 'Microsoft.Data.SqlClient.Extensions.Azure' NuGet package (https://www.nuget.org/packages/Microsoft.Data.SqlClient.Extensions.Azure) to use Active Directory (Entra ID) authentication methods.
+```
+
+That's clear enough once you know what you're looking at, but getting there took some unpacking.
+
+## What Actually Went Wrong
+
+EF Core 10 pulls in `Microsoft.Data.SqlClient` 7.0.1. And SqlClient 7.0, [released in early 2026](https://techcommunity.microsoft.com/blog/sqlserver/microsoft-data-sqlclient-7-0-is-here-a-leaner-more-modular-driver-for-sql-server/4503173), shipped a deliberate breaking change. The single most-voted feature request in the SqlClient issue tracker (#1108) was "make Azure.Identity optional." Fair ask: if you're doing plain SQL auth or Windows auth, there's no reason to drag in the entire Azure identity SDK. So they extracted all the Entra ID authentication providers into a separate add-on package: `Microsoft.Data.SqlClient.Extensions.Azure`.
+
+For people who don't need AAD auth, this is excellent: a smaller dependency tree and cleaner builds.
+
+For people who *do* need it (like, say, anyone using managed identity to connect to Azure SQL), it means you now need to add one extra package reference. And nothing in the EF Core 10 package, or the `Aspire.Microsoft.EntityFrameworkCore.SqlServer` integration, pulls it in for you.
+
+Here's where Aspire comes into the story. Aspire is opinionated about how you should connect to Azure SQL. It generates a production connection string that includes `Authentication=Active Directory Default`, which is the *correct* thing to do. Passwordless, managed-identity auth is absolutely the right call. The problem is that Aspire doesn't bring along the provider package that makes "Active Directory Default" actually work. So you end up with a connection string that references an authentication mode with no registered handler, and the first DB connection blows up at runtime.
+
+[ErikEJ wrote a good breakdown of the SqlClient 7.0 change](https://erikej.github.io/sqlclient/dotnet/2026/03/06/dotnet-sqlClient-7.html), worth reading if you're on the .NET data stack. The [dotnet/aspnetcore issue #66107](https://github.com/dotnet/aspnetcore/issues/66107) has people running into exactly this after publishing to Azure, which is how I knew I wasn't just doing something dumb.
+
+## Why It Only Bit in Prod
+
+Locally, Aspire runs SQL Server in a container and authenticates with an SA password. That's not Entra auth. The `ActiveDirectoryDefault` provider is never invoked, so the missing package is completely invisible. Everything runs, tests pass, you feel good about yourself.
+
+Then you push to Azure Container Apps, the app starts talking to a real Azure SQL instance via managed identity, and the first connection attempt asks for a provider that isn't registered. This is one of those gaps between local development and prod that's easy to miss precisely *because* the tooling hides it. Aspire's local SQL container is doing you a favour by not requiring Entra auth, but that same favour means you never see the missing piece until it's in front of real users.
+
+## The Fix
+
+It came down to one package reference, with no code changes.
+
+Add `Microsoft.Data.SqlClient.Extensions.Azure` (v1.0.0) to the project that hosts your EF `DbContext`. For me that's the Infrastructure project, which flows through to the API, the migrator, and the Azure Functions host.
+
+```xml title="Dashboard.Infrastructure/Dashboard.Infrastructure.csproj"
+<PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="1.0.0" />
+```
+
+That's the whole fix. The package registers the Entra ID auth providers itself, so once it's referenced, `Active Directory Default` has a handler and the connection just works. No `SetProvider` call, no startup wiring, nothing. If you ever need a non-default auth mode, the [Microsoft Learn docs on Entra auth with SqlClient](https://learn.microsoft.com/en-us/sql/connect/ado-net/sql/azure-active-directory-authentication) cover the current patterns.
+
+I deployed, and the 500 went away. The whole thing took about five minutes, from seeing the error to having a fix in prod.
+
+## The Part Worth Dwelling On
+
+The thing I keep thinking about isn't the bug itself. It makes sense once you understand the SqlClient 7.0 change. It's not a mistake, it's a deliberate modularisation that just has a sharp edge for Aspire users right now. The Aspire team could auto-include the package when it emits an `Authentication=Active Directory Default` connection string, or at least warn at startup. In a way, it's a [tin test failure](/blog/it-does-what-it-says-on-the-tin): Aspire confidently generates an AAD connection string but doesn't deliver the runtime piece that makes it go. That's a reasonable gap to close.
+
+What I keep thinking about is how fast it was to debug.
+
+I wired up Application Insights during the initial build. Aspire's `ServiceDefaults` makes this very easy: `AddAzureApplicationInsights()` in the AppHost, `UseAzureMonitor()` in the service defaults, and your logs and traces just flow to App Insights automatically. It takes maybe 20 seconds and you never think about it again.
+
+A lot of the time, on a small internal tool for 2 users, you'd skip that. It feels like overhead. "I'll add observability later." Later never comes, and then when something breaks in prod at 9pm you're reading container logs through the Azure portal and trying to correlate requests by timestamp.
+
+Because I hadn't skipped it, debugging this was easy: open App Insights, look at the failed requests, read the exception. The boring upfront work is always the thing that saves you later, and it's always the first thing you consider cutting.
+
+Aspire nudges you toward the pit of success: managed identity instead of passwords, observability baked in from day one, infrastructure-as-code that converges with your app. Most of the time it delivers on that promise, and when it doesn't (when there's a gap like this one), having the observability sorted means the gap costs you five minutes, not five hours.
+
+The lesson here isn't about SqlClient or Aspire. It's that observability is the easiest thing to cut on a small project and the first thing that earns its keep when production breaks. Set it up before you need it, because once you need it, it's too late to add.
