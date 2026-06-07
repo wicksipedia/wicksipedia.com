@@ -63,9 +63,9 @@ The thing I keep thinking about isn't the bug itself. It makes sense once you un
 
 What I keep thinking about is how fast it was to debug.
 
-I wired up Application Insights during the initial build. Aspire's `ServiceDefaults` makes this very easy: `AddAzureApplicationInsights()` in the AppHost, `UseAzureMonitor()` in the service defaults, and your logs and traces just flow to App Insights automatically. It takes maybe 20 minutes and you never think about it again.
+I wired up Application Insights during the initial build. Aspire's `ServiceDefaults` makes this very easy: `AddAzureApplicationInsights()` in the AppHost, `UseAzureMonitor()` in the service defaults, and your logs and traces just flow to App Insights automatically. It takes maybe 20 seconds and you never think about it again.
 
-A lot of the time, on a small internal tool for two users, you'd skip that. It feels like overhead. "I'll add observability later." Later never comes, and then when something breaks in prod at 9pm you're reading container logs through the Azure portal and trying to correlate requests by timestamp.
+A lot of the time, on a small internal tool for 2 users, you'd skip that. It feels like overhead. "I'll add observability later." Later never comes, and then when something breaks in prod at 9pm you're reading container logs through the Azure portal and trying to correlate requests by timestamp.
 
 Because I hadn't skipped it, debugging this was easy: open App Insights, look at the failed requests, read the exception. The boring upfront work is always the thing that saves you later, and it's always the first thing you consider cutting.
 
