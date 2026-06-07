@@ -1,0 +1,5 @@
+Contact: mailto:help@wicksipedia.com
+Contact: https://github.com/wicksipedia/wicksipedia.com/security/advisories/new
+Expires: 2027-06-07T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://wicksipedia.com/.well-known/security.txt

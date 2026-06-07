@@ -1,0 +1,32 @@
+name: Refresh security.txt expiry
+on:
+  schedule:
+    - cron: '0 3 1 1 *' # 03:00 UTC, Jan 1st, yearly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Bump Expires to ~1 year out
+        run: |
+          NEW_EXPIRES=$(date -u -d '+1 year -1 day' +%Y-%m-%dT00:00:00.000Z)
+          sed -i "s|^Expires:.*|Expires: ${NEW_EXPIRES}|" public/.well-known/security.txt
+          echo "Set Expires: ${NEW_EXPIRES}"
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet; then
+            echo "No change."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/.well-known/security.txt
+          git commit -m "chore: refresh security.txt expiry"
+          git push
