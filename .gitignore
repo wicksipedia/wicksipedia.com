@@ -36,3 +36,7 @@ vale_*.tar.gz
 
 # local build baseline
 .baseline/
+
+# TinaCMS
+public/admin
+tina/__generated__/*.js

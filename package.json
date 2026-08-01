@@ -3,8 +3,9 @@
 	"type": "module",
 	"version": "5.5.1",
 	"scripts": {
-		"dev": "astro dev",
+		"dev": "tinacms dev -c \"astro dev\"",
 		"build": "astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/",
+		"build:local": "tinacms build --local --skip-cloud-checks -c \"astro check && astro build\"",
 		"preview": "astro build && npx wrangler dev",
 		"deploy": "npx wrangler deploy",
 		"sync": "astro sync",
@@ -21,6 +22,7 @@
 		"@astrojs/sitemap": "^3.7",
 		"@resvg/resvg-js": "^2.6.2",
 		"@tailwindcss/vite": "^4.1.18",
+		"@tinacms/astro": "^0.6.1",
 		"astro": "^7.1.6",
 		"dayjs": "^1.11.19",
 		"lodash.kebabcase": "^4.1.1",
@@ -28,6 +30,7 @@
 		"sharp": "^0.34.5",
 		"slugify": "^1.6.6",
 		"tailwindcss": "^4.1.18",
+		"tinacms": "^3.11",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
@@ -36,9 +39,12 @@
 		"@pagefind/default-ui": "^1.4.0",
 		"@shikijs/transformers": "^4.4.1",
 		"@tailwindcss/typography": "^0.5.19",
+		"@tinacms/cli": "^2.5",
 		"@types/lodash.kebabcase": "^4.1.9",
 		"@vitejs/plugin-basic-ssl": "^2.1.4",
 		"pagefind": "^1.4.0",
+		"react": "^19.2",
+		"react-dom": "^19.2",
 		"typescript": "^5.9.3",
 		"wrangler": "^4.60.0"
 	}
