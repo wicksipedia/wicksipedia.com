@@ -4,6 +4,7 @@ import type { TinaRichTextContent } from "@tinacms/astro/types";
 import GithubSlugger from "github-slugger";
 import { groupBlockquoteParagraphs } from "@/lib/tina/blockquote";
 import { sanitizeAuthorHtml } from "@/lib/tina/sanitize-html";
+import { smartypants } from "@/lib/tina/smartypants";
 import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
 import BlogImage from "./BlogImage.astro";
 import Heading from "./Heading.astro";
@@ -28,6 +29,8 @@ import RawHtml from "./RawHtml.astro";
  *    colocated asset and hands to Astro's <Image> for optimisation.
  *  - `blockquote` children are regrouped into paragraphs; see
  *    src/lib/tina/blockquote.ts for why that is necessary and how it can fail.
+ *  - `text` nodes outside inline code get typographic punctuation back; see
+ *    src/lib/tina/smartypants.ts.
  *  - `h1`-`h6` nodes gain the slug `id` Astro's Markdown pipeline generated, so
  *    section permalinks and external deep links keep resolving. See
  *    Heading.astro for why they have to become mdx nodes to carry it.
@@ -146,15 +149,26 @@ function walk(node: AstNode): AstNode {
 		};
 	}
 
+	// Astro's Markdown pipeline applied smartypants; post bodies no longer pass
+	// through it. Inline code is `{type:"text", code:true}`, so `!code` is the
+	// exact guard keeping `--flag` and `"quoted"` literal inside code spans.
+	if (node.type === "text" && node.code !== true) {
+		return { ...node, text: smartypants(String(node.text ?? "")) };
+	}
+
 	let next = node;
 	if (next.type && HEADING_TYPES.has(next.type)) {
+		// Children first, so the id is slugged from the smart-punctuated text.
+		// Astro ran remark-smartypants before rehype-slug, and the order is
+		// load-bearing: `a -- b` slugs to `a----b`, `a — b` to `a--b`.
+		const children = (next.children ?? []).map(walk);
 		return {
 			type: "mdxJsxFlowElement",
 			name: "Heading",
 			props: {
 				level: Number(next.type.slice(1)),
-				id: slugger.slug(textContent(next)),
-				children: (next.children ?? []).map(walk),
+				id: slugger.slug(children.map(textContent).join("")),
+				children,
 			},
 			children: [],
 		};
