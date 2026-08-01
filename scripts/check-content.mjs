@@ -4,21 +4,31 @@
  * post renders as raw text in a <pre> instead of prose.
  *
  * Run: bun run check:content
+ *
+ * Progress is reported through process.stdout/stderr rather than `console`,
+ * which Biome bans repo-wide. This script only needs a stream, not an
+ * exemption.
  */
-import { parseMDX } from "@tinacms/mdx";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { parseMDX } from "@tinacms/mdx";
 
 const BASE = "src/data/blog";
 const FIELD = { type: "rich-text", name: "body", parser: { type: "markdown" } };
 
-const dirs = readdirSync(BASE).filter((d) =>
-	statSync(join(BASE, d)).isDirectory() && !d.startsWith("_"),
+/** @param {string} message */
+const out = (message) => process.stdout.write(`${message}\n`);
+/** @param {string} message */
+const err = (message) => process.stderr.write(`${message}\n`);
+
+const dirs = readdirSync(BASE).filter(
+	(d) => statSync(join(BASE, d)).isDirectory() && !d.startsWith("_"),
 );
 
 // A loop over an empty set passes identically to success. Refuse to pass here.
 if (dirs.length === 0) {
-	console.error(`FAIL: no post directories found under ${BASE}`);
+	err(`FAIL: no post directories found under ${BASE}`);
 	process.exit(1);
 }
 
@@ -31,7 +41,7 @@ for (const dir of dirs) {
 	try {
 		raw = readFileSync(file, "utf8");
 	} catch {
-		console.error(`FAIL: ${dir} has no index.md`);
+		err(`FAIL: ${dir} has no index.md`);
 		failed++;
 		continue;
 	}
@@ -43,21 +53,21 @@ for (const dir of dirs) {
 	checked++;
 	if (invalid.length > 0) {
 		failed++;
-		console.error(`FAIL: ${dir}`);
+		err(`FAIL: ${dir}`);
 		for (const node of invalid) {
-			console.error(`  line ${node.position?.start?.line}: ${node.message}`);
+			err(`  line ${node.position?.start?.line}: ${node.message}`);
 		}
 	}
 }
 
 if (checked !== dirs.length) {
-	console.error(`FAIL: checked ${checked} of ${dirs.length} posts`);
+	err(`FAIL: checked ${checked} of ${dirs.length} posts`);
 	process.exit(1);
 }
 
 if (failed > 0) {
-	console.error(`\n${failed} of ${checked} posts failed to parse`);
+	err(`\n${failed} of ${checked} posts failed to parse`);
 	process.exit(1);
 }
 
-console.log(`OK: ${checked} posts parse cleanly`);
+out(`OK: ${checked} posts parse cleanly`);

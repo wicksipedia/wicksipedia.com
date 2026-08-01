@@ -34,6 +34,7 @@
 			"!**/.astro",
 			"!**/public/pagefind",
 			"!**/public/admin",
+			"!**/tina/__generated__",
 			"!**/node_modules",
 			"!**/*.html"
 		]
