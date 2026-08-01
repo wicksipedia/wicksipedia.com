@@ -3,7 +3,6 @@ import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
 import type { TinaRichTextContent } from "@tinacms/astro/types";
 import GithubSlugger from "github-slugger";
 import { groupBlockquoteParagraphs } from "@/lib/tina/blockquote";
-import { matchYouTubeEmbed } from "@/lib/tina/embeds";
 import { sanitizeAuthorHtml } from "@/lib/tina/sanitize-html";
 import { smartypants } from "@/lib/tina/smartypants";
 import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
@@ -145,19 +144,6 @@ function walk(node: AstNode): AstNode {
 	// RawHtml renders these unescaped, so this is what stands between a post body
 	// and script execution once Tina Cloud allows publishing without a commit.
 	if (node.type === "html" || node.type === "html_inline") {
-		// Under `format: "md"` Tina's parser ignores a field's `templates` and
-		// hands back plain html, so an embed block is recognised here and turned
-		// into the mdx node the components map dispatches on. See lib/tina/embeds.
-		const embed =
-			node.type === "html" ? matchYouTubeEmbed(String(node.value ?? "")) : null;
-		if (embed) {
-			return {
-				type: "mdxJsxFlowElement",
-				name: "youTubeEmbed",
-				props: embed,
-				children: [],
-			};
-		}
 		return {
 			...node,
 			value: sanitizeAuthorHtml(String(node.value ?? ""), node.type),

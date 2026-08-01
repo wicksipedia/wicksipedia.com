@@ -17,9 +17,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
 import { groupBlockquoteParagraphs } from "../src/lib/tina/blockquote.ts";
+import { BODY_FIELD } from "./lib/body-field.mjs";
 
 const BASE = "src/data/blog";
-const FIELD = { type: "rich-text", name: "body", parser: { type: "markdown" } };
 
 /** @param {string} message */
 const out = (message) => process.stdout.write(`${message}\n`);
@@ -27,7 +27,7 @@ const out = (message) => process.stdout.write(`${message}\n`);
 const err = (message) => process.stderr.write(`${message}\n`);
 
 const blockquotesIn = (markdown) =>
-	(parseMDX(markdown, FIELD, (s) => s).children ?? []).filter(
+	(parseMDX(markdown, BODY_FIELD, (s) => s).children ?? []).filter(
 		(n) => n.type === "blockquote",
 	);
 

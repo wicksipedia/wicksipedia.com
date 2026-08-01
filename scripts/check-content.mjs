@@ -13,9 +13,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
+import { BODY_FIELD } from "./lib/body-field.mjs";
 
 const BASE = "src/data/blog";
-const FIELD = { type: "rich-text", name: "body", parser: { type: "markdown" } };
 
 /** @param {string} message */
 const out = (message) => process.stdout.write(`${message}\n`);
@@ -46,7 +46,7 @@ for (const dir of dirs) {
 		continue;
 	}
 	const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
-	const ast = parseMDX(body, FIELD, (s) => s);
+	const ast = parseMDX(body, BODY_FIELD, (s) => s);
 	const invalid = (ast.children ?? []).filter(
 		(node) => node.type === "invalid_markdown",
 	);

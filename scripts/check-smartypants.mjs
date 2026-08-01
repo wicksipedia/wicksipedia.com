@@ -13,9 +13,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
 import { smartypants } from "../src/lib/tina/smartypants.ts";
+import { BODY_FIELD } from "./lib/body-field.mjs";
 
 const BASE = "src/data/blog";
-const FIELD = { type: "rich-text", name: "body", parser: { type: "markdown" } };
 
 /** @param {string} m */
 const out = (m) => process.stdout.write(`${m}\n`);
@@ -96,7 +96,7 @@ for (const dir of readdirSync(BASE).sort()) {
 		continue;
 	}
 	const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
-	visit(parseMDX(body, FIELD, (s) => s));
+	visit(parseMDX(body, BODY_FIELD, (s) => s));
 }
 if (converted === 0) {
 	err(

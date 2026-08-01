@@ -54,7 +54,7 @@ If you spend your days at a desk and your back reminds you about it every evenin
 
 ## Demo
 
-<youTubeEmbed videoId="SJtuU_6mags" title="Posturr demo" />
+{{< youTubeEmbed videoId="SJtuU_6mags" title="Posturr demo" >}}
 
 ---
 

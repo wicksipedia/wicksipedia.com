@@ -1,11 +1,11 @@
 ---
 /**
- * Responsive YouTube embed.
+ * Responsive YouTube embed, rendered from a rich-text template.
  *
  * This component exists so that no post has to hand-write an `<iframe>`. Every
- * part of the markup below is static: the only value taken from the post is the
- * video id, which src/lib/tina/embeds.ts has already checked against YouTube's
- * 11-character id format. That is what allowed the sanitiser to drop `iframe`,
+ * part of the markup is static: the only values crossing from the post are the
+ * video id and title, and the id is checked against YouTube's 11-character
+ * format before it reaches a URL. That is what let the sanitiser drop `iframe`,
  * the `style` attribute and the embed-host allowlist entirely — a post can no
  * longer express an arbitrary frame or arbitrary CSS.
  *
@@ -15,26 +15,51 @@
  * youtube-nocookie.com is YouTube's own privacy-preserving host: it serves the
  * same player without setting tracking cookies until the visitor hits play.
  */
+import { captionFor, isValidVideoId } from "@/lib/tina/youtube";
+
 interface Props {
 	videoId: string;
 	title?: string;
 }
 
-const { videoId, title = "YouTube video" } = Astro.props;
+const { videoId, title } = Astro.props;
+
+const caption = captionFor(title);
+// An id that is not an id would otherwise be interpolated straight into a URL.
+// Rendering nothing is the safe end of that; the CMS marks the field required
+// so a well-formed post cannot reach it.
+const isValid = isValidVideoId(videoId);
+const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
 ---
 
-<figure class="my-8 not-prose">
-  <div
-    class="relative aspect-video w-full overflow-hidden rounded-xl border border-border/60 bg-muted"
-  >
-    <iframe
-      src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-      title={title}
-      class="absolute inset-0 h-full w-full"
-      loading="lazy"
-      referrerpolicy="strict-origin-when-cross-origin"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowfullscreen
-    ></iframe>
-  </div>
-</figure>
+{
+  isValid && (
+    <figure class="my-8 not-prose">
+      <div class="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+          title={caption}
+          class="absolute inset-0 h-full w-full"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        />
+      </div>
+      {/* Captions the figure, and is the only route to the video when the frame
+          is blocked by an extension, a region restriction or a strict CSP — an
+          iframe has no fallback content of its own. */}
+      <figcaption class="mt-2 text-sm text-foreground/60">
+        {caption} —{" "}
+        <a
+          href={watchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-accent underline decoration-dashed underline-offset-4 hover:decoration-solid"
+        >
+          watch on YouTube
+        </a>
+      </figcaption>
+    </figure>
+  )
+}

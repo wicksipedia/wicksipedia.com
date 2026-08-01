@@ -13,11 +13,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
-import { matchYouTubeEmbed } from "../src/lib/tina/embeds.ts";
 import { sanitizeAuthorHtml } from "../src/lib/tina/sanitize-html.ts";
+import { captionFor, isValidVideoId } from "../src/lib/tina/youtube.ts";
+import { BODY_FIELD } from "./lib/body-field.mjs";
 
 const BASE = "src/data/blog";
-const FIELD = { type: "rich-text", name: "body", parser: { type: "markdown" } };
 
 /** @param {string} m */
 const out = (m) => process.stdout.write(`${m}\n`);
@@ -239,80 +239,86 @@ const CASES = [
 	],
 ];
 
-/** The embed matcher is the surface that replaced `iframe`; pin it here too. */
-const EMBED_CASES = [
+/**
+ * The embed is a rich-text template with a `match`, so Tina's markdown parser
+ * turns the shortcode into an mdxJsxFlowElement and RichText dispatches it by
+ * name. Two things are worth pinning: that the parse still produces that node
+ * with the right props, and the id/title validation that is now the only
+ * boundary between a post and the embed markup.
+ */
+const EMBED_PARSE_CASES = [
 	[
-		"valid embed is recognised",
-		'<youTubeEmbed videoId="SJtuU_6mags" title="Posturr demo" />',
-		{ videoId: "SJtuU_6mags", title: "Posturr demo" },
+		"shortcode parses to a named node with props",
+		'{{< youTubeEmbed videoId="SJtuU_6mags" title="Posturr demo" >}}',
+		{
+			name: "youTubeEmbed",
+			props: { videoId: "SJtuU_6mags", title: "Posturr demo" },
+		},
 	],
 	[
-		"missing title falls back, it is never author-optional markup",
+		"a different template name is not this block",
+		'{{< notAnEmbed videoId="SJtuU_6mags" >}}',
+		null,
+	],
+	[
+		"raw jsx syntax is no longer how the block is written",
 		'<youTubeEmbed videoId="SJtuU_6mags" />',
-		{ videoId: "SJtuU_6mags", title: "YouTube video" },
-	],
-	["id that is too short is refused", '<youTubeEmbed videoId="abc" />', null],
-	[
-		"id that is too long is refused",
-		'<youTubeEmbed videoId="SJtuU_6mags12" />',
-		null,
-	],
-	[
-		"id containing a slash is refused",
-		'<youTubeEmbed videoId="../../etc/pas" />',
-		null,
-	],
-	[
-		"id containing a quote is refused",
-		"<youTubeEmbed videoId='a\"onload=x' />",
-		null,
-	],
-	[
-		"a full url is refused, only an id is accepted",
-		'<youTubeEmbed videoId="https://evil" />',
-		null,
-	],
-	["missing videoId is refused", '<youTubeEmbed title="x" />', null],
-	["a different element is not an embed", "<div>x</div>", null],
-	[
-		// The element NAME must be checked. A mutant accepting any name survived
-		// the suite before this case existed, because every other negative case
-		// failed on something else first.
-		"an element with embed-shaped attributes but another name is refused",
-		'<notAnEmbed videoId="SJtuU_6mags" title="x" />',
-		null,
-	],
-	[
-		"a close-but-wrong name is refused",
-		'<youTubeEmbeds videoId="SJtuU_6mags" />',
-		null,
-	],
-	[
-		"control characters and runaway length are stripped from the title",
-		'<youTubeEmbed videoId="SJtuU_6mags" title="a\u0000b\nc" />',
-		{ videoId: "SJtuU_6mags", title: "a b c" },
-	],
-	[
-		"an empty title falls back rather than emitting a bare attribute",
-		'<youTubeEmbed videoId="SJtuU_6mags" title="" />',
-		{ videoId: "SJtuU_6mags", title: "YouTube video" },
-	],
-	[
-		"an iframe is never treated as an embed",
-		'<iframe src="https://www.youtube.com/embed/SJtuU_6mags"></iframe>',
 		null,
 	],
 ];
 
+const VIDEO_ID_CASES = [
+	["a real id is accepted", "SJtuU_6mags", true],
+	["too short is refused", "abc", false],
+	["too long is refused", "SJtuU_6mags12", false],
+	["a slash is refused", "../../etc/pas", false],
+	["a quote is refused", 'a"onload=x', false],
+	["a full url is refused", "https://evil", false],
+	["trailing newline is refused", "SJtuU_6mags\n", false],
+	["a unicode look-alike is refused", "SJtuU_6magѕ", false],
+	["empty is refused", "", false],
+	["a non-string is refused", undefined, false],
+];
+
+const CAPTION_CASES = [
+	["a normal title is kept", "Posturr demo", "Posturr demo"],
+	["control characters are stripped", "a\u0000b\nc", "a b c"],
+	["an empty title falls back", "", "YouTube video"],
+	["a missing title falls back", undefined, "YouTube video"],
+	["a runaway title is bounded", "x".repeat(500), "x".repeat(200)],
+];
+
 let failed = 0;
 let checked = 0;
-for (const [name, input, want] of EMBED_CASES) {
+for (const [name, markdown, want] of EMBED_PARSE_CASES) {
 	checked++;
-	const got = matchYouTubeEmbed(input);
+	const node = (parseMDX(markdown, BODY_FIELD, (s) => s).children ?? []).find(
+		(n) => n.type === "mdxJsxFlowElement",
+	);
+	const got = node ? { name: node.name, props: node.props } : null;
 	if (JSON.stringify(got) !== JSON.stringify(want)) {
 		failed++;
-		err(`FAIL: embed — ${name}`);
-		err(`  input:    ${input}`);
+		err(`FAIL: embed parse — ${name}`);
+		err(`  input:    ${markdown}`);
+		err(`  expected: ${JSON.stringify(want)}`);
+		err(`  actual:   ${JSON.stringify(got)}`);
+	}
+}
+
+for (const [name, id, want] of VIDEO_ID_CASES) {
+	checked++;
+	if (isValidVideoId(id) !== want) {
+		failed++;
+		err(`FAIL: video id — ${name} (${JSON.stringify(id)})`);
+	}
+}
+
+for (const [name, title, want] of CAPTION_CASES) {
+	checked++;
+	const got = captionFor(title);
+	if (got !== want) {
+		failed++;
+		err(`FAIL: caption — ${name}`);
 		err(`  expected: ${JSON.stringify(want)}`);
 		err(`  actual:   ${JSON.stringify(got)}`);
 	}
@@ -329,8 +335,13 @@ for (const [name, input, type, want] of CASES) {
 		err(`  actual:   ${JSON.stringify(got)}`);
 	}
 }
-if (checked !== CASES.length + EMBED_CASES.length) {
-	err(`FAIL: ran ${checked} of ${CASES.length + EMBED_CASES.length} cases`);
+const EXPECTED =
+	CASES.length +
+	EMBED_PARSE_CASES.length +
+	VIDEO_ID_CASES.length +
+	CAPTION_CASES.length;
+if (checked !== EXPECTED) {
+	err(`FAIL: ran ${checked} of ${EXPECTED} cases`);
 	process.exit(1);
 }
 
@@ -388,13 +399,6 @@ let corpusNodes = 0;
 let corpusEmbeds = 0;
 const collect = (node, dir) => {
 	if (node.type === "html" || node.type === "html_inline") {
-		// RichText converts embed blocks before sanitising, so they never reach
-		// the sanitiser. Assert that is why this node is exempt, rather than
-		// letting an unexplained drop pass.
-		if (node.type === "html" && matchYouTubeEmbed(node.value)) {
-			corpusEmbeds++;
-			return;
-		}
 		corpusNodes++;
 		const got = sanitizeAuthorHtml(node.value, node.type);
 		// Attribute whitespace may be normalised; elements, attributes and text
@@ -417,6 +421,9 @@ const collect = (node, dir) => {
 			err(`FAIL: corpus ${dir} — sanitiser is not idempotent`);
 		}
 	}
+	if (node.type === "mdxJsxFlowElement" && node.name === "youTubeEmbed") {
+		corpusEmbeds++;
+	}
 	for (const child of node.children ?? []) collect(child, dir);
 };
 for (const dir of readdirSync(BASE).sort()) {
@@ -429,7 +436,7 @@ for (const dir of readdirSync(BASE).sort()) {
 	}
 	const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
 	collect(
-		parseMDX(body, FIELD, (s) => s),
+		parseMDX(body, BODY_FIELD, (s) => s),
 		dir,
 	);
 }
@@ -455,5 +462,5 @@ if (failed > 0) {
 	process.exit(1);
 }
 out(
-	`OK: ${checked} cases, ${corpusNodes} corpus html nodes sanitised, ${corpusEmbeds} embed block(s) handled before sanitising`,
+	`OK: ${checked} cases, ${corpusNodes} corpus html nodes sanitised, ${corpusEmbeds} embed block(s) parsed as templates`,
 );

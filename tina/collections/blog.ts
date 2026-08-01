@@ -7,9 +7,11 @@ export const blogCollection: Collection = {
 	name: "blog",
 	label: "Blog Posts",
 	path: "src/data/blog",
-	// Plain CommonMark, not MDX: no post uses components, and `md` parses shell
-	// `${...}` braces and `<word word>` literally instead of choking on them as
-	// MDX expressions.
+	// Plain CommonMark, not MDX. Every post's hazardous syntax — shell `${...}`
+	// braces, `<word word>` placeholders — currently sits inside code fences,
+	// which MDX would also survive, so this is a guard against future prose
+	// rather than a present-tense necessity. Components still work: a rich-text
+	// template with a `match` is parsed and serialised by the markdown parser.
 	format: "md",
 	match: {
 		// Matches every `index` file under any subdirectory depth, including
@@ -67,16 +69,20 @@ export const blogCollection: Collection = {
 			name: "body",
 			label: "Body",
 			isBody: true,
-			// Declared so the editor offers a YouTube block instead of asking an
-			// author for raw iframe HTML. Note the markdown parser does not expand
-			// templates into mdx nodes — measured, not assumed — so
-			// src/lib/tina/embeds.ts recognises the element it writes. Should this
-			// collection ever move to `format: "mdx"`, the parser emits the node
-			// directly and that bridge becomes a no-op.
+			// A YouTube block, so no post has to hand-write iframe HTML.
+			//
+			// `match` is load-bearing, not decoration. Without it the markdown
+			// parser does not recognise the template at all: it reads the element
+			// as raw html on the way in, and — worse — serialises an
+			// editor-inserted block to an empty string on the way out, silently
+			// deleting whatever the author just filled in. With it, the same
+			// parser produces a real mdxJsxFlowElement and writes the shortcode
+			// back symmetrically. Verified in both directions.
 			templates: [
 				{
 					name: "youTubeEmbed",
 					label: "YouTube Embed",
+					match: { start: "{{<", end: ">}}" },
 					fields: [
 						{
 							type: "string",
@@ -90,7 +96,9 @@ export const blogCollection: Collection = {
 							type: "string",
 							name: "title",
 							label: "Title",
-							description: "Describes the video to screen readers.",
+							description:
+								"Describes the video to screen readers, and captions it. Required: two untitled embeds are indistinguishable to anyone not seeing the page.",
+							required: true,
 						},
 					],
 				},
