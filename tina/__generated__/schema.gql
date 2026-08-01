@@ -134,10 +134,13 @@ input BooleanFilter {
   exists: Boolean
 }
 
-input RichTextFilter {
-  startsWith: String
-  eq: String
-  exists: Boolean
+input BlogBodyYouTubeEmbedFilter {
+  videoId: StringFilter
+  title: StringFilter
+}
+
+input BlogBodyFilter {
+  youTubeEmbed: BlogBodyYouTubeEmbedFilter
 }
 
 input BlogFilter {
@@ -154,7 +157,7 @@ input BlogFilter {
   hideEditPost: BooleanFilter
   timezone: StringFilter
   noindex: BooleanFilter
-  body: RichTextFilter
+  body: BlogBodyFilter
 }
 
 type BlogConnectionEdges {

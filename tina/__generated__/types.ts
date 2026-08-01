@@ -213,10 +213,13 @@ export type BooleanFilter = {
   exists?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-export type RichTextFilter = {
-  startsWith?: InputMaybe<Scalars['String']['input']>;
-  eq?: InputMaybe<Scalars['String']['input']>;
-  exists?: InputMaybe<Scalars['Boolean']['input']>;
+export type BlogBodyYouTubeEmbedFilter = {
+  videoId?: InputMaybe<StringFilter>;
+  title?: InputMaybe<StringFilter>;
+};
+
+export type BlogBodyFilter = {
+  youTubeEmbed?: InputMaybe<BlogBodyYouTubeEmbedFilter>;
 };
 
 export type BlogFilter = {
@@ -233,7 +236,7 @@ export type BlogFilter = {
   hideEditPost?: InputMaybe<BooleanFilter>;
   timezone?: InputMaybe<StringFilter>;
   noindex?: InputMaybe<BooleanFilter>;
-  body?: InputMaybe<RichTextFilter>;
+  body?: InputMaybe<BlogBodyFilter>;
 };
 
 export type BlogConnectionEdges = {
