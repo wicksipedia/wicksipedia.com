@@ -14,7 +14,7 @@
 
 - **Package manager is `bun`.** The repo ships `bun.lock` and `.github/workflows/daily-deploy.yml` runs `bun install` / `bun run build` / `bun run deploy`. Use `bun add`, `bun remove`, `bun run`. Do not create `package-lock.json` or `pnpm-lock.yaml`.
 - **Branch:** all work happens on `feat/tinacms-astro7`, cut from `main`. Never commit to `main`.
-- **Phase review gate:** at the end of every phase, STOP and ask Matt to review before starting the next phase. Commits within a phase are fine (they are local to the branch and keep work recoverable); moving to the next phase is not.
+- **Phase review gates: REMOVED.** Matt ruled on 2026-08-01 that execution runs straight through Tasks 0.1 → 3.2 with no human checkpoint, reviewed per task by a subagent reviewer and once more by a whole-branch review at the end. The `PHASE N REVIEW GATE` steps below are superseded — treat them as no-ops. Phase 4 still stops, because it needs Matt's tina.io account.
 - **Astro version floor:** `astro@^7.1.6`. Node `>=22.12.0`.
 - **No React in the shipped page.** `react` / `react-dom` stay as **devDependencies only** — the TinaCMS admin SPA build needs them. Zero `client:*` directives exist in this repo today; keep it that way.
 - **Design must not regress.** `CLAUDE.md` defines the design system: orange `var(--accent)` for anything interactive, `rounded-xl`, `border-border/50`, `bg-muted/20`, `text-foreground/60` for muted text. No new hardcoded colours, no green accents. Every UI-touching task ends with the three checks named in `CLAUDE.md`: (1) mobile vs desktop layout consistency, (2) no duplicate elements at different breakpoints, (3) CSS animations still run.
@@ -1977,7 +1977,7 @@ Read the nav links out of `src/components/Header.astro` and the socials out of `
 ```json
 {
 	"nav": [
-		{ "title": "Posts", "href": "/blog" },
+		{ "title": "Blog", "href": "/blog" },
 		{ "title": "Tags", "href": "/tags" },
 		{ "title": "About", "href": "/about" }
 	],
