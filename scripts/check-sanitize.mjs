@@ -93,6 +93,35 @@ const CASES = [
 	],
 	["comment is dropped", "<!-- <script>alert(1)</script> -->", "html", ""],
 
+	// --- prototype-chain: a plain object would answer these truthy from
+	// Object.prototype and defeat default-deny ---
+	[
+		"element named after an inherited object member is dropped",
+		"<div><constructor>hello</constructor></div>",
+		"html",
+		"<div></div>",
+	],
+	[
+		"inherited-member element with an attribute is dropped, not thrown on",
+		"<div><constructor id=x>y</constructor></div>",
+		"html",
+		"<div></div>",
+	],
+	[
+		"inherited-member inline tag is dropped",
+		"<constructor>",
+		"html_inline",
+		"",
+	],
+	[
+		// Not a valid tag-name start, so parse5 keeps it as text and the escaper
+		// neutralises it. Safe by a different route than the allowlist.
+		"prototype-polluting tag name is escaped as text",
+		"<div><__proto__>x</__proto__></div>",
+		"html",
+		"<div>&lt;__proto__&gt;x</div>",
+	],
+
 	// --- parser-level bypasses: a `/` where whitespace is expected made the
 	// previous regex tokenizer fall through and emit these verbatim ---
 	[

@@ -55,47 +55,67 @@ const INLINE_TAGS = new Set([
 	"wbr",
 ]);
 
-/** Block elements, each with the exact attributes it may keep. */
-const BLOCK_POLICY: Record<string, ReadonlySet<string>> = {
-	// No `target`/`rel`: an author-set `rel="opener"` re-enables
-	// window.opener for a new tab, and nothing in the corpus needs either.
-	a: new Set(["href", "title"]),
-	blockquote: new Set(["cite"]),
-	br: new Set(),
-	caption: new Set(),
-	col: new Set(["span"]),
-	div: new Set(["class", "style"]),
-	figcaption: new Set(),
-	figure: new Set(["class"]),
-	iframe: new Set([
-		"src",
-		"title",
-		"width",
-		"height",
-		"style",
-		"loading",
-		"allow",
-		"allowfullscreen",
-		"frameborder",
-		"referrerpolicy",
-	]),
-	img: new Set(["src", "alt", "title", "width", "height", "loading", "class"]),
-	li: new Set(),
-	ol: new Set(["start"]),
-	p: new Set(["class"]),
-	picture: new Set(),
-	pre: new Set(["class"]),
-	span: new Set(["class"]),
-	table: new Set(),
-	tbody: new Set(),
-	td: new Set(["colspan", "rowspan"]),
-	tfoot: new Set(),
-	th: new Set(["colspan", "rowspan", "scope"]),
-	thead: new Set(),
-	tr: new Set(),
-	ul: new Set(),
-};
-for (const tag of INLINE_TAGS) BLOCK_POLICY[tag] ??= new Set();
+/**
+ * Block elements, each with the exact attributes it may keep.
+ *
+ * A Map, not an object. A plain object inherits from Object.prototype, so a
+ * lookup for an element named after an inherited member returns something
+ * truthy and defeats the default-deny check: `<constructor>` was let through
+ * untouched, and `<constructor id=x>` then threw on `allowed.has`. A Map has no
+ * such keys, so the whole class of bug is gone rather than one name patched.
+ */
+const BLOCK_POLICY = new Map<string, ReadonlySet<string>>(
+	Object.entries({
+		// No `target`/`rel`: an author-set `rel="opener"` re-enables
+		// window.opener for a new tab, and nothing in the corpus needs either.
+		a: new Set(["href", "title"]),
+		blockquote: new Set(["cite"]),
+		br: new Set(),
+		caption: new Set(),
+		col: new Set(["span"]),
+		div: new Set(["class", "style"]),
+		figcaption: new Set(),
+		figure: new Set(["class"]),
+		iframe: new Set([
+			"src",
+			"title",
+			"width",
+			"height",
+			"style",
+			"loading",
+			"allow",
+			"allowfullscreen",
+			"frameborder",
+			"referrerpolicy",
+		]),
+		img: new Set([
+			"src",
+			"alt",
+			"title",
+			"width",
+			"height",
+			"loading",
+			"class",
+		]),
+		li: new Set(),
+		ol: new Set(["start"]),
+		p: new Set(["class"]),
+		picture: new Set(),
+		pre: new Set(["class"]),
+		span: new Set(["class"]),
+		table: new Set(),
+		tbody: new Set(),
+		td: new Set(["colspan", "rowspan"]),
+		tfoot: new Set(),
+		th: new Set(["colspan", "rowspan", "scope"]),
+		thead: new Set(),
+		tr: new Set(),
+		ul: new Set(),
+	}),
+);
+for (const tag of INLINE_TAGS) {
+	if (!BLOCK_POLICY.has(tag)) BLOCK_POLICY.set(tag, new Set());
+}
 
 /**
  * Attributes holding a URL, which get a scheme check rather than a name check.
@@ -242,7 +262,7 @@ function clean(node: Parse5Node): string {
 	if (!node.tagName) return "";
 
 	const name = node.tagName.toLowerCase();
-	const allowed = BLOCK_POLICY[name];
+	const allowed = BLOCK_POLICY.get(name);
 	// Default deny, and drop the subtree with it: keeping the children of a
 	// <script> or <style> would put their contents on the page as text.
 	if (!allowed) return "";
