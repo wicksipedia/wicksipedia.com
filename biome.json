@@ -35,6 +35,7 @@
 			"!**/public/pagefind",
 			"!**/public/admin",
 			"!**/tina/__generated__",
+			"!**/.claude",
 			"!**/node_modules",
 			"!**/*.html"
 		]
