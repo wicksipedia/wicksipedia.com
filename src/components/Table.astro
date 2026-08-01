@@ -1,6 +1,7 @@
 ---
 import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
 import type { TinaRichTextNode } from "@tinacms/astro/types";
+import BlogImage from "./BlogImage.astro";
 import RawHtml from "./RawHtml.astro";
 
 /**
@@ -62,7 +63,7 @@ const alignClass = (index: number) => {
 
 // Cells hold inline content only; `html_inline` still needs the raw renderer or
 // an author's inline tag shows up as escaped source inside the cell.
-const components = { html: RawHtml, html_inline: RawHtml };
+const components = { html: RawHtml, html_inline: RawHtml, img: BlogImage };
 ---
 
 <table>

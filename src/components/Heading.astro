@@ -1,6 +1,7 @@
 ---
 import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
 import type { TinaRichTextContent } from "@tinacms/astro/types";
+import BlogImage from "./BlogImage.astro";
 import RawHtml from "./RawHtml.astro";
 
 /**
@@ -32,9 +33,11 @@ const Tag = `h${Math.min(Math.max(level, 1), 6)}` as
 	| "h5"
 	| "h6";
 
-// Headings hold inline content only. `html_inline` still needs the raw renderer
-// or an author's inline tag would show up as escaped source in the heading.
-const components = { html: RawHtml, html_inline: RawHtml };
+// Inline content only, but it still needs the same renderers RichText uses:
+// `html_inline` or an author's inline tag shows up as escaped source, and `img`
+// or a colocated image renders as a bare <img> pointing at /blog/<slug>/file,
+// a path that does not exist in the build.
+const components = { html: RawHtml, html_inline: RawHtml, img: BlogImage };
 ---
 
 <Tag {id}><TinaMarkdown content={children} components={components} /></Tag>
