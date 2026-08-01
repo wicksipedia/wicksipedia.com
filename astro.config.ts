@@ -1,5 +1,5 @@
+import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
-import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import {
 	transformerNotationDiff,
@@ -9,16 +9,13 @@ import {
 import tailwindcss from "@tailwindcss/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import { defineConfig, envField, fontProviders } from "astro/config";
-import remarkCollapse from "remark-collapse";
-import remarkToc from "remark-toc";
 import { SITE } from "./src/config";
 import { transformerFileName } from "./src/utils/transformers/fileName";
 
-// https://astro.build/config
 export default defineConfig({
 	site: SITE.website,
 	trailingSlash: "never",
-	output: "static", // Explicitly set to static mode for Cloudflare Workers
+	output: "static",
 
 	integrations: [
 		sitemap({
@@ -26,19 +23,20 @@ export default defineConfig({
 				if (!SITE.showArchives && page.endsWith("/archives")) return false;
 				if (page.includes("/tags")) return false;
 				if (page.endsWith("/search")) return false;
-				// Exclude blog pagination pages (e.g. /blog/2, /blog/3)
 				if (/\/blog\/\d+$/.test(page)) return false;
 				return true;
 			},
 		}),
-		react(),
 		mdx(),
 	],
 
 	markdown: {
-		remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
+		// Astro 7 defaults to the Sätteri processor. This site's code blocks rely
+		// on the remark/rehype pipeline's shikiConfig (dual themes + notation
+		// transformers), so pin the old processor explicitly. Phase 1 removes this
+		// entirely — post bodies stop going through Astro's Markdown pipeline.
+		processor: unified({ gfm: true, smartypants: true }),
 		shikiConfig: {
-			// For more themes, visit https://shiki.style/themes
 			themes: { light: "min-light", dark: "night-owl" },
 			defaultColor: false,
 			wrap: false,
@@ -52,14 +50,12 @@ export default defineConfig({
 	},
 
 	vite: {
-		// This will be fixed in Astro 6 with Vite 7 support
-		// See: https://github.com/withastro/astro/issues/14030
 		plugins: [tailwindcss(), basicSsl()],
 		optimizeDeps: {
 			exclude: ["@resvg/resvg-js"],
 		},
 		server: {
-			cors: true, // Allow cross-origin requests (giscus iframe fetches theme CSS)
+			cors: true, // giscus iframe fetches theme CSS cross-origin
 		},
 	},
 
@@ -69,7 +65,7 @@ export default defineConfig({
 		service: {
 			entrypoint: "astro/assets/services/sharp",
 			config: {
-				limitInputPixels: false, // Disable pixel limit to pass through large images
+				limitInputPixels: false,
 			},
 		},
 	},
@@ -84,25 +80,22 @@ export default defineConfig({
 		},
 	},
 
-	experimental: {
-		preserveScriptOrder: true,
-		fonts: [
-			{
-				name: "Google Sans Code",
-				cssVariable: "--font-google-sans-code",
-				provider: fontProviders.google(),
-				fallbacks: ["monospace"],
-				weights: [300, 400, 500, 600, 700],
-				styles: ["normal", "italic"],
-			},
-			{
-				name: "Source Serif 4",
-				cssVariable: "--font-source-serif",
-				provider: fontProviders.google(),
-				fallbacks: ["Georgia", "serif"],
-				weights: [400, 600, 700],
-				styles: ["normal", "italic"],
-			},
-		],
-	},
+	fonts: [
+		{
+			name: "Google Sans Code",
+			cssVariable: "--font-google-sans-code",
+			provider: fontProviders.google(),
+			fallbacks: ["monospace"],
+			weights: [300, 400, 500, 600, 700],
+			styles: ["normal", "italic"],
+		},
+		{
+			name: "Source Serif 4",
+			cssVariable: "--font-source-serif",
+			provider: fontProviders.google(),
+			fallbacks: ["Georgia", "serif"],
+			weights: [400, 600, 700],
+			styles: ["normal", "italic"],
+		},
+	],
 });
