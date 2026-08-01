@@ -1,9 +1,11 @@
 ---
 import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
 import type { TinaRichTextContent } from "@tinacms/astro/types";
+import GithubSlugger from "github-slugger";
 import { groupBlockquoteParagraphs } from "@/lib/tina/blockquote";
 import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
 import BlogImage from "./BlogImage.astro";
+import Heading from "./Heading.astro";
 import RawHtml from "./RawHtml.astro";
 
 /**
@@ -24,6 +26,9 @@ import RawHtml from "./RawHtml.astro";
  *    colocated asset and hands to Astro's <Image> for optimisation.
  *  - `blockquote` children are regrouped into paragraphs; see
  *    src/lib/tina/blockquote.ts for why that is necessary and how it can fail.
+ *  - `h1`-`h6` nodes gain the slug `id` Astro's Markdown pipeline generated, so
+ *    section permalinks and external deep links keep resolving. See
+ *    Heading.astro for why they have to become mdx nodes to carry it.
  */
 interface Props {
 	content: TinaRichTextContent | null;
@@ -110,10 +115,37 @@ function absoluteImageUrl(url: string): string {
 	return `/blog/${segments.join("/")}`;
 }
 
+const HEADING_TYPES = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
+
+/** Concatenated text of a node's whole subtree — what rehype-slug hashes. */
+function textContent(node: AstNode): string {
+	if (typeof node.text === "string") return node.text;
+	return (node.children ?? []).map(textContent).join("");
+}
+
+/**
+ * One slugger per rendered post, exactly as Astro used one per file. It carries
+ * the de-duplication state that turns a repeated heading into `-1`, `-2`, so it
+ * must see the headings in document order — which the pre-order walk guarantees.
+ */
+const slugger = new GithubSlugger();
+
 function walk(node: AstNode): AstNode {
 	if (node.type === "code_block") return highlight(node);
 
 	let next = node;
+	if (next.type && HEADING_TYPES.has(next.type)) {
+		return {
+			type: "mdxJsxFlowElement",
+			name: "Heading",
+			props: {
+				level: Number(next.type.slice(1)),
+				id: slugger.slug(textContent(next)),
+				children: (next.children ?? []).map(walk),
+			},
+			children: [],
+		};
+	}
 	if (node.type === "img" && typeof node.url === "string") {
 		next = { ...node, url: absoluteImageUrl(node.url) };
 	}
@@ -134,6 +166,7 @@ const resolved = content
 	: null;
 
 const components = {
+	Heading,
 	html: RawHtml,
 	html_inline: RawHtml,
 	img: BlogImage,
