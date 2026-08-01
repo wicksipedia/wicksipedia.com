@@ -1,6 +1,5 @@
 ---
 import { Image } from "astro:assets";
-import { type CollectionEntry, render } from "astro:content";
 import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
@@ -14,9 +13,11 @@ import EditPost from "@/components/EditPost.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import RelatedPosts from "@/components/RelatedPosts.astro";
+import RichText from "@/components/RichText.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
+import type { PostEntry } from "@/lib/tina/posts";
 import { getPath } from "@/utils/getPath";
 import { slugifyStr } from "@/utils/slugify";
 
@@ -24,8 +25,8 @@ dayjs.extend(utc);
 dayjs.extend(tz);
 
 type Props = {
-	post: CollectionEntry<"blog">;
-	posts: CollectionEntry<"blog">[];
+	post: PostEntry;
+	posts: PostEntry[];
 };
 
 const { post, posts } = Astro.props;
@@ -43,8 +44,6 @@ const {
 	hideEditPost,
 	noindex,
 } = post.data;
-
-const { Content } = await render(post);
 
 let ogImageUrl: string | undefined;
 
@@ -237,7 +236,7 @@ const nextPost =
       id="article"
       class="animate-reveal-delay-1 app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
     >
-      <Content />
+      <RichText content={post.body} slug={post.slug} />
     </article>
 
     <div class="border-0 border-t border-border/40 my-8"></div>

@@ -1,0 +1,31 @@
+---
+/**
+ * Renderer for Tina rich-text `html` / `html_inline` nodes.
+ *
+ * TinaMarkdown's built-in handling for those node types interpolates `value`
+ * as an Astro expression, which HTML-escapes it — pre-rendered markup lands on
+ * the page as visible `&lt;pre&gt;…` source text. Every Shiki-highlighted code
+ * block arrives as an `html` node (see RichText.astro), so without this
+ * override no code block on the site renders.
+ *
+ * TRUST: today every value is either this site's own Shiki output or raw HTML an
+ * author committed to this repo, which the MDX pipeline also rendered unescaped
+ * (astro.config.ts sets no rehype-sanitize). So this does not widen anything as
+ * things stand.
+ *
+ * It WILL widen in phase 4. Once Tina Cloud lets someone edit a post without a
+ * commit and a review, an `html` block containing a <script> becomes stored XSS
+ * on every visitor. Highlighter output cannot simply be given its own node type
+ * to separate the two — @tinacms/astro's Node.astro dispatches a fixed set of
+ * types and drops anything else — so the split has to happen another way, e.g.
+ * routing author HTML through an allowlist sanitiser while the highlighter feeds
+ * a component override directly. Resolve that before Tina Cloud writes go live.
+ */
+interface Props {
+	value: string;
+}
+
+const { value } = Astro.props;
+---
+
+<Fragment set:html={value} />

@@ -1,9 +1,10 @@
 ---
-import { getImage } from "astro:assets";
 import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
 import type { TinaRichTextContent } from "@tinacms/astro/types";
-import { resolveBlogImage } from "@/lib/tina/images";
+import { groupBlockquoteParagraphs } from "@/lib/tina/blockquote";
 import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
+import BlogImage from "./BlogImage.astro";
+import RawHtml from "./RawHtml.astro";
 
 /**
  * Renders a Tina rich-text body. Two things the default renderer would drop are
@@ -12,8 +13,17 @@ import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
  *  - `code_block` nodes become `html` nodes holding dual-theme Shiki output.
  *    (Not a `components.code_block` override: that API only receives `value`
  *    and `lang`, so fence meta like `title="~/.zshrc"` would be lost.)
- *  - `img` nodes pointing at colocated `/blog/<slug>/<file>` refs get their url
- *    rewritten to the optimised `/_astro/*.webp` from getImage().
+ *    TinaMarkdown escapes raw markup, so these need the RawHtml override to
+ *    render at all. Highlighter output and author-written HTML necessarily
+ *    share the `html` type: @tinacms/astro's Node.astro dispatches a fixed set
+ *    of node types and renders anything else as nothing, so a distinct
+ *    `shiki_html` type would silently disappear. See RawHtml.astro for what
+ *    that means for trust.
+ *  - `img` nodes carrying a relative `./file.png` ref are rewritten to the
+ *    absolute `/blog/<slug>/<file>` form, which BlogImage resolves back to the
+ *    colocated asset and hands to Astro's <Image> for optimisation.
+ *  - `blockquote` children are regrouped into paragraphs; see
+ *    src/lib/tina/blockquote.ts for why that is necessary and how it can fail.
  */
 interface Props {
 	content: TinaRichTextContent | null;
@@ -48,12 +58,34 @@ function highlight(node: AstNode): AstNode {
 		// `title="~/.zshrc"` into the filename label above the block.
 		meta: { __raw: node.meta ?? "" },
 		transformers: [
+			{
+				name: "astro-code-overflow",
+				pre(el) {
+					// Astro's Markdown Shiki wrapper appends this whenever `wrap` is
+					// false, and typography.css relies on the <pre> scrolling rather
+					// than widening the article. Its trailing `;` also terminates the
+					// last CSS variable, which matters because transformerFileName
+					// concatenates onto this string without a separator.
+					el.properties.style = `${el.properties.style ?? ""}; overflow-x: auto;`;
+				},
+			},
 			...SHIKI_TRANSFORMERS,
 			{
 				name: "astro-code-class",
 				pre(el) {
-					const cls = (el.properties.class as string | undefined) ?? "";
-					el.properties.class = `astro-code ${cls}`.trim();
+					// Reproduce the class list and data attribute Astro's Markdown
+					// Shiki wrapper emitted, so the <pre> that typography.css and any
+					// downstream tooling sees is unchanged by the renderer swap.
+					const cls = ((el.properties.class as string | undefined) ?? "")
+						.replace(/\bshiki-themes\b/g, "astro-code-themes")
+						.replace(/\bshiki\b/g, "astro-code")
+						.trim();
+					// typography.css styles `.astro-code`; never let it go missing,
+					// whatever class list Shiki or a transformer produced.
+					el.properties.class = /\bastro-code\b/.test(cls)
+						? cls
+						: `astro-code ${cls}`.trim();
+					el.properties["data-language"] = lang;
 				},
 			},
 		],
@@ -61,26 +93,51 @@ function highlight(node: AstNode): AstNode {
 	return { type: "html", value: html };
 }
 
-async function walk(node: AstNode): Promise<AstNode> {
+/**
+ * `./file.png` → `/blog/<slug>/file.png`; anything already absolute or remote is
+ * left alone. `../` segments are resolved rather than passed through, so a
+ * sibling-post ref like `../other/img.png` still finds its asset instead of
+ * shipping a 404.
+ */
+function absoluteImageUrl(url: string): string {
+	if (/^https?:\/\//i.test(url) || url.startsWith("/")) return url;
+	const segments: string[] = [slug];
+	for (const part of url.split("/")) {
+		if (part === "" || part === ".") continue;
+		if (part === "..") segments.pop();
+		else segments.push(part);
+	}
+	return `/blog/${segments.join("/")}`;
+}
+
+function walk(node: AstNode): AstNode {
 	if (node.type === "code_block") return highlight(node);
 
 	let next = node;
 	if (node.type === "img" && typeof node.url === "string") {
-		const resolved = resolveBlogImage(slug, node.url);
-		if (resolved && typeof resolved !== "string") {
-			const optimised = await getImage({ src: resolved, format: "webp" });
-			next = { ...node, url: optimised.src };
-		}
+		next = { ...node, url: absoluteImageUrl(node.url) };
+	}
+	if (next.type === "blockquote" && next.children?.length) {
+		next = {
+			...next,
+			children: groupBlockquoteParagraphs(next.children) as AstNode[],
+		};
 	}
 	if (next.children?.length) {
-		next = { ...next, children: await Promise.all(next.children.map(walk)) };
+		next = { ...next, children: next.children.map(walk) };
 	}
 	return next;
 }
 
 const resolved = content
-	? ((await walk(content as AstNode)) as TinaRichTextContent)
+	? (walk(content as AstNode) as TinaRichTextContent)
 	: null;
+
+const components = {
+	html: RawHtml,
+	html_inline: RawHtml,
+	img: BlogImage,
+};
 ---
 
-{resolved && <TinaMarkdown content={resolved} />}
+{resolved && <TinaMarkdown content={resolved} components={components} />}
