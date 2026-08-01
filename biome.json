@@ -33,6 +33,7 @@
 			"!**/dist",
 			"!**/.astro",
 			"!**/public/pagefind",
+			"!**/public/admin",
 			"!**/node_modules",
 			"!**/*.html"
 		]
