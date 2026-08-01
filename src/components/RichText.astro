@@ -9,6 +9,7 @@ import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
 import BlogImage from "./BlogImage.astro";
 import Heading from "./Heading.astro";
 import RawHtml from "./RawHtml.astro";
+import Table from "./Table.astro";
 import YouTubeEmbed from "./YouTubeEmbed.astro";
 
 /**
@@ -28,6 +29,8 @@ import YouTubeEmbed from "./YouTubeEmbed.astro";
  *  - `img` nodes carrying a relative `./file.png` ref are rewritten to the
  *    absolute `/blog/<slug>/<file>` form, which BlogImage resolves back to the
  *    colocated asset and hands to Astro's <Image> for optimisation.
+ *  - `table` nodes are rendered by our own component: the built-in one emits
+ *    no `<thead>`/`<th>` and hardcodes a border colour inline. See Table.astro.
  *  - `blockquote` children are regrouped into paragraphs; see
  *    src/lib/tina/blockquote.ts for why that is necessary and how it can fail.
  *  - `text` nodes outside inline code get typographic punctuation back; see
@@ -195,6 +198,7 @@ const resolved = content
 
 const components = {
 	Heading,
+	table: Table,
 	youTubeEmbed: YouTubeEmbed,
 	html: RawHtml,
 	html_inline: RawHtml,
