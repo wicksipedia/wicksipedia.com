@@ -988,7 +988,9 @@ git commit -m "feat: add Tina post data adapter"
 
 Two features of the current MDX pipeline do not survive Tina's AST and must be rebuilt here:
 
-- **Code highlighting.** Tina's `code_block` node carries `{ lang, meta, value }`, but `@tinacms/astro`'s `CodeBlockNode.astro` only forwards `value` and `lang` to a `components.code_block` override — `meta` is dropped, which would lose the `title="~/.zshrc"` filename labels on seven fences across the site. So instead of registering an override, the AST walk **replaces each `code_block` node with an `html` node** holding pre-rendered Shiki output. `html` nodes render through `set:html`, and the walk has access to `lang`, `meta`, and `value`.
+- **Code highlighting.** Tina's `code_block` node carries `{ lang, meta, value }`, but `@tinacms/astro`'s `CodeBlockNode.astro` only forwards `value` and `lang` to a `components.code_block` override — `meta` is dropped. So instead of registering an override, the AST walk **replaces each `code_block` node with an `html` node** holding pre-rendered Shiki output. `html` nodes render through `set:html`, and the walk has access to `lang`, `meta`, and `value`.
+
+  **Note on filename labels (verified 2026-08-01, do not "fix" this here):** `src/utils/transformers/fileName.js` reads the meta key `file=`, but all 8 metadata fences in the corpus write `title=`. Measured on the pre-migration build: 139 `--file-name-offset` CSS vars (emitted unconditionally) and **0** actual label spans. Filename labels have therefore never rendered on this site — it is a pre-existing latent bug, not something the migration breaks. Preserving `meta` through the walk keeps the mechanism intact and behaviour identical; it does not make labels appear, and this task must not change that either way. Fixing it (accept `title=` in the transformer, or rename the 8 fences to `file=`) is a separate change requiring Matt's sign-off.
 - **Colocated images.** `img` nodes hold the raw `/blog/<slug>/<file>` string. The walk rewrites each `url` to the optimised `/_astro/*.webp` emitted by `getImage()`.
 
 - [ ] **Step 1: Write `src/shiki.ts`**
@@ -1413,13 +1415,36 @@ Expected: `ROUTES MATCH`. Any missing route means a post failed to come through 
 
 - [ ] **Step 15: Spot-check rendered output, not source text**
 
+Capture these counts from the **pre-migration** build of the same page first (the Astro-rendered output, before this task's changes), then compare after:
+
 ```bash
-grep -c 'astro-code' dist/blog/modern-zsh-setup/index.html
-grep -o 'title="~/.zshrc"' dist/blog/modern-zsh-setup/index.html | head -1
-grep -o '_astro/[^"]*\.webp' dist/blog/setting-up-a-new-mac/index.html | head -3
+P=dist/blog/modern-zsh-setup/index.html
+grep -c 'astro-code' $P
+grep -c -- '--shiki-light' $P
+grep -c -- '--shiki-dark' $P
+grep -o '_astro/[^"]*\.webp' dist/blog/setting-up-a-new-mac/index.html | wc -l
 ```
 
-Expected: a non-zero `astro-code` count (highlighting ran), the filename label present (fence meta survived), and at least one `/_astro/*.webp` reference (colocated images were optimised, not served raw).
+Expected: the `astro-code` and `--shiki-light` / `--shiki-dark` counts match the pre-migration build exactly (highlighting and dual-theme output survived the renderer swap), and the webp count is non-zero (colocated images were optimised, not served raw).
+
+Do **not** assert on a filename label here — see the note in Task 1.4: labels do not render on this site today, and expecting one would make this check fail for a reason unrelated to the migration.
+
+Separately assert that fence meta survived into the AST, since nothing in the rendered HTML reveals it:
+
+```bash
+node -e "
+const {parseMDX}=require('@tinacms/mdx');
+const fs=require('fs');
+const raw=fs.readFileSync('src/data/blog/modern-zsh-setup/index.md','utf8');
+const body=raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,'');
+const ast=parseMDX(body,{type:'rich-text',name:'body',parser:{type:'markdown'}},s=>s);
+const metas=(ast.children??[]).filter(n=>n.type==='code_block').map(n=>n.meta).filter(Boolean);
+if(metas.length===0) throw new Error('no code_block carried meta — expected at least one title=');
+console.log('OK: fence meta preserved:', metas);
+"
+```
+
+Expected: `OK: fence meta preserved: [ 'title=\"~/.zshrc\"' ]` or similar. The throw guarantees an empty result fails instead of passing silently.
 
 - [ ] **Step 16: Commit**
 
