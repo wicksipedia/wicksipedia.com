@@ -73,7 +73,7 @@ Ships a site that looks and behaves identically to today, on Astro 7, with the d
 - Modify: none
 
 **Interfaces:**
-- Produces: a `baseline-routes.txt` in the scratchpad listing every HTML page the current build emits. Later phases diff against it to prove no route disappeared.
+- Produces: `.baseline/routes.txt` in the repo root (git-ignored), listing every HTML page the current build emits. Later tasks diff against it to prove no route disappeared.
 
 - [ ] **Step 1: Cut the branch from a clean `main`**
 
