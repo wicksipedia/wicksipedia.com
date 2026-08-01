@@ -42,13 +42,17 @@ Once installed, it's as simple as running `brew install [package]` to install to
 
 After setting up Homebrew, I'd start with the applications that I find indispensable:
 
-**[iTerm2](https://iterm2.com/)** - A replacement for the default Terminal app, with better features like split panes, quake mode and search.
+### **[iTerm2](https://iterm2.com/)**
+
+A replacement for the default Terminal app, with better features like split panes, quake mode and search.
 
 ```shell
 brew install --cask iterm2
 ```
 
-**[Fig](https://fig.io/)** - Enhances your terminal experience on MacOS with autocomplete features, adding powerful IDE-like capabilities to your command line workflow (picture Visual Studio intellisense). Also dove tails nicely into VSCode and Rider integrated terminals.
+### **[Fig](https://fig.io/)**
+
+Enhances your terminal experience on MacOS with autocomplete features, adding powerful IDE-like capabilities to your command line workflow (picture Visual Studio intellisense). Also dove tails nicely into VSCode and Rider integrated terminals.
 
 ```shell
 brew install --cask fig
@@ -60,7 +64,9 @@ Update: Fig was acquired by Amazon, so they aren't accepting new users at the ti
 brew install --cask codewhisperer
 ```
 
-**[Oh My Zsh](https://ohmyz.sh/)** - An open source, community-driven framework for managing your Zsh configuration, providing themes and plugins to enhance your terminal experience. You can configure your prompt just like Oh My Posh, with all the cool stats and powerline glyphs. I've written a detailed guide on [how I set up my terminal](/blog/terminal-setup) with Oh My Zsh and all the productivity plugins I use.
+### **[Oh My Zsh](https://ohmyz.sh/)**
+
+An open source, community-driven framework for managing your Zsh configuration, providing themes and plugins to enhance your terminal experience. You can configure your prompt just like Oh My Posh, with all the cool stats and powerline glyphs. I've written a detailed guide on [how I set up my terminal](/blog/terminal-setup) with Oh My Zsh and all the productivity plugins I use.
 
 ```shell
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
@@ -71,7 +77,9 @@ Oh My Zsh has a great plugin model, my favourite is turning on aliases for many 
 ![Preview of the Spaceship theme in Oh my zsh](./omz-spaceship.webp)
 🔥 Hot tip: install the [Spaceship theme](https://github.com/pascaldevink/spaceship-zsh-theme)
 
-**[Nerd Fonts](https://github.com/ryanoasis/nerd-fonts)** - Tap into the Nerd Fonts repository to access a variety of developer-friendly fonts that include Powerline symbols pre-baked, enhancing the terminal and code editor aesthetics.
+### **[Nerd Fonts](https://github.com/ryanoasis/nerd-fonts)**
+
+Tap into the Nerd Fonts repository to access a variety of developer-friendly fonts that include Powerline symbols pre-baked, enhancing the terminal and code editor aesthetics.
 
 ```shell
 brew tap homebrew/cask-fonts
@@ -81,43 +89,57 @@ brew install font-monaspace-nerd-font
 
 ### Productivity
 
-**[1Password](https://1password.com/)** - A premier password manager that securely stores various passwords, software licenses, and other sensitive information in a virtual vault.
+#### **[1Password](https://1password.com/)**
+
+A premier password manager that securely stores various passwords, software licenses, and other sensitive information in a virtual vault.
 
 ```shell
 brew install --cask 1password
 ```
 
-**[Raycast](https://www.raycast.com/)** - An alternative to Alfred and Spotlight, it offers a command bar to launch apps, find documents, manage tasks, and automate frequent actions. This deserves a post to itself - it's so good I've let Raycast replace my Spotlight shortcut!
+#### **[Raycast](https://www.raycast.com/)**
+
+An alternative to Alfred and Spotlight, it offers a command bar to launch apps, find documents, manage tasks, and automate frequent actions. This deserves a post to itself - it's so good I've let Raycast replace my Spotlight shortcut!
 
 ```shell
 brew install --cask raycast
 ```
 
-**[Rectangle](https://rectangleapp.com/)** - A powerful window management app for Mac, enabling you to quickly organize and manipulate windows through easy-to-use keyboard shortcuts and snap areas.
+#### **[Rectangle](https://rectangleapp.com/)**
+
+A powerful window management app for Mac, enabling you to quickly organize and manipulate windows through easy-to-use keyboard shortcuts and snap areas.
 
 ```shell
 brew install --cask rectangle
 ```
 
-**[Bartender](https://www.macbartender.com/)** - A macOS utility that helps you organize and hide menu bar icons, keeping your workspace tidy and free from distractions.
+#### **[Bartender](https://www.macbartender.com/)**
+
+A macOS utility that helps you organize and hide menu bar icons, keeping your workspace tidy and free from distractions.
 
 ```shell
 brew install --cask bartender
 ```
 
-**[CleanShot X](https://cleanshot.com/)** - A versatile screen capture tool for Mac that offers powerful features such as capturing scrolling content, annotating screenshots, and recording your screen with audio.
+#### **[CleanShot X](https://cleanshot.com/)**
+
+A versatile screen capture tool for Mac that offers powerful features such as capturing scrolling content, annotating screenshots, and recording your screen with audio.
 
 ```shell
 brew install --cask cleanshot
 ```
 
-**[Arc Browser](https://thebrowser.company/)** - A modern web browser designed to enhance productivity with a focus on design and user experience, offering unique features such as organizing tabs into stacks and a customizable interface.
+#### **[Arc Browser](https://thebrowser.company/)**
+
+A modern web browser designed to enhance productivity with a focus on design and user experience, offering unique features such as organizing tabs into stacks and a customizable interface.
 
 ```shell
 brew install --cask arc
 ```
 
-**[UnnaturalScrollWheels](https://github.com/ther0n/UnnaturalScrollWheels)** - A simple utility that reverses the direction of scrolling with a physical mouse wheel on MacOS, making it behave like traditional Windows scrolling whislt keeping the trackpad in 'natural' scrolling mode.
+#### **[UnnaturalScrollWheels](https://github.com/ther0n/UnnaturalScrollWheels)**
+
+A simple utility that reverses the direction of scrolling with a physical mouse wheel on MacOS, making it behave like traditional Windows scrolling whislt keeping the trackpad in 'natural' scrolling mode.
 
 ```shell
 brew install --cask unnaturalscrollwheels
@@ -125,37 +147,49 @@ brew install --cask unnaturalscrollwheels
 
 ### Presentation tools
 
-**[Camo](https://reincubate.com/camo/)** - Upgrade your webcam for your Mac, featuring Pan-Tilt-Zoom (PTZ) functionality, enhancing your video calls with superior image quality and camera control.
+#### **[Camo](https://reincubate.com/camo/)**
+
+Upgrade your webcam for your Mac, featuring Pan-Tilt-Zoom (PTZ) functionality, enhancing your video calls with superior image quality and camera control.
 
 ```shell
 brew install --cask camo-studio
 ```
 
-**[Camtasia](https://www.techsmith.com/video-editor.html)** - A full-featured screen recorder and video editor that allows you to create professional-looking videos, ideal for tutorials, presentations, and online courses.
+#### **[Camtasia](https://www.techsmith.com/video-editor.html)**
+
+A full-featured screen recorder and video editor that allows you to create professional-looking videos, ideal for tutorials, presentations, and online courses.
 
 ```shell
 brew install --cask camtasia
 ```
 
-**[Presentify](https://presentify.compzets.com/)** - A Mac app perfect for annotating your screen, highlighting things or drawing on your screen; it's the closest alternative to ZoomIt for Mac users, offering similar functionality for presentations.
+#### **[Presentify](https://presentify.compzets.com/)**
+
+A Mac app perfect for annotating your screen, highlighting things or drawing on your screen; it's the closest alternative to ZoomIt for Mac users, offering similar functionality for presentations.
 
 Get it from the AppStore [https://apps.apple.com/us/app/presentify-screen-annotation/id1507246666](https://apps.apple.com/us/app/presentify-screen-annotation/id1507246666)
 
 ### Dev tools
 
-**[Visual Studio Code](https://code.visualstudio.com/)** - A versatile code editor that's become the de facto choice for many developers.
+#### **[Visual Studio Code](https://code.visualstudio.com/)**
+
+A versatile code editor that's become the de facto choice for many developers.
 
 ```shell
 brew install --cask visual-studio-code
 ```
 
-**[Rider](https://www.jetbrains.com/rider/)** - A fast and powerful cross-platform .NET IDE by JetBrains, which provides an extensive set of features for .NET developers, including strong C# analysis, testing tools, and Docker integration.
+#### **[Rider](https://www.jetbrains.com/rider/)**
+
+A fast and powerful cross-platform .NET IDE by JetBrains, which provides an extensive set of features for .NET developers, including strong C# analysis, testing tools, and Docker integration.
 
 ```shell
 brew install --cask rider
 ```
 
-**[Docker](https://www.docker.com/)** - Essential for containerization, Docker simplifies the creation, deployment, and running of applications using containers, streamlining the development process across different environments.
+#### **[Docker](https://www.docker.com/)**
+
+Essential for containerization, Docker simplifies the creation, deployment, and running of applications using containers, streamlining the development process across different environments.
 
 ```shell
 brew install --cask docker
@@ -168,19 +202,25 @@ brew install colima
 colima start
 ```
 
-**[Azure Data Studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/)** - A cross-platform database tool for data professionals using the Microsoft family of on-premises and cloud SQL databases, offering a modern editor experience with IntelliSense, code snippets, source control integration, and an integrated terminal.
+#### **[Azure Data Studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/)**
+
+A cross-platform database tool for data professionals using the Microsoft family of on-premises and cloud SQL databases, offering a modern editor experience with IntelliSense, code snippets, source control integration, and an integrated terminal.
 
 ```shell
 brew install --cask azure-data-studio
 ```
 
-**[Microsoft Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/)** - A powerful standalone app from Microsoft that lets you easily work with Azure Storage data on Windows, macOS, and Linux.
+#### **[Microsoft Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/)**
+
+A powerful standalone app from Microsoft that lets you easily work with Azure Storage data on Windows, macOS, and Linux.
 
 ```shell
 brew install --cask microsoft-azure-storage-explorer
 ```
 
-**[Postman](https://www.postman.com/)** - A full-featured tool for API development, Postman streamlines the testing, documentation, and sharing of APIs, facilitating a more efficient and collaborative workflow for developers.
+#### **[Postman](https://www.postman.com/)**
+
+A full-featured tool for API development, Postman streamlines the testing, documentation, and sharing of APIs, facilitating a more efficient and collaborative workflow for developers.
 
 ```shell
 brew install --cask postman
