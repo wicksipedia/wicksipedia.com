@@ -93,6 +93,96 @@ const CASES = [
 	],
 	["comment is dropped", "<!-- <script>alert(1)</script> -->", "html", ""],
 
+	// --- parser-level bypasses: a `/` where whitespace is expected made the
+	// previous regex tokenizer fall through and emit these verbatim ---
+	[
+		"slash before attributes does not smuggle a script",
+		'<div>\n<script/ src="https://evil.example/x.js"></script>\n</div>',
+		"html",
+		"<div>\n\n</div>",
+	],
+	[
+		"slash before attributes does not smuggle an onerror",
+		"<div><img/ src=x onerror=alert(1)></div>",
+		"html",
+		'<div><img src="x"></div>',
+	],
+	[
+		"svg with slash-onload is dropped",
+		"<div><svg/onload=alert(1)></div>",
+		"html",
+		"<div></div>",
+	],
+	[
+		"unterminated tag cannot run off the end of the document",
+		"<div><img src=x onerror=alert(1);//",
+		"html",
+		"<div></div>",
+	],
+	// --- url and style policy ---
+	[
+		"protocol-relative iframe src is dropped",
+		'<iframe src="//evil.example/"></iframe>',
+		"html",
+		"<iframe></iframe>",
+	],
+	[
+		"protocol-relative link href is dropped",
+		'<a href="//evil.example/">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
+		"schemeless iframe src is dropped",
+		'<iframe src="/local/page"></iframe>',
+		"html",
+		"<iframe></iframe>",
+	],
+	[
+		"position:fixed overlay is stripped from style",
+		'<div style="position: fixed; top: 0; height: 100%;">x</div>',
+		"html",
+		'<div style="top: 0; height: 100%;">x</div>',
+	],
+	[
+		"url() beacon is stripped from style",
+		'<div style="background: url(https://evil.example/p.gif); height: 10px;">x</div>',
+		"html",
+		'<div style="height: 10px;">x</div>',
+	],
+	[
+		// `border` IS an allowed property, so only the url() guard can catch this.
+		// Without it the fixture passes on the property allowlist alone.
+		"url() in an allowed style property is dropped",
+		'<div style="border: url(https://evil.example/p.gif); width: 10px;">x</div>',
+		"html",
+		'<div style="width: 10px;">x</div>',
+	],
+	[
+		"unknown style property is dropped",
+		'<div style="behavior: url(#x); width: 10px;">x</div>',
+		"html",
+		'<div style="width: 10px;">x</div>',
+	],
+	[
+		"text is escaped, never copied through",
+		"<div>a &lt; b &amp; c</div>",
+		"html",
+		"<div>a &lt; b &amp; c</div>",
+	],
+	[
+		"target and rel are not author-controllable",
+		'<a href="https://example.com" target="_blank" rel="opener">x</a>',
+		"html",
+		'<a href="https://example.com">x</a>',
+	],
+	[
+		"srcset is not an allowed attribute",
+		'<img src="/a.png" srcset="//evil.example/b.png 2x">',
+		"html",
+		'<img src="/a.png">',
+	],
+
 	// --- legitimate content the posts depend on: must survive ---
 	["opening cite passes through unchanged", "<cite>", "html_inline", "<cite>"],
 	[
