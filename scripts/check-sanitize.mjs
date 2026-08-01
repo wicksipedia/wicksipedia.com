@@ -14,6 +14,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
 import { ELEMENT_NODE, parse } from "ultrahtml";
+import { matchYouTubeEmbed } from "../src/lib/tina/embeds.ts";
 import { sanitizeAuthorHtml } from "../src/lib/tina/sanitize-html.ts";
 
 const BASE = "src/data/blog";
@@ -65,12 +66,6 @@ const CASES = [
 		"<a>x</a>",
 	],
 	["style element is dropped", "<style>body{display:none}</style>", "html", ""],
-	[
-		"iframe from an unlisted host is dropped",
-		'<iframe src="https://evil.example/x"></iframe>',
-		"html",
-		"<iframe></iframe>",
-	],
 	["object/embed are dropped", '<object data="x.swf"></object>', "html", ""],
 	[
 		"form is dropped",
@@ -150,48 +145,10 @@ const CASES = [
 	],
 	// --- url and style policy ---
 	[
-		"protocol-relative iframe src is dropped",
-		'<iframe src="//evil.example/"></iframe>',
-		"html",
-		"<iframe></iframe>",
-	],
-	[
 		"protocol-relative link href is dropped",
 		'<a href="//evil.example/">x</a>',
 		"html",
 		"<a>x</a>",
-	],
-	[
-		"schemeless iframe src is dropped",
-		'<iframe src="/local/page"></iframe>',
-		"html",
-		"<iframe></iframe>",
-	],
-	[
-		"position:fixed overlay is stripped from style",
-		'<div style="position: fixed; top: 0; height: 100%;">x</div>',
-		"html",
-		'<div style="top: 0; height: 100%;">x</div>',
-	],
-	[
-		"url() beacon is stripped from style",
-		'<div style="background: url(https://evil.example/p.gif); height: 10px;">x</div>',
-		"html",
-		'<div style="height: 10px;">x</div>',
-	],
-	[
-		// `border` IS an allowed property, so only the url() guard can catch this.
-		// Without it the fixture passes on the property allowlist alone.
-		"url() in an allowed style property is dropped",
-		'<div style="border: url(https://evil.example/p.gif); width: 10px;">x</div>',
-		"html",
-		'<div style="width: 10px;">x</div>',
-	],
-	[
-		"unknown style property is dropped",
-		'<div style="behavior: url(#x); width: 10px;">x</div>',
-		"html",
-		'<div style="width: 10px;">x</div>',
 	],
 	[
 		"text is escaped, never copied through",
@@ -212,6 +169,26 @@ const CASES = [
 		'<img src="/a.png">',
 	],
 
+	// --- iframe and style are no longer expressible from a post at all ---
+	[
+		"iframe is dropped outright, whatever its src",
+		'<iframe src="https://www.youtube.com/embed/X"></iframe>',
+		"html",
+		"",
+	],
+	[
+		"iframe from any other host is dropped",
+		'<iframe src="https://evil.example/x"></iframe>',
+		"html",
+		"",
+	],
+	[
+		"style attribute is dropped, so no overlay and no url() beacon",
+		'<div style="position: fixed; inset: 0; background: url(https://evil.example/p.gif)">x</div>',
+		"html",
+		"<div>x</div>",
+	],
+
 	// --- legitimate content the posts depend on: must survive ---
 	["opening cite passes through unchanged", "<cite>", "html_inline", "<cite>"],
 	[
@@ -222,12 +199,6 @@ const CASES = [
 	],
 	["opening kbd passes through unchanged", "<kbd>", "html_inline", "<kbd>"],
 	["closing kbd passes through unchanged", "</kbd>", "html_inline", "</kbd>"],
-	[
-		"youtube embed survives with its attributes",
-		'<div style="position: relative;"><iframe src="https://www.youtube.com/embed/X" title="v" frameborder="0" allow="accelerometer" allowfullscreen></iframe></div>',
-		"html",
-		'<div style="position: relative;"><iframe src="https://www.youtube.com/embed/X" title="v" frameborder="0" allow="accelerometer" allowfullscreen></iframe></div>',
-	],
 	[
 		"relative link survives",
 		'<a href="/blog/x">y</a>',
@@ -242,8 +213,62 @@ const CASES = [
 	],
 ];
 
+/** The embed matcher is the surface that replaced `iframe`; pin it here too. */
+const EMBED_CASES = [
+	[
+		"valid embed is recognised",
+		'<youTubeEmbed videoId="SJtuU_6mags" title="Posturr demo" />',
+		{ videoId: "SJtuU_6mags", title: "Posturr demo" },
+	],
+	[
+		"missing title falls back, it is never author-optional markup",
+		'<youTubeEmbed videoId="SJtuU_6mags" />',
+		{ videoId: "SJtuU_6mags", title: "YouTube video" },
+	],
+	["id that is too short is refused", '<youTubeEmbed videoId="abc" />', null],
+	[
+		"id that is too long is refused",
+		'<youTubeEmbed videoId="SJtuU_6mags12" />',
+		null,
+	],
+	[
+		"id containing a slash is refused",
+		'<youTubeEmbed videoId="../../etc/pas" />',
+		null,
+	],
+	[
+		"id containing a quote is refused",
+		"<youTubeEmbed videoId='a\"onload=x' />",
+		null,
+	],
+	[
+		"a full url is refused, only an id is accepted",
+		'<youTubeEmbed videoId="https://evil" />',
+		null,
+	],
+	["missing videoId is refused", '<youTubeEmbed title="x" />', null],
+	["a different element is not an embed", "<div>x</div>", null],
+	[
+		"an iframe is never treated as an embed",
+		'<iframe src="https://www.youtube.com/embed/SJtuU_6mags"></iframe>',
+		null,
+	],
+];
+
 let failed = 0;
 let checked = 0;
+for (const [name, input, want] of EMBED_CASES) {
+	checked++;
+	const got = matchYouTubeEmbed(input);
+	if (JSON.stringify(got) !== JSON.stringify(want)) {
+		failed++;
+		err(`FAIL: embed — ${name}`);
+		err(`  input:    ${input}`);
+		err(`  expected: ${JSON.stringify(want)}`);
+		err(`  actual:   ${JSON.stringify(got)}`);
+	}
+}
+
 for (const [name, input, type, want] of CASES) {
 	checked++;
 	const got = sanitizeAuthorHtml(input, type);
@@ -255,8 +280,8 @@ for (const [name, input, type, want] of CASES) {
 		err(`  actual:   ${JSON.stringify(got)}`);
 	}
 }
-if (checked !== CASES.length) {
-	err(`FAIL: ran ${checked} of ${CASES.length} cases`);
+if (checked !== CASES.length + EMBED_CASES.length) {
+	err(`FAIL: ran ${checked} of ${CASES.length + EMBED_CASES.length} cases`);
 	process.exit(1);
 }
 
@@ -300,8 +325,16 @@ function structureOf(html) {
 // Every html node in the real corpus must survive the sanitiser unchanged;
 // if one does not, a published post is about to lose content.
 let corpusNodes = 0;
+let corpusEmbeds = 0;
 const collect = (node, dir) => {
 	if (node.type === "html" || node.type === "html_inline") {
+		// RichText converts embed blocks before sanitising, so they never reach
+		// the sanitiser. Assert that is why this node is exempt, rather than
+		// letting an unexplained drop pass.
+		if (node.type === "html" && matchYouTubeEmbed(node.value)) {
+			corpusEmbeds++;
+			return;
+		}
 		corpusNodes++;
 		const got = sanitizeAuthorHtml(node.value, node.type);
 		// Attribute whitespace may be normalised; elements, attributes and text
@@ -352,5 +385,5 @@ if (failed > 0) {
 	process.exit(1);
 }
 out(
-	`OK: ${checked} cases and ${corpusNodes} corpus html nodes sanitise correctly`,
+	`OK: ${checked} cases, ${corpusNodes} corpus html nodes sanitised, ${corpusEmbeds} embed block(s) handled before sanitising`,
 );

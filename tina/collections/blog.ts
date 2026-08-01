@@ -67,6 +67,34 @@ export const blogCollection: Collection = {
 			name: "body",
 			label: "Body",
 			isBody: true,
+			// Declared so the editor offers a YouTube block instead of asking an
+			// author for raw iframe HTML. Note the markdown parser does not expand
+			// templates into mdx nodes — measured, not assumed — so
+			// src/lib/tina/embeds.ts recognises the element it writes. Should this
+			// collection ever move to `format: "mdx"`, the parser emits the node
+			// directly and that bridge becomes a no-op.
+			templates: [
+				{
+					name: "youTubeEmbed",
+					label: "YouTube Embed",
+					fields: [
+						{
+							type: "string",
+							name: "videoId",
+							label: "Video ID",
+							description:
+								"The 11-character id from the video URL, e.g. SJtuU_6mags",
+							required: true,
+						},
+						{
+							type: "string",
+							name: "title",
+							label: "Title",
+							description: "Describes the video to screen readers.",
+						},
+					],
+				},
+			],
 		},
 	],
 };

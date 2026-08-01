@@ -54,15 +54,7 @@ If you spend your days at a desk and your back reminds you about it every evenin
 
 ## Demo
 
-<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
-  <iframe
-    src="https://www.youtube.com/embed/SJtuU_6mags"
-    title="Posturr demo"
-    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-    allowfullscreen
-  ></iframe>
-</div>
+<youTubeEmbed videoId="SJtuU_6mags" title="Posturr demo" />
 
 ---
 

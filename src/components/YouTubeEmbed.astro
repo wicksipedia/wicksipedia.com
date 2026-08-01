@@ -1,0 +1,40 @@
+---
+/**
+ * Responsive YouTube embed.
+ *
+ * This component exists so that no post has to hand-write an `<iframe>`. Every
+ * part of the markup below is static: the only value taken from the post is the
+ * video id, which src/lib/tina/embeds.ts has already checked against YouTube's
+ * 11-character id format. That is what allowed the sanitiser to drop `iframe`,
+ * the `style` attribute and the embed-host allowlist entirely — a post can no
+ * longer express an arbitrary frame or arbitrary CSS.
+ *
+ * The aspect ratio lives here rather than in author-supplied inline styles, so
+ * it stays consistent and cannot be used to lay an element over the page.
+ *
+ * youtube-nocookie.com is YouTube's own privacy-preserving host: it serves the
+ * same player without setting tracking cookies until the visitor hits play.
+ */
+interface Props {
+	videoId: string;
+	title?: string;
+}
+
+const { videoId, title = "YouTube video" } = Astro.props;
+---
+
+<figure class="my-8 not-prose">
+  <div
+    class="relative aspect-video w-full overflow-hidden rounded-xl border border-border/60 bg-muted"
+  >
+    <iframe
+      src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+      title={title}
+      class="absolute inset-0 h-full w-full"
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+    ></iframe>
+  </div>
+</figure>

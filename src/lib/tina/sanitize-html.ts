@@ -5,11 +5,17 @@ import { parseFragment } from "parse5";
  *
  * RichText renders `html` / `html_inline` nodes unescaped, because the Markdown
  * pipeline this migration replaced did too and posts rely on it — a `<cite>`
- * attribution, `<kbd>` keys, a YouTube embed. Unescaped means that whoever can
- * write a post body can write a `<script>`. Today that is only someone with
- * commit access, but Tina Cloud is designed to let an editor publish without a
- * commit or a review, at which point an unfiltered body is stored XSS on every
- * visitor.
+ * attribution and `<kbd>` keys. Unescaped means that whoever can write a post
+ * body can write a `<script>`. Today that is only someone with commit access,
+ * but Tina Cloud is designed to let an editor publish without a commit or a
+ * review, at which point an unfiltered body is stored XSS on every visitor.
+ *
+ * `iframe`, the `style` attribute and the embed-host allowlist are deliberately
+ * absent. They existed for exactly one YouTube embed, and carried with them a
+ * CSS value parser, a position allowlist and a URL-host check — the three most
+ * delicate things here, to serve one node. That embed is now a rich-text block
+ * rendered by src/components/YouTubeEmbed.astro from a validated video id, so a
+ * post can no longer express an arbitrary frame or arbitrary CSS at all.
  *
  * Provenance is knowable at the point this is applied: RichText's walk returns
  * `highlight(node)` before recursing, so the `html` nodes Shiki mints never
@@ -73,21 +79,9 @@ const BLOCK_POLICY = new Map<string, ReadonlySet<string>>(
 		br: new Set(),
 		caption: new Set(),
 		col: new Set(["span"]),
-		div: new Set(["class", "style"]),
+		div: new Set(["class"]),
 		figcaption: new Set(),
 		figure: new Set(["class"]),
-		iframe: new Set([
-			"src",
-			"title",
-			"width",
-			"height",
-			"style",
-			"loading",
-			"allow",
-			"allowfullscreen",
-			"frameborder",
-			"referrerpolicy",
-		]),
 		img: new Set([
 			"src",
 			"alt",
@@ -124,33 +118,10 @@ for (const tag of INLINE_TAGS) {
  */
 const URL_ATTRIBUTES = new Set(["href", "src", "cite"]);
 
-/** Hosts an <iframe> may embed. An iframe from anywhere else is dropped. */
-const EMBED_HOSTS = new Set([
-	"www.youtube.com",
-	"youtube.com",
-	"www.youtube-nocookie.com",
-	"youtube-nocookie.com",
-	"player.vimeo.com",
-]);
-
-function isSafeUrl(value: string, element: string): boolean {
+function isSafeUrl(value: string): boolean {
 	const trimmed = value.trim();
 	// Protocol-relative borrows the page's scheme and the attacker's host.
 	if (trimmed.startsWith("//")) return false;
-
-	// An iframe is the one element that executes another origin's code, so it is
-	// checked first and absolutely: it must be an https URL on a known embed
-	// host. Relative and schemeless forms never reach the host allowlist, so
-	// they have to be rejected here rather than after the parse attempt.
-	if (element === "iframe") {
-		let url: URL;
-		try {
-			url = new URL(trimmed);
-		} catch {
-			return false;
-		}
-		return url.protocol === "https:" && EMBED_HOSTS.has(url.hostname);
-	}
 
 	if (trimmed.startsWith("/") || trimmed.startsWith("#")) return true;
 	let url: URL;
@@ -165,61 +136,6 @@ function isSafeUrl(value: string, element: string): boolean {
 		url.protocol === "http:" ||
 		url.protocol === "mailto:"
 	);
-}
-
-/**
- * Layout properties an author may set inline. `style` is kept at all only
- * because the responsive-video embed needs it; it is the one attribute whose
- * *value* is a language of its own, so the value is filtered rather than trusted.
- */
-const STYLE_PROPERTIES = new Set([
-	"aspect-ratio",
-	"border",
-	"border-radius",
-	"bottom",
-	"display",
-	"height",
-	"left",
-	"margin",
-	"margin-bottom",
-	"margin-left",
-	"margin-right",
-	"margin-top",
-	"max-width",
-	"min-height",
-	"overflow",
-	"padding",
-	"padding-bottom",
-	"padding-left",
-	"padding-right",
-	"padding-top",
-	"position",
-	"right",
-	"text-align",
-	"top",
-	"width",
-]);
-
-/** `fixed`/`sticky` lift an element out of the article and over the page. */
-const SAFE_POSITIONS = new Set(["static", "relative", "absolute"]);
-
-function sanitizeStyle(value: string): string {
-	const kept: string[] = [];
-	for (const declaration of value.split(";")) {
-		const [rawProp, ...rest] = declaration.split(":");
-		const prop = rawProp.trim().toLowerCase();
-		const val = rest.join(":").trim();
-		if (!prop || !val) continue;
-		if (!STYLE_PROPERTIES.has(prop)) continue;
-		// url() is a request to an arbitrary host — a visitor beacon with no
-		// consent gate. The rest cannot appear in a real layout value.
-		if (/url\(|expression\(|@import|javascript:|<|\\/i.test(val)) continue;
-		if (prop === "position" && !SAFE_POSITIONS.has(val.toLowerCase())) continue;
-		kept.push(`${prop}: ${val}`);
-	}
-	// Trailing semicolon kept so a filtered value is byte-identical to an
-	// unfiltered one, which keeps existing posts untouched.
-	return kept.length ? `${kept.join("; ")};` : "";
 }
 
 const escapeAttribute = (value: string) =>
@@ -271,12 +187,7 @@ function clean(node: Parse5Node): string {
 	for (const { name: rawKey, value: rawValue } of node.attrs ?? []) {
 		const key = rawKey.toLowerCase();
 		if (!allowed.has(key)) continue;
-		if (URL_ATTRIBUTES.has(key) && !isSafeUrl(rawValue, name)) continue;
-		if (key === "style") {
-			const style = sanitizeStyle(rawValue);
-			if (style) attrs.push(`style="${escapeAttribute(style)}"`);
-			continue;
-		}
+		if (URL_ATTRIBUTES.has(key) && !isSafeUrl(rawValue)) continue;
 		attrs.push(rawValue === "" ? key : `${key}="${escapeAttribute(rawValue)}"`);
 	}
 
