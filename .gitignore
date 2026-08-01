@@ -31,3 +31,5 @@ public/pagefind
 # vale binary
 vale
 vale_*.tar.gz
+# Superpowers SDD scratch
+.superpowers/
