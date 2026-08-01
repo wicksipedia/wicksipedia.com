@@ -47,7 +47,6 @@
 | `src/components/islands/PageBlocks.astro` | Editable page-blocks region (home + about). |
 | `src/components/blocks/*.astro` + `*.template.ts` | One component + one Tina template per block type. Colocated so a block's schema and its rendering change together. |
 | `src/shiki.ts` | Single shared Shiki configuration object + highlighter factory. |
-| `src/middleware.ts` | Dev-only: serves colocated blog images at their absolute `/blog/<slug>/<file>` URL. |
 | `scripts/check-content.mjs` | Runnable content check: every post parses to a clean Tina rich-text AST. |
 | `content/settings/index.json` | Site settings document. |
 | `content/pages/*.mdx` | Page documents (blocks in frontmatter). Routes are inferred from these — adding one publishes a page with no code change. |
@@ -1504,7 +1503,7 @@ git commit -m "feat: render blog from TinaCMS instead of astro:content"
 ### Task 1.6: Add the Cloudflare adapter, the island route, and visual editing
 
 **Files:**
-- Create: `src/pages/tina-island/[name].ts`, `src/lib/islands.ts`, `src/components/islands/BlogBody.astro`, `src/components/islands/PostHero.astro`, `src/middleware.ts`
+- Create: `src/pages/tina-island/[name].ts`, `src/lib/islands.ts`, `src/components/islands/BlogBody.astro`, `src/components/islands/PostHero.astro`
 - Modify: `astro.config.ts`, `src/layouts/PostDetails.astro`, `package.json`, `wrangler.jsonc`
 
 **Interfaces:**
@@ -1829,61 +1828,15 @@ and replace the `<RichText …>` call added in Task 1.5 with:
 
 `primary` goes on the body island only — at most one per page, or the editor opens the multi-document picker instead of the post form.
 
-- [ ] **Step 8: Write `src/middleware.ts`**
+- [ ] **Step 8: CANCELLED — do not write `src/middleware.ts`**
 
-```ts
-import { readFile } from "node:fs/promises";
-import { join, normalize } from "node:path";
-import { defineMiddleware } from "astro:middleware";
+This step originally served colocated blog images at an absolute `/blog/<slug>/<file>` URL, because the abandoned branch had rewritten every image reference to that form so the Tina editor could show thumbnails.
 
-/**
- * Dev-only: serve colocated blog images at their absolute, slug-qualified URL.
- *
- * Posts reference images as `/blog/<slug>/<file>` so the TinaCMS editor can load
- * them (it resolves a stored string as-is, with no post context). The files live
- * in `src/data/blog/<slug>/<file>`, which `astro dev` does not serve.
- *
- * In production those files are copied into `dist/client/blog/<slug>/` by the
- * `copy:blog-media` build step, so this no-ops there — guarded by
- * `import.meta.env.DEV` since the Worker cannot read the source tree anyway.
- */
-const IMAGE_MIME: Record<string, string> = {
-	png: "image/png",
-	jpg: "image/jpeg",
-	jpeg: "image/jpeg",
-	webp: "image/webp",
-	gif: "image/gif",
-	svg: "image/svg+xml",
-	avif: "image/avif",
-};
+Measured 2026-08-01: the corpus uses **relative `./file.png` refs** — 9 markdown images and all 17 `ogImage` values, zero absolute image refs. `resolveBlogImage` already handles the relative form, so nothing needs serving from `src/`. The dev middleware and the `copy:blog-media` build step both exist only to support the absolute form and are therefore unnecessary.
 
-const BLOG_IMAGE_RE =
-	/^\/blog\/(?<rest>[^.][^?]*\.(?<ext>png|jpe?g|webp|gif|svg|avif))$/i;
+Consequence, accepted deliberately: the Tina editor cannot render image thumbnails for relative refs, because it has no post-slug context. That is a CMS convenience, not a site defect, and it is reversible later by rewriting refs to absolute and restoring this step.
 
-export const onRequest = defineMiddleware(async (context, next) => {
-	if (import.meta.env.DEV) {
-		const match = context.url.pathname.match(BLOG_IMAGE_RE);
-		if (match?.groups) {
-			const rel = normalize(match.groups.rest).replace(/^(\.\.[/\\])+/, "");
-			const file = join(process.cwd(), "src/data/blog", rel);
-			try {
-				const buf = await readFile(file);
-				return new Response(new Uint8Array(buf), {
-					headers: {
-						"Content-Type":
-							IMAGE_MIME[match.groups.ext.toLowerCase()] ??
-							"application/octet-stream",
-						"Cache-Control": "no-store",
-					},
-				});
-			} catch {
-				// Not a colocated image — fall through to normal routing.
-			}
-		}
-	}
-	return next();
-});
-```
+**Do not create `src/middleware.ts`. Do not add a `copy:blog-media` script.**
 
 - [ ] **Step 9: Rewrite the build scripts in `package.json`**
 
@@ -1891,9 +1844,8 @@ The Cloudflare adapter emits `dist/client` (static assets) and `dist/server` (th
 
 ```json
 		"dev": "tinacms dev -c \"astro dev\"",
-		"copy:blog-media": "rsync -a --include='*/' --include='*.png' --include='*.PNG' --include='*.jpg' --include='*.jpeg' --include='*.webp' --include='*.gif' --include='*.svg' --include='*.avif' --exclude='*' src/data/blog/ dist/client/blog/",
-		"build": "tinacms build --content=local -c \"astro check && astro build && bun run copy:blog-media && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
-		"build:local": "tinacms build --local --skip-cloud-checks -c \"astro check && astro build && bun run copy:blog-media && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
+		"build": "tinacms build --content=local --datalayer-port 9007 -c \"bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
+		"build:local": "tinacms build --local --skip-cloud-checks --datalayer-port 9007 -c \"bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
 		"preview": "bun run build:local && npx wrangler dev -c dist/server/wrangler.json",
 		"deploy": "npx wrangler deploy -c dist/server/wrangler.json",
 		"check:content": "node scripts/check-content.mjs",
