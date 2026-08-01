@@ -50,7 +50,7 @@
 | `src/middleware.ts` | Dev-only: serves colocated blog images at their absolute `/blog/<slug>/<file>` URL. |
 | `scripts/check-content.mjs` | Runnable content check: every post parses to a clean Tina rich-text AST. |
 | `content/settings/index.json` | Site settings document. |
-| `content/pages/home.mdx`, `content/pages/about.mdx` | Page documents (blocks in frontmatter). |
+| `content/pages/*.mdx` | Page documents (blocks in frontmatter). Routes are inferred from these — adding one publishes a page with no code change. |
 
 **Files deleted by the end of Phase 3**
 
@@ -2373,9 +2373,13 @@ import { heroBlockSchema } from "../../src/components/blocks/hero.template";
 import { postFeedBlockSchema } from "../../src/components/blocks/post-feed.template";
 import { proseBlockSchema } from "../../src/components/blocks/prose.template";
 
-// Two documents only: home and about. Routes are explicit .astro files, so
-// creating a third page here would produce content with nowhere to render —
-// hence create/delete are disabled.
+// Pages are INFERRED from this collection — `src/pages/[...slug].astro` builds
+// its routes from `listPages()`, so creating a page in the CMS creates a route
+// with no code change. That is the point of the collection; do not add explicit
+// per-page `.astro` routes.
+//
+// `home` is the exception: it renders at `/` via `src/pages/index.astro` and is
+// filtered out of the catch-all.
 export const pageCollection: Collection = {
 	name: "page",
 	label: "Pages",
@@ -2384,7 +2388,20 @@ export const pageCollection: Collection = {
 	ui: {
 		router: ({ document }) =>
 			document._sys.filename === "home" ? "/" : `/${document._sys.filename}`,
-		allowedActions: { create: false, delete: false },
+		filename: {
+			readonly: false,
+			// Reserved slugs collide with real file-based routes. Astro gives static
+			// routes priority, so a page named e.g. `blog` would index in Tina, pass
+			// every build check, and silently never render. Refuse the name instead.
+			slugify: (values) => {
+				const RESERVED = ["blog", "tags", "archives", "search", "admin", "404", "rss.xml", "robots.txt", "og.png"];
+				const slug = (values?.seoTitle ?? "untitled")
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, "-")
+					.replace(/^-+|-+$/g, "");
+				return RESERVED.includes(slug) ? `${slug}-page` : slug;
+			},
+		},
 	},
 	fields: [
 		{
@@ -2497,6 +2514,25 @@ export const getPage = (slug: string) =>
 		priority: "primary",
 	});
 
+/**
+ * Every page document. `src/pages/[...slug].astro` builds its routes from this,
+ * so a page created in the CMS gets a route with no code change.
+ *
+ * Throws on an empty result for the same reason `getAllPosts` does: Tina reports
+ * success on an empty collection, and a silently-empty list would drop every
+ * page from the build while exiting 0.
+ */
+export async function listPages() {
+	const res = await client.queries.pageConnection();
+	const pages = (res.data.pageConnection.edges ?? []).flatMap((edge) =>
+		edge?.node ? [edge.node] : [],
+	);
+	if (pages.length === 0) {
+		throw new Error("listPages: Tina returned zero pages");
+	}
+	return pages;
+}
+
 export type CmsPage = Awaited<ReturnType<typeof getPage>>["data"]["page"];
 export type PageBlock = NonNullable<NonNullable<CmsPage["blocks"]>[number]>;
 
@@ -2538,7 +2574,7 @@ git commit -m "feat: add Tina page collection with site-specific blocks"
 ### Task 3.2: Render the blocks and switch the two routes over
 
 **Files:**
-- Create: `src/components/islands/PageBlocks.astro`, `src/pages/about.astro`
+- Create: `src/components/islands/PageBlocks.astro`, `src/pages/[...slug].astro`
 - Modify: `src/pages/index.astro`, `src/lib/islands.ts`, `src/components/blocks/*.astro`
 - Delete: `src/pages/about.mdx`, `src/layouts/AboutLayout.astro`
 
@@ -2699,7 +2735,9 @@ const socials = (settings?.socials ?? []).filter((s) => s !== null);
 
 The island wrapper is `<main>`, so `PostFeed.astro` must carry the `id="main-content"` and `data-layout="index"` attributes the back-button script reads — move them onto its outer element.
 
-- [ ] **Step 6: Write `src/pages/about.astro` and delete the MDX page**
+- [ ] **Step 6: Write the catch-all route `src/pages/[...slug].astro` and delete the MDX page**
+
+Pages are **inferred from the CMS collection**, not declared as individual route files. One catch-all builds a route per page document, so creating a page in Tina publishes it with no code change. Do not write an `about.astro`.
 
 ```astro
 ---
@@ -2711,10 +2749,19 @@ import PageBlocks from "@/components/islands/PageBlocks.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
 import { islands } from "@/lib/islands";
-import { getPage } from "@/lib/tina/pages";
+import { getPage, listPages } from "@/lib/tina/pages";
 import { getSettings } from "@/lib/tina/settings";
 
-const slug = "about";
+export async function getStaticPaths() {
+	const pages = await listPages();
+	return pages
+		.map((node) => node._sys.filename)
+		// `home` renders at `/` via src/pages/index.astro.
+		.filter((slug) => slug !== "home")
+		.map((slug) => ({ params: { slug } }));
+}
+
+const slug = (Astro.params.slug ?? "").toString();
 const page = (await getPage(slug)).data?.page ?? null;
 const settings = (await getSettings()).data?.settings ?? null;
 const socials = (settings?.socials ?? []).filter((s) => s !== null);
