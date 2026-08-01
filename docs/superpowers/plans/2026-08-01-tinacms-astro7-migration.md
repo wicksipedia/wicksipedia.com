@@ -713,13 +713,47 @@ Expected: `OK: 17 posts parse cleanly`.
 
 `bun run check:content` proves the files *parse*. It does not prove TinaCMS *sees* them — the collection glob could be wrong and every command above would still pass. Before this task, `tinacms build` exited 0 while matching **zero** documents, because Tina treats an empty collection as valid. That is the failure this step exists to catch.
 
+**Do not just run `tinacms audit` and read it.** Verified on 2026-08-01 against the empty collection: it prints `Checking blog collection. 0 Documents`, then `✅ Audit passed`, and **exits 0**. A green checkmark and a zero exit code are exactly what it reports when Tina can see nothing at all. Wrap it in an assertion that fails:
+
+Create `scripts/assert-doc-count.sh`:
+
 ```bash
-bunx tinacms audit -v --datalayer-port 9001 2>&1 | grep -A2 'blog collection'
+#!/bin/bash
+# Assert TinaCMS indexes exactly N documents in the blog collection.
+# `tinacms audit` exits 0 and prints "Audit passed" on an EMPTY collection,
+# so the count must be asserted explicitly or this check measures nothing.
+set -uo pipefail
+EXPECTED="${1:?usage: assert-doc-count.sh <expected-count>}"
+LOG=$(bunx tinacms audit -v --datalayer-port 9001 2>&1)
+COUNT=$(printf '%s\n' "$LOG" | grep -oE '[0-9]+ Documents' | head -1 | grep -oE '^[0-9]+')
+if [ -z "$COUNT" ]; then
+  echo "FAIL: audit printed no document count (did the CLI output change?)"
+  printf '%s\n' "$LOG"
+  exit 1
+fi
+if [ "$COUNT" != "$EXPECTED" ]; then
+  echo "FAIL: Tina indexed $COUNT documents, expected $EXPECTED"
+  exit 1
+fi
+echo "OK: Tina indexes $COUNT documents"
 ```
 
-Expected: `Checking blog collection.` followed by `17 Documents`.
+```bash
+chmod +x scripts/assert-doc-count.sh
+./scripts/assert-doc-count.sh 17
+```
 
-If it reports `0 Documents` — or any count other than 17 — STOP. The files converted but Tina cannot see them, which means the collection's `path`, `format`, or `match.include` is wrong. Do not proceed to Task 1.3: `getAllPosts()` would return an empty list and the site would build every page with no posts, successfully.
+Expected: `OK: Tina indexes 17 documents`, exit 0.
+
+Then prove the assertion can fail, by asserting a count you know is wrong:
+
+```bash
+./scripts/assert-doc-count.sh 99 && echo "UNEXPECTED: passed on a wrong count" || echo "GOOD: assertion fails on a wrong count"
+```
+
+Expected: `FAIL: Tina indexed 17 documents, expected 99`, then `GOOD: assertion fails on a wrong count`.
+
+If the real count is anything other than 17, STOP. The files converted but Tina cannot see them, which means the collection's `path`, `format`, or `match.include` is wrong. Do not proceed to Task 1.3: `getAllPosts()` would return an empty list and the site would build all 59 pages with no posts, exit 0, and deploy.
 
 - [ ] **Step 5: Prove the check can fail**
 
