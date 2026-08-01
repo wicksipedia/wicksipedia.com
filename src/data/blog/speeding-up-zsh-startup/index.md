@@ -292,15 +292,11 @@ zprof
 for i in {1..5}; do /usr/bin/time zsh -i -c exit 2>&1 | grep real; done
 ```
 
-### 3. Review the `zprof` output
+3. **Review the `zprof` output** to identify your actual bottlenecks (don't guess like I did!)
 
-to identify your actual bottlenecks (don't guess like I did!)
+4. **Optimize based on what the data shows**
 
-4. Optimize based on what the data shows
-
-### 5. Measure again
-
-to verify your improvements
+5. **Measure again** to verify your improvements
 
 ## Wrapping Up
 
