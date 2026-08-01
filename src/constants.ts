@@ -37,14 +37,27 @@ interface Social {
  *
  * The link title is derived, not stored: `${SITE.title} on ${name}`, which is
  * exactly what the hand-written SOCIALS array produced.
+ *
+ * Null prototype, for the same reason the island registries have one: the key
+ * is an untrusted string. A bare `SOCIAL_ICONS[icon]` on an object literal
+ * resolves `constructor`, `valueOf`, `__proto__` and friends to inherited
+ * functions — every one of them truthy, so the "did we find an icon?" test
+ * passes and Astro is handed `Object` where it expected a component. Rendered
+ * from the island endpoint that is an unauthenticated 500. `Socials.astro` also
+ * looks the key up with `Object.hasOwn`, so the guarantee does not rest on
+ * remembering this line.
  */
-export const SOCIAL_ICONS: Record<string, (_props: Props) => Element> = {
-	github: IconGitHub,
-	linkedin: IconLinkedin,
-	x: IconBrandX,
-	facebook: IconFacebook,
-	mail: IconMail,
-};
+export const SOCIAL_ICONS: Record<string, (_props: Props) => Element> =
+	Object.setPrototypeOf(
+		{
+			github: IconGitHub,
+			linkedin: IconLinkedin,
+			x: IconBrandX,
+			facebook: IconFacebook,
+			mail: IconMail,
+		},
+		null,
+	);
 
 export const SHARE_LINKS: Social[] = [
 	// {

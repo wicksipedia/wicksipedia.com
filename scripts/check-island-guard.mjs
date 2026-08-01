@@ -43,8 +43,10 @@ const out = (m) => process.stdout.write(`${m}\n`);
 const err = (m) => process.stderr.write(`${m}\n`);
 
 /**
- * Each case is a raw query string, exactly as it would arrive on the wire.
- * @type {Array<[string, string, boolean]>}
+ * Each case is a raw query string, exactly as it would arrive on the wire. The
+ * optional fourth element tags a case as belonging to the cross-collection
+ * group, whose size is asserted below.
+ * @type {Array<[string, string, boolean] | [string, string, boolean, "x"]>}
  */
 const CASES = [
 	// --- the four the audit asked for -------------------------------------
@@ -73,11 +75,19 @@ const CASES = [
 	["nested folder", "slug=a/b", false],
 
 	// --- reaching the OTHER collection (Task 2.1 made these reachable) -----
-	["hop to settings", "slug=../settings/index.json", false],
-	["hop to settings, encoded", "slug=..%2Fsettings%2Findex.json", false],
-	["out to the content root", "slug=../../content/settings/index.json", false],
-	["settings as a subfolder", "slug=settings/index.json", false],
-	["bare settings document", "slug=index.json", false],
+	// Tagged `x` rather than detected by substring: `slug=index.json` belongs to
+	// this group and does not contain the word "settings", and a substring test
+	// would quietly stop counting it.
+	["hop to settings", "slug=../settings/index.json", false, "x"],
+	["hop to settings, encoded", "slug=..%2Fsettings%2Findex.json", false, "x"],
+	[
+		"out to the content root",
+		"slug=../../content/settings/index.json",
+		false,
+		"x",
+	],
+	["settings as a subfolder", "slug=settings/index.json", false, "x"],
+	["bare settings document", "slug=index.json", false, "x"],
 
 	// --- shapes that must keep working ------------------------------------
 	["plain kebab slug", "slug=git-and-diffs", true],
@@ -135,10 +145,8 @@ if (negatives < 10 || positives < 3) {
 
 // The cross-collection cases are the ones that stopped being theoretical when
 // `settings` landed. Losing them would leave a table that still looks thorough.
-const crossCollection = CASES.filter(([, query]) =>
-	query.includes("settings"),
-).length;
-if (crossCollection < 4) {
+const crossCollection = CASES.filter(([, , , group]) => group === "x").length;
+if (crossCollection < 5) {
 	err(`FAIL: only ${crossCollection} cross-collection cases left in the table`);
 	process.exit(1);
 }
@@ -251,11 +259,46 @@ if (Object.getPrototypeOf(literalRegistry) === null) {
 	process.exit(1);
 }
 
+/**
+ * The island name is not the only untrusted key looked up in an object. Since
+ * Task 2.1 the footer's icon is chosen by `SOCIAL_ICONS[social.icon]`, where
+ * `icon` is a CMS string: `"constructor"` would resolve to `Object`, pass the
+ * "did we find an icon?" test, and hand Astro a non-component — an
+ * unauthenticated 500 when rendered from `/tina-island/settings-footer`.
+ *
+ * `src/constants.ts` cannot be imported here (it pulls in `.svg` components
+ * through Vite), so this pins the *lookup shape* `Socials.astro` uses, against
+ * a plain literal keyed the same way. Same standing as the registry fixture
+ * above: it proves the pattern, not that file.
+ */
+const ICON_KEYS = ["github", "linkedin", "x", "facebook", "mail"];
+const literalIcons = Object.fromEntries(ICON_KEYS.map((k) => [k, `ICON_${k}`]));
+
+let iconChecked = 0;
+for (const key of PROTOTYPE_KEYS) {
+	iconChecked++;
+	if (resolveIslandEntry(literalIcons, key) !== undefined) {
+		failed++;
+		err(`FAIL: social icon name "${key}" resolved on a literal icon map`);
+	}
+}
+for (const key of ICON_KEYS) {
+	iconChecked++;
+	if (resolveIslandEntry(literalIcons, key) !== `ICON_${key}`) {
+		failed++;
+		err(`FAIL: real social icon "${key}" did not resolve`);
+	}
+}
+if (Object.getPrototypeOf(literalIcons) === null) {
+	err("FAIL: the icon fixture is no longer a plain object literal");
+	process.exit(1);
+}
+
 if (failed > 0) {
 	err(`\n${failed} island-guard check(s) failed`);
 	process.exit(1);
 }
 
 out(
-	`OK: ${checked} slug cases (${negatives} rejected, ${positives} accepted, ${crossCollection} cross-collection), ${corpusChecked} corpus slugs accepted, ${settingsChecked} settings-path cases, ${protoChecked} island-name cases`,
+	`OK: ${checked} slug cases (${negatives} rejected, ${positives} accepted, ${crossCollection} cross-collection), ${corpusChecked} corpus slugs accepted, ${settingsChecked} settings-path cases, ${protoChecked} island-name cases, ${iconChecked} icon-name cases`,
 );

@@ -24,7 +24,9 @@ const { socials } = Astro.props;
 <div class="flex flex-wrap items-center gap-1">
   {
     socials.map(social => {
-      const Icon = SOCIAL_ICONS[social.icon];
+      const Icon = Object.hasOwn(SOCIAL_ICONS, social.icon)
+        ? SOCIAL_ICONS[social.icon]
+        : undefined;
       const linkTitle = `${SITE.title} on ${social.name}`;
       return Icon ? (
         <LinkButton
