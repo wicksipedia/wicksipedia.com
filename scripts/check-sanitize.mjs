@@ -423,6 +423,20 @@ const collect = (node, dir) => {
 	}
 	if (node.type === "mdxJsxFlowElement" && node.name === "youTubeEmbed") {
 		corpusEmbeds++;
+		// Counting embeds proves nothing on its own. Moving the block off the
+		// sanitiser and onto a template also moved it out of coverage: a bad id
+		// left this loop green while YouTubeEmbed rendered nothing at all, so the
+		// post shipped with an invisible hole. The component fails closed by
+		// design, which is precisely why the build has to fail loudly instead.
+		const videoId = node.props?.videoId;
+		if (!isValidVideoId(videoId)) {
+			failed++;
+			err(`FAIL: corpus ${dir} — youTubeEmbed has an unusable videoId`);
+			err(
+				`  ${JSON.stringify(videoId)} is not an 11-character YouTube id, so the`,
+			);
+			err("  embed renders nothing. Fix the post, do not relax this check.");
+		}
 	}
 	for (const child of node.children ?? []) collect(child, dir);
 };
