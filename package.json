@@ -4,7 +4,7 @@
 	"version": "5.5.1",
 	"scripts": {
 		"dev": "tinacms dev -c \"astro dev\"",
-		"check": "bun run check:content && bun run check:blockquotes",
+		"check": "bun run check:content && bun run check:blockquotes && bun run check:sanitize",
 		"build": "bun run check && astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/",
 		"build:local": "tinacms build --local --skip-cloud-checks -c \"bun run check && astro check && astro build\"",
 		"preview": "astro build && npx wrangler dev",
@@ -13,6 +13,7 @@
 		"astro": "astro",
 		"check:content": "node scripts/check-content.mjs",
 		"check:blockquotes": "node scripts/check-blockquotes.mjs",
+		"check:sanitize": "node scripts/check-sanitize.mjs",
 		"format:check": "biome format .",
 		"format": "biome format --write .",
 		"lint": "biome check ."

@@ -3,6 +3,7 @@ import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
 import type { TinaRichTextContent } from "@tinacms/astro/types";
 import GithubSlugger from "github-slugger";
 import { groupBlockquoteParagraphs } from "@/lib/tina/blockquote";
+import { sanitizeAuthorHtml } from "@/lib/tina/sanitize-html";
 import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
 import BlogImage from "./BlogImage.astro";
 import Heading from "./Heading.astro";
@@ -16,7 +17,8 @@ import RawHtml from "./RawHtml.astro";
  *    (Not a `components.code_block` override: that API only receives `value`
  *    and `lang`, so fence meta like `title="~/.zshrc"` would be lost.)
  *    TinaMarkdown escapes raw markup, so these need the RawHtml override to
- *    render at all. Highlighter output and author-written HTML necessarily
+ *    render at all. Author-written `html` nodes go through an allowlist
+ *    sanitiser first — see src/lib/tina/sanitize-html.ts. Highlighter output and author-written HTML necessarily
  *    share the `html` type: @tinacms/astro's Node.astro dispatches a fixed set
  *    of node types and renders anything else as nothing, so a distinct
  *    `shiki_html` type would silently disappear. See RawHtml.astro for what
@@ -132,6 +134,17 @@ const slugger = new GithubSlugger();
 
 function walk(node: AstNode): AstNode {
 	if (node.type === "code_block") return highlight(node);
+
+	// Anything reaching here is author-written: highlight() returns above without
+	// recursing, so the html nodes Shiki mints never pass through this branch.
+	// RawHtml renders these unescaped, so this is what stands between a post body
+	// and script execution once Tina Cloud allows publishing without a commit.
+	if (node.type === "html" || node.type === "html_inline") {
+		return {
+			...node,
+			value: sanitizeAuthorHtml(String(node.value ?? ""), node.type),
+		};
+	}
 
 	let next = node;
 	if (next.type && HEADING_TYPES.has(next.type)) {
