@@ -1,11 +1,14 @@
 ---
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import Card from "@/components/Card.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
 import Main from "@/layouts/Main.astro";
+import { islands } from "@/lib/islands";
 import { getAllPosts } from "@/lib/tina/posts";
+import { getSettings } from "@/lib/tina/settings";
 import getPostsByGroupCondition from "@/utils/getPostsByGroupCondition";
 import postFilter from "@/utils/postFilter";
 
@@ -15,6 +18,9 @@ if (!SITE.showArchives) {
 }
 
 const posts = (await getAllPosts()).filter(postFilter);
+
+// Editable site chrome (header nav, footer socials).
+const settings = (await getSettings()).data.settings;
 
 const months = [
 	"January",
@@ -33,7 +39,9 @@ const months = [
 ---
 
 <Layout title={`Archives | ${SITE.title}`}>
-  <Header />
+  <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
+    <Header settings={settings} />
+  </TinaIsland>
   <Main pageTitle="Archives" pageDesc="All the articles I've archived.">
     {
       Object.entries(
@@ -90,5 +98,10 @@ const months = [
         ))
     }
   </Main>
-  <Footer />
+  <TinaIsland
+    name="settings-footer"
+    wrapper={islands["settings-footer"].wrapper}
+  >
+    <Footer settings={settings} />
+  </TinaIsland>
 </Layout>

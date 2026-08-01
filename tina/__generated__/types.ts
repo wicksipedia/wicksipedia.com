@@ -84,6 +84,8 @@ export type Query = {
   document: DocumentNode;
   blog: Blog;
   blogConnection: BlogConnection;
+  settings: Settings;
+  settingsConnection: SettingsConnection;
 };
 
 
@@ -122,8 +124,24 @@ export type QueryBlogConnectionArgs = {
   filter?: InputMaybe<BlogFilter>;
 };
 
+
+export type QuerySettingsArgs = {
+  relativePath?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QuerySettingsConnectionArgs = {
+  before?: InputMaybe<Scalars['String']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Float']['input']>;
+  last?: InputMaybe<Scalars['Float']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
+  filter?: InputMaybe<SettingsFilter>;
+};
+
 export type DocumentFilter = {
   blog?: InputMaybe<BlogFilter>;
+  settings?: InputMaybe<SettingsFilter>;
 };
 
 export type DocumentConnectionEdges = {
@@ -163,7 +181,7 @@ export type CollectionDocumentsArgs = {
   folder?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type DocumentNode = Blog | Folder;
+export type DocumentNode = Blog | Settings | Folder;
 
 export type Blog = Node & Document & {
   __typename?: 'Blog';
@@ -252,6 +270,57 @@ export type BlogConnection = Connection & {
   edges?: Maybe<Array<Maybe<BlogConnectionEdges>>>;
 };
 
+export type SettingsNav = {
+  __typename?: 'SettingsNav';
+  title: Scalars['String']['output'];
+  href: Scalars['String']['output'];
+};
+
+export type SettingsSocials = {
+  __typename?: 'SettingsSocials';
+  name: Scalars['String']['output'];
+  href: Scalars['String']['output'];
+  icon: Scalars['String']['output'];
+};
+
+export type Settings = Node & Document & {
+  __typename?: 'Settings';
+  nav?: Maybe<Array<Maybe<SettingsNav>>>;
+  socials?: Maybe<Array<Maybe<SettingsSocials>>>;
+  id: Scalars['ID']['output'];
+  _sys: SystemInfo;
+  _values: Scalars['JSON']['output'];
+};
+
+export type SettingsNavFilter = {
+  title?: InputMaybe<StringFilter>;
+  href?: InputMaybe<StringFilter>;
+};
+
+export type SettingsSocialsFilter = {
+  name?: InputMaybe<StringFilter>;
+  href?: InputMaybe<StringFilter>;
+  icon?: InputMaybe<StringFilter>;
+};
+
+export type SettingsFilter = {
+  nav?: InputMaybe<SettingsNavFilter>;
+  socials?: InputMaybe<SettingsSocialsFilter>;
+};
+
+export type SettingsConnectionEdges = {
+  __typename?: 'SettingsConnectionEdges';
+  cursor: Scalars['String']['output'];
+  node?: Maybe<Settings>;
+};
+
+export type SettingsConnection = Connection & {
+  __typename?: 'SettingsConnection';
+  pageInfo: PageInfo;
+  totalCount: Scalars['Float']['output'];
+  edges?: Maybe<Array<Maybe<SettingsConnectionEdges>>>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   addPendingDocument: DocumentNode;
@@ -261,6 +330,8 @@ export type Mutation = {
   createFolder: DocumentNode;
   updateBlog: Blog;
   createBlog: Blog;
+  updateSettings: Settings;
+  createSettings: Settings;
 };
 
 
@@ -308,13 +379,27 @@ export type MutationCreateBlogArgs = {
   params: BlogMutation;
 };
 
+
+export type MutationUpdateSettingsArgs = {
+  relativePath: Scalars['String']['input'];
+  params: SettingsMutation;
+};
+
+
+export type MutationCreateSettingsArgs = {
+  relativePath: Scalars['String']['input'];
+  params: SettingsMutation;
+};
+
 export type DocumentUpdateMutation = {
   blog?: InputMaybe<BlogMutation>;
+  settings?: InputMaybe<SettingsMutation>;
   relativePath?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type DocumentMutation = {
   blog?: InputMaybe<BlogMutation>;
+  settings?: InputMaybe<SettingsMutation>;
 };
 
 export type BlogMutation = {
@@ -334,7 +419,25 @@ export type BlogMutation = {
   body?: InputMaybe<Scalars['JSON']['input']>;
 };
 
+export type SettingsNavMutation = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  href?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SettingsSocialsMutation = {
+  name?: InputMaybe<Scalars['String']['input']>;
+  href?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SettingsMutation = {
+  nav?: InputMaybe<Array<InputMaybe<SettingsNavMutation>>>;
+  socials?: InputMaybe<Array<InputMaybe<SettingsSocialsMutation>>>;
+};
+
 export type BlogPartsFragment = { __typename: 'Blog', title: string, description: string, pubDatetime: string, modDatetime?: string | null, author?: string | null, ogImage?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, draft?: boolean | null, canonicalURL?: string | null, hideEditPost?: boolean | null, timezone?: string | null, noindex?: boolean | null, body?: any | null };
+
+export type SettingsPartsFragment = { __typename: 'Settings', nav?: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials?: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null };
 
 export type BlogQueryVariables = Exact<{
   relativePath: Scalars['String']['input'];
@@ -355,6 +458,25 @@ export type BlogConnectionQueryVariables = Exact<{
 
 export type BlogConnectionQuery = { __typename?: 'Query', blogConnection: { __typename?: 'BlogConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'BlogConnectionEdges', cursor: string, node?: { __typename: 'Blog', id: string, title: string, description: string, pubDatetime: string, modDatetime?: string | null, author?: string | null, ogImage?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, draft?: boolean | null, canonicalURL?: string | null, hideEditPost?: boolean | null, timezone?: string | null, noindex?: boolean | null, body?: any | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string } } | null } | null> | null } };
 
+export type SettingsQueryVariables = Exact<{
+  relativePath: Scalars['String']['input'];
+}>;
+
+
+export type SettingsQuery = { __typename?: 'Query', settings: { __typename: 'Settings', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, nav?: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials?: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null } };
+
+export type SettingsConnectionQueryVariables = Exact<{
+  before?: InputMaybe<Scalars['String']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Float']['input']>;
+  last?: InputMaybe<Scalars['Float']['input']>;
+  sort?: InputMaybe<Scalars['String']['input']>;
+  filter?: InputMaybe<SettingsFilter>;
+}>;
+
+
+export type SettingsConnectionQuery = { __typename?: 'Query', settingsConnection: { __typename?: 'SettingsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'SettingsConnectionEdges', cursor: string, node?: { __typename: 'Settings', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, nav?: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials?: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null } | null } | null> | null } };
+
 export const BlogPartsFragmentDoc = gql`
     fragment BlogParts on Blog {
   __typename
@@ -372,6 +494,22 @@ export const BlogPartsFragmentDoc = gql`
   timezone
   noindex
   body
+}
+    `;
+export const SettingsPartsFragmentDoc = gql`
+    fragment SettingsParts on Settings {
+  __typename
+  nav {
+    __typename
+    title
+    href
+  }
+  socials {
+    __typename
+    name
+    href
+    icon
+  }
 }
     `;
 export const BlogDocument = gql`
@@ -431,6 +569,63 @@ export const BlogConnectionDocument = gql`
   }
 }
     ${BlogPartsFragmentDoc}`;
+export const SettingsDocument = gql`
+    query settings($relativePath: String!) {
+  settings(relativePath: $relativePath) {
+    ... on Document {
+      _sys {
+        filename
+        basename
+        hasReferences
+        breadcrumbs
+        path
+        relativePath
+        extension
+      }
+      id
+    }
+    ...SettingsParts
+  }
+}
+    ${SettingsPartsFragmentDoc}`;
+export const SettingsConnectionDocument = gql`
+    query settingsConnection($before: String, $after: String, $first: Float, $last: Float, $sort: String, $filter: SettingsFilter) {
+  settingsConnection(
+    before: $before
+    after: $after
+    first: $first
+    last: $last
+    sort: $sort
+    filter: $filter
+  ) {
+    pageInfo {
+      hasPreviousPage
+      hasNextPage
+      startCursor
+      endCursor
+    }
+    totalCount
+    edges {
+      cursor
+      node {
+        ... on Document {
+          _sys {
+            filename
+            basename
+            hasReferences
+            breadcrumbs
+            path
+            relativePath
+            extension
+          }
+          id
+        }
+        ...SettingsParts
+      }
+    }
+  }
+}
+    ${SettingsPartsFragmentDoc}`;
 export type Requester<C= {}> = <R, V>(doc: DocumentNode, vars?: V, options?: C) => Promise<R>
   export function getSdk<C>(requester: Requester<C>) {
     return {
@@ -439,6 +634,12 @@ export type Requester<C= {}> = <R, V>(doc: DocumentNode, vars?: V, options?: C) 
       },
     blogConnection(variables?: BlogConnectionQueryVariables, options?: C): Promise<{data: BlogConnectionQuery, errors?: { message: string, locations: { line: number, column: number }[], path: string[] }[], variables: BlogConnectionQueryVariables, query: string}> {
         return requester<{data: BlogConnectionQuery, errors?: { message: string, locations: { line: number, column: number }[], path: string[] }[], variables: BlogConnectionQueryVariables, query: string}, BlogConnectionQueryVariables>(BlogConnectionDocument, variables, options);
+      },
+    settings(variables: SettingsQueryVariables, options?: C): Promise<{data: SettingsQuery, errors?: { message: string, locations: { line: number, column: number }[], path: string[] }[], variables: SettingsQueryVariables, query: string}> {
+        return requester<{data: SettingsQuery, errors?: { message: string, locations: { line: number, column: number }[], path: string[] }[], variables: SettingsQueryVariables, query: string}, SettingsQueryVariables>(SettingsDocument, variables, options);
+      },
+    settingsConnection(variables?: SettingsConnectionQueryVariables, options?: C): Promise<{data: SettingsConnectionQuery, errors?: { message: string, locations: { line: number, column: number }[], path: string[] }[], variables: SettingsConnectionQueryVariables, query: string}> {
+        return requester<{data: SettingsConnectionQuery, errors?: { message: string, locations: { line: number, column: number }[], path: string[] }[], variables: SettingsConnectionQueryVariables, query: string}, SettingsConnectionQueryVariables>(SettingsConnectionDocument, variables, options);
       }
     };
   }

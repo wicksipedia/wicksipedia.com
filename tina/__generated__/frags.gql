@@ -15,3 +15,18 @@ fragment BlogParts on Blog {
   noindex
   body
 }
+
+fragment SettingsParts on Settings {
+  __typename
+  nav {
+    __typename
+    title
+    href
+  }
+  socials {
+    __typename
+    name
+    href
+    icon
+  }
+}

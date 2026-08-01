@@ -1,8 +1,15 @@
 ---
+/**
+ * Site footer. The social row is editorial and comes from the Tina `settings`
+ * document — rendered statically inside <TinaIsland name="settings-footer">
+ * and on demand by /tina-island/settings-footer. The wordmark, copyright and
+ * commit hash are build facts, not content, and stay in code.
+ */
 import { execSync } from "node:child_process";
 import type { HTMLAttributes } from "astro/types";
 import IconRss from "@/assets/icons/IconRss.svg";
 import { SITE } from "@/config";
+import type { CmsSettings, CmsSocial } from "@/lib/tina/settings";
 import LinkButton from "./LinkButton.astro";
 import Socials from "./Socials.astro";
 
@@ -19,9 +26,19 @@ try {
 
 type Props = {
 	noMarginTop?: boolean;
+	settings: CmsSettings | null;
 } & HTMLAttributes<"footer">;
 
-const { noMarginTop = false, class: className, ...attrs } = Astro.props;
+const {
+	noMarginTop = false,
+	settings,
+	class: className,
+	...attrs
+} = Astro.props;
+
+const socials: CmsSocial[] = (settings?.socials ?? []).filter(
+	(social): social is CmsSocial => Boolean(social),
+);
 ---
 
 <footer class:list={[{ "mt-auto": !noMarginTop }, className]} {...attrs}>
@@ -81,7 +98,7 @@ const { noMarginTop = false, class: className, ...attrs } = Astro.props;
             />
             <span class="sr-only">RSS Feed</span>
           </LinkButton>
-          <Socials />
+          <Socials socials={socials} />
         </div>
       </div>
     </div>

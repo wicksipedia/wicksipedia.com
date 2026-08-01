@@ -22,6 +22,8 @@
  *     swallows query errors and returns `{}`).
  */
 import type { IslandRegistry } from "@tinacms/astro/experimental";
+import Footer from "@/components/Footer.astro";
+import Header from "@/components/Header.astro";
 import BlogBody from "@/components/islands/BlogBody.astro";
 import PostHero from "@/components/islands/PostHero.astro";
 import { isValidBlogSlug } from "@/lib/tina/island-guard";
@@ -32,10 +34,20 @@ import {
 	queryBlogDocument,
 	tagBlogDocument,
 } from "@/lib/tina/posts";
+import {
+	querySettingsDocument,
+	type SettingsDocumentSource,
+	tagSettingsDocument,
+} from "@/lib/tina/settings";
 import postFilter from "@/utils/postFilter";
 
 // biome-ignore lint/suspicious/noExplicitAny: registry data is loosely typed
 const blogPost = (data: any) => ({ post: data.data?.blog });
+
+// biome-ignore lint/suspicious/noExplicitAny: registry data is loosely typed
+const settingsProps = (data: any) => ({
+	settings: data.data?.settings ?? null,
+});
 
 /**
  * One Tina query per request, shared between the visibility gate and the render.
@@ -70,6 +82,26 @@ function blogSource(request: Request, slug: string): BlogDocumentSource {
 	if (cached) return cached;
 	const source = queryBlogDocument(slug);
 	bySlug.set(slug, source);
+	return source;
+}
+
+/**
+ * Same one-query-per-request trick for the settings singleton: the gate has to
+ * establish the document loads, and the island then hands the *same* promise to
+ * `requestWithMetadata`, which must run inside the forms-store scope.
+ *
+ * Note what is deliberately absent: this takes no slug, reads no search param,
+ * and interpolates nothing. `querySettingsDocument` addresses one constant
+ * relativePath and refuses anything else, so there is no string on the wire
+ * that can steer the settings island at another collection's document.
+ */
+const settingsCache = new WeakMap<Request, SettingsDocumentSource>();
+
+function settingsSource(request: Request): SettingsDocumentSource {
+	const cached = settingsCache.get(request);
+	if (cached) return cached;
+	const source = querySettingsDocument();
+	settingsCache.set(request, source);
 	return source;
 }
 
@@ -124,9 +156,37 @@ const blogGate: IslandGate = async (request, params) => {
 	return null;
 };
 
+/**
+ * Site chrome. There is no per-document visibility question to answer here —
+ * the header nav and footer socials are rendered on all 59 public pages, so
+ * serving them from the island endpoint discloses nothing the site does not
+ * already publish. The gate is not a formality though: it refuses when the
+ * document cannot be loaded, so a broken content backend renders no header at
+ * all rather than an empty one, and it leaves a server-side line saying why.
+ */
+const settingsGate: IslandGate = async (request) => {
+	try {
+		const result = await settingsSource(request);
+		if (!result?.data?.settings) return "document unavailable";
+	} catch (error) {
+		// Same reasoning as blogGate: a refused request and a broken deployment
+		// both answer 404, and without this line they are indistinguishable to
+		// whoever is on call. Nothing here reaches the caller.
+		// biome-ignore lint/suspicious/noConsole: server-side diagnostic only
+		console.error(
+			"[tina-island] settings gate could not load document:",
+			error,
+		);
+		return "document unavailable";
+	}
+	return null;
+};
+
 const gates: Record<string, IslandGate> = {
 	blog: blogGate,
 	blogHero: blogGate,
+	settings: settingsGate,
+	"settings-footer": settingsGate,
 };
 
 /**
@@ -165,6 +225,29 @@ const registry: IslandRegistry = {
 		component: PostHero,
 		wrapper: { tag: "div" },
 		propsFromData: blogPost,
+	},
+	// Header nav and footer socials — one document, two regions, so both refresh
+	// together when a nav label or a social URL changes.
+	//
+	// `display: contents` on the wrapper is load-bearing, not cosmetic. The page
+	// body is a full-height flex column (see global.css), and both regions depend
+	// on being *direct* flex children of it: the header is stickied to the top of
+	// the viewport, which constrains it to its parent's box, and the footer is
+	// pushed down by an auto top margin, which needs a flex parent. An ordinary
+	// generated `<div>` around either would silently unstick the header and stop
+	// the footer sitting at the bottom of short pages. A `contents` box is not
+	// generated at all, so the layout is the one that shipped before the island.
+	settings: {
+		fetch: (request) => tagSettingsDocument(settingsSource(request)),
+		component: Header,
+		wrapper: { tag: "div", className: "contents" },
+		propsFromData: settingsProps,
+	},
+	"settings-footer": {
+		fetch: (request) => tagSettingsDocument(settingsSource(request)),
+		component: Footer,
+		wrapper: { tag: "div", className: "contents" },
+		propsFromData: settingsProps,
 	},
 };
 

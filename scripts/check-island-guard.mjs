@@ -5,8 +5,14 @@
  * string and interpolates it into a Tina relativePath. Tina *resolves* `..`
  * rather than rejecting it, so before this guard `../blog/git-and-diffs`
  * reached the real document; escape from the collection was prevented by the
- * index lookup failing, not by any check. With a second collection landing in
- * Task 2.1 that stops being a comfortable position.
+ * index lookup failing, not by any check. Task 2.1 added the second collection
+ * (`settings`), so there is now somewhere to escape *to* — the cross-collection
+ * cases below are load-bearing rather than hypothetical.
+ *
+ * The settings islands take the other approach to the same problem: they read
+ * no URL parameter at all and address one constant relativePath, checked by
+ * `isValidSettingsPath`. That guard is exercised here too, so the property
+ * survives someone later giving the island a `?path=`.
  *
  * Cases go through a real URLSearchParams, because that is what the route
  * hands the guard — percent-decoding has already happened by then, which is
@@ -24,7 +30,9 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
 	isValidBlogSlug,
+	isValidSettingsPath,
 	resolveIslandEntry,
+	SETTINGS_RELATIVE_PATH,
 } from "../src/lib/tina/island-guard.ts";
 
 const BASE = "src/data/blog";
@@ -63,6 +71,13 @@ const CASES = [
 	["leading space", "slug=%20git-and-diffs", false],
 	["wildcard", "slug=*", false],
 	["nested folder", "slug=a/b", false],
+
+	// --- reaching the OTHER collection (Task 2.1 made these reachable) -----
+	["hop to settings", "slug=../settings/index.json", false],
+	["hop to settings, encoded", "slug=..%2Fsettings%2Findex.json", false],
+	["out to the content root", "slug=../../content/settings/index.json", false],
+	["settings as a subfolder", "slug=settings/index.json", false],
+	["bare settings document", "slug=index.json", false],
 
 	// --- shapes that must keep working ------------------------------------
 	["plain kebab slug", "slug=git-and-diffs", true],
@@ -118,6 +133,54 @@ if (negatives < 10 || positives < 3) {
 	process.exit(1);
 }
 
+// The cross-collection cases are the ones that stopped being theoretical when
+// `settings` landed. Losing them would leave a table that still looks thorough.
+const crossCollection = CASES.filter(([, query]) =>
+	query.includes("settings"),
+).length;
+if (crossCollection < 4) {
+	err(`FAIL: only ${crossCollection} cross-collection cases left in the table`);
+	process.exit(1);
+}
+
+/**
+ * The settings islands never read a URL parameter — they address one constant
+ * document. `isValidSettingsPath` is what keeps that true if someone later
+ * wires a `?path=` to it, so hold it against the same hostile shapes.
+ * @type {Array<[string, unknown, boolean]>}
+ */
+const SETTINGS_CASES = [
+	["the one real document", SETTINGS_RELATIVE_PATH, true],
+	["hop to a post", "../src/data/blog/git-and-diffs/index.md", false],
+	["hop to the blog collection", "../blog/git-and-diffs/index.md", false],
+	["traversal mid-path", "settings/../../index.json", false],
+	["absolute path", "/etc/passwd", false],
+	["a neighbouring json", "other.json", false],
+	["same name, nested", "settings/index.json", false],
+	["extension swap", "index.md", false],
+	["empty string", "", false],
+	["null", null, false],
+	["undefined", undefined, false],
+];
+
+let settingsChecked = 0;
+for (const [name, path, want] of SETTINGS_CASES) {
+	settingsChecked++;
+	const got = isValidSettingsPath(path);
+	if (got !== want) {
+		failed++;
+		err(`FAIL: settings path "${name}"`);
+		err(`  value:    ${JSON.stringify(path)}`);
+		err(`  expected: ${want ? "accepted" : "rejected"}`);
+		err(`  actual:   ${got ? "accepted" : "rejected"}`);
+	}
+}
+
+if (SETTINGS_CASES.filter(([, , want]) => !want).length < 8) {
+	err("FAIL: settings path table lost its rejection cases");
+	process.exit(1);
+}
+
 /**
  * The island *name* is the other untrusted path segment. A bare
  * `registry[name]` on an object literal resolves these to inherited functions —
@@ -146,7 +209,12 @@ const PROTOTYPE_KEYS = [
 	"__lookupSetter__",
 ];
 
-const literalRegistry = { blog: "GATE_A", blogHero: "GATE_B" };
+const literalRegistry = {
+	blog: "GATE_A",
+	blogHero: "GATE_B",
+	settings: "GATE_C",
+	"settings-footer": "GATE_D",
+};
 const nullProtoRegistry = Object.assign(Object.create(null), literalRegistry);
 
 let protoChecked = 0;
@@ -189,5 +257,5 @@ if (failed > 0) {
 }
 
 out(
-	`OK: ${checked} slug cases (${negatives} rejected, ${positives} accepted), ${corpusChecked} corpus slugs accepted, ${protoChecked} island-name cases`,
+	`OK: ${checked} slug cases (${negatives} rejected, ${positives} accepted, ${crossCollection} cross-collection), ${corpusChecked} corpus slugs accepted, ${settingsChecked} settings-path cases, ${protoChecked} island-name cases`,
 );

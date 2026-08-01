@@ -1,5 +1,6 @@
 import { defineConfig } from "tinacms";
 import { blogCollection } from "./collections/blog";
+import { settingsCollection } from "./collections/settings";
 
 // Branch Tina Cloud reads and writes against. CI providers expose it under
 // different names; fall back to `main`.
@@ -31,6 +32,6 @@ export default defineConfig({
 	},
 
 	schema: {
-		collections: [blogCollection],
+		collections: [blogCollection, settingsCollection],
 	},
 });

@@ -56,10 +56,13 @@ type Query {
   document(collection: String, relativePath: String): DocumentNode!
   blog(relativePath: String): Blog!
   blogConnection(before: String, after: String, first: Float, last: Float, sort: String, filter: BlogFilter): BlogConnection!
+  settings(relativePath: String): Settings!
+  settingsConnection(before: String, after: String, first: Float, last: Float, sort: String, filter: SettingsFilter): SettingsConnection!
 }
 
 input DocumentFilter {
   blog: BlogFilter
+  settings: SettingsFilter
 }
 
 type DocumentConnectionEdges {
@@ -85,7 +88,7 @@ type Collection {
   documents(before: String, after: String, first: Float, last: Float, sort: String, filter: DocumentFilter, folder: String): DocumentConnection!
 }
 
-union DocumentNode = Blog | Folder
+union DocumentNode = Blog | Settings | Folder
 
 type Blog implements Node & Document {
   title: String!
@@ -171,6 +174,52 @@ type BlogConnection implements Connection {
   edges: [BlogConnectionEdges]
 }
 
+type SettingsNav {
+  title: String!
+  href: String!
+}
+
+type SettingsSocials {
+  name: String!
+  href: String!
+  icon: String!
+}
+
+type Settings implements Node & Document {
+  nav: [SettingsNav]
+  socials: [SettingsSocials]
+  id: ID!
+  _sys: SystemInfo!
+  _values: JSON!
+}
+
+input SettingsNavFilter {
+  title: StringFilter
+  href: StringFilter
+}
+
+input SettingsSocialsFilter {
+  name: StringFilter
+  href: StringFilter
+  icon: StringFilter
+}
+
+input SettingsFilter {
+  nav: SettingsNavFilter
+  socials: SettingsSocialsFilter
+}
+
+type SettingsConnectionEdges {
+  cursor: String!
+  node: Settings
+}
+
+type SettingsConnection implements Connection {
+  pageInfo: PageInfo!
+  totalCount: Float!
+  edges: [SettingsConnectionEdges]
+}
+
 type Mutation {
   addPendingDocument(collection: String!, relativePath: String!, template: String): DocumentNode!
   updateDocument(collection: String, relativePath: String!, params: DocumentUpdateMutation!): DocumentNode!
@@ -179,15 +228,19 @@ type Mutation {
   createFolder(collection: String, relativePath: String!): DocumentNode!
   updateBlog(relativePath: String!, params: BlogMutation!): Blog!
   createBlog(relativePath: String!, params: BlogMutation!): Blog!
+  updateSettings(relativePath: String!, params: SettingsMutation!): Settings!
+  createSettings(relativePath: String!, params: SettingsMutation!): Settings!
 }
 
 input DocumentUpdateMutation {
   blog: BlogMutation
+  settings: SettingsMutation
   relativePath: String
 }
 
 input DocumentMutation {
   blog: BlogMutation
+  settings: SettingsMutation
 }
 
 input BlogMutation {
@@ -205,6 +258,22 @@ input BlogMutation {
   timezone: String
   noindex: Boolean
   body: JSON
+}
+
+input SettingsNavMutation {
+  title: String
+  href: String
+}
+
+input SettingsSocialsMutation {
+  name: String
+  href: String
+  icon: String
+}
+
+input SettingsMutation {
+  nav: [SettingsNavMutation]
+  socials: [SettingsSocialsMutation]
 }
 
 schema {

@@ -125,6 +125,49 @@ var blogCollection = {
   ]
 };
 
+// tina/collections/settings.ts
+var settingsCollection = {
+  name: "settings",
+  label: "Site Settings",
+  path: "content/settings",
+  format: "json",
+  ui: {
+    global: true,
+    allowedActions: { create: false, delete: false }
+  },
+  fields: [
+    {
+      type: "object",
+      name: "nav",
+      label: "Header Navigation",
+      list: true,
+      ui: { itemProps: (item) => ({ label: item?.title ?? "Link" }) },
+      fields: [
+        { type: "string", name: "title", label: "Label", required: true },
+        { type: "string", name: "href", label: "URL", required: true }
+      ]
+    },
+    {
+      type: "object",
+      name: "socials",
+      label: "Social Links",
+      list: true,
+      ui: { itemProps: (item) => ({ label: item?.name ?? "Social" }) },
+      fields: [
+        { type: "string", name: "name", label: "Name", required: true },
+        { type: "string", name: "href", label: "URL", required: true },
+        {
+          type: "string",
+          name: "icon",
+          label: "Icon",
+          options: ["github", "linkedin", "x", "facebook", "mail"],
+          required: true
+        }
+      ]
+    }
+  ]
+};
+
 // tina/config.ts
 var branch = process.env.GITHUB_BRANCH || process.env.WORKERS_CI_BRANCH || process.env.CF_PAGES_BRANCH || process.env.HEAD || "main";
 var config_default = defineConfig({
@@ -145,7 +188,7 @@ var config_default = defineConfig({
     }
   },
   schema: {
-    collections: [blogCollection]
+    collections: [blogCollection, settingsCollection]
   }
 });
 export {

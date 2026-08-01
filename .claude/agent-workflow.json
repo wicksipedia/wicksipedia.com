@@ -3,14 +3,14 @@
     {
       "name": "content-parses",
       "command": "bun run check",
-      "expect": "all five suites OK, each naming how much it examined (posts, blockquotes, html nodes, text nodes, island-guard cases)",
+      "expect": "all five suites OK, each naming how much it examined (posts, blockquotes, html nodes, text nodes, island-guard slug/settings-path/island-name cases)",
       "why": "Aggregates check:content, check:blockquotes, check:sanitize, check:smartypants and check:island-guard. Each asserts it ran over a non-empty corpus \u2014 a Tina collection, a Vale glob and an embed counter have all reported success over nothing on this branch."
     },
     {
       "name": "tina-indexes-posts",
-      "command": "./scripts/assert-doc-count.sh 17",
-      "expect": "OK: Tina indexes 17 documents",
-      "why": "`tinacms audit` prints '\u2705 Audit passed' and exits 0 on an EMPTY collection, so the count must be asserted explicitly. A wrong collection path/format/glob would otherwise build all 59 pages with no posts, exit 0, and deploy. NOTE: this script uses `grep | head -1` and therefore asserts only the FIRST collection's count \u2014 it must be generalised per-collection before the `settings` and `page` collections land."
+      "command": "./scripts/assert-doc-count.sh blog=17 settings=1",
+      "expect": "OK: Tina indexes blog=17 settings=1",
+      "why": "`tinacms audit` prints '\u2705 Audit passed' and exits 0 on an EMPTY collection, so the counts must be asserted explicitly. A wrong collection path/format/glob would otherwise build all 59 pages with no posts, exit 0, and deploy. Asserts per-collection since Task 2.1: the script fails if a named collection is missing from the audit, if a count is wrong, AND if the audit reports a collection nobody asserted \u2014 so adding the Task 3.1 `page` collection without extending this command fails the gate instead of silently narrowing it."
     },
     {
       "name": "types",
@@ -32,7 +32,7 @@
     {
       "name": "lint",
       "command": "bun run lint",
-      "expect": "fails ONLY on DESIGN.json, src/components/Header.astro, src/utils/og-templates/post.js, src/utils/og-templates/site.js \u2014 all pre-existing on main",
+      "expect": "fails ONLY on DESIGN.json, src/utils/og-templates/post.js, src/utils/og-templates/site.js \u2014 all pre-existing on main. src/components/Header.astro was on this list until Task 2.1; its only complaint was a missing blank line after the imports, which the settings-prop edit supplied.",
       "why": "Not a clean gate. Any file outside that list appearing is a regression introduced by this branch."
     }
   ],

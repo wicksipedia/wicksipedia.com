@@ -1,0 +1,19 @@
+{
+	"nav": [
+		{ "title": "Blog", "href": "/blog" },
+		{ "title": "Tags", "href": "/tags" },
+		{ "title": "About", "href": "/about" }
+	],
+	"socials": [
+		{
+			"name": "GitHub",
+			"href": "https://github.com/wicksipedia",
+			"icon": "github"
+		},
+		{
+			"name": "LinkedIn",
+			"href": "https://www.linkedin.com/in/matt-wicks/",
+			"icon": "linkedin"
+		}
+	]
+}

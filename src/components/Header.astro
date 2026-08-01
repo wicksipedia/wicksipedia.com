@@ -1,10 +1,29 @@
 ---
+/**
+ * Site header. The nav is editorial and comes from the Tina `settings`
+ * document — rendered statically inside <TinaIsland name="settings"> and on
+ * demand by /tina-island/settings, so labels and URLs live-update in the admin
+ * preview. Everything else here (brand mark, search, theme toggle) is chrome,
+ * not content, and stays in code.
+ */
+import { tinaField } from "@tinacms/astro/tina-field";
 import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
 import IconMoon from "@/assets/icons/IconMoon.svg";
 import IconSearch from "@/assets/icons/IconSearch.svg";
 import IconSunHigh from "@/assets/icons/IconSunHigh.svg";
 import IconX from "@/assets/icons/IconX.svg";
 import { SITE } from "@/config";
+import type { CmsNavItem, CmsSettings } from "@/lib/tina/settings";
+
+interface Props {
+	settings: CmsSettings | null;
+}
+
+const { settings } = Astro.props;
+const nav: CmsNavItem[] = (settings?.nav ?? []).filter(
+	(item): item is CmsNavItem => Boolean(item),
+);
+
 const { pathname } = Astro.url;
 
 // Remove trailing slash from current pathname if exists
@@ -74,30 +93,19 @@ const iconBtn =
             "sm:flex sm:items-center sm:gap-1",
           ]}
         >
-          <li>
-            <a
-              href="/blog"
-              class:list={[navLink, { [navActive]: isActive("/blog") }]}
-            >
-              Blog
-            </a>
-          </li>
-          <li>
-            <a
-              href="/tags"
-              class:list={[navLink, { [navActive]: isActive("/tags") }]}
-            >
-              Tags
-            </a>
-          </li>
-          <li>
-            <a
-              href="/about"
-              class:list={[navLink, { [navActive]: isActive("/about") }]}
-            >
-              About
-            </a>
-          </li>
+          {
+            nav.map(item => (
+              <li>
+                <a
+                  href={item.href}
+                  class:list={[navLink, { [navActive]: isActive(item.href) }]}
+                  data-tina-field={tinaField(item, "title") || undefined}
+                >
+                  {item.title}
+                </a>
+              </li>
+            ))
+          }
           <li class="hidden h-5 w-px bg-border/60 sm:block mx-1" aria-hidden="true"></li>
           <li class="flex items-center justify-center">
             <button

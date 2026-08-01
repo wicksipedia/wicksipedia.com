@@ -1,5 +1,6 @@
 ---
 import { Image } from "astro:assets";
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
 import IconHash from "@/assets/icons/IconHash.svg";
 import avatarImage from "@/assets/images/avatar.png";
@@ -7,14 +8,22 @@ import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import Socials from "@/components/Socials.astro";
 import { SITE } from "@/config";
-import { SOCIALS } from "@/constants";
 import Layout from "@/layouts/Layout.astro";
+import { islands } from "@/lib/islands";
 import { getAllPosts } from "@/lib/tina/posts";
+import { type CmsSocial, getSettings } from "@/lib/tina/settings";
 import { getPath } from "@/utils/getPath";
 import getSortedPosts from "@/utils/getSortedPosts";
 import { slugifyStr } from "@/utils/slugify";
 
 const posts = await getAllPosts();
+
+// Editable site chrome (header nav, footer socials). The hero's social row is
+// the same list — Phase 3 turns the hero itself into an editable block.
+const settings = (await getSettings()).data.settings;
+const heroSocials: CmsSocial[] = (settings?.socials ?? []).filter(
+	(social): social is CmsSocial => Boolean(social),
+);
 
 const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
@@ -40,7 +49,9 @@ const gridPosts = [
 ---
 
 <Layout isHomepage={true}>
-  <Header />
+  <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
+    <Header settings={settings} />
+  </TinaIsland>
   <section
     id="hero"
     class="animate-reveal overflow-hidden bg-hero-bg transition-[background] duration-300"
@@ -87,9 +98,9 @@ const gridPosts = [
             </a>
           </p>
           {
-            SOCIALS.length > 0 && (
+            heroSocials.length > 0 && (
               <div class="mt-5 flex justify-center md:justify-start [&_svg]:stroke-hero-social [&_svg]:hover:stroke-hero-accent">
-                <Socials />
+                <Socials socials={heroSocials} />
               </div>
             )
           }
@@ -304,7 +315,12 @@ const gridPosts = [
       </a>
     </div>
   </main>
-  <Footer />
+  <TinaIsland
+    name="settings-footer"
+    wrapper={islands["settings-footer"].wrapper}
+  >
+    <Footer settings={settings} />
+  </TinaIsland>
 </Layout>
 
 <script>

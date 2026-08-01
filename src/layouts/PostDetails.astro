@@ -17,6 +17,7 @@ import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
 import { islands } from "@/lib/islands";
 import { getBlogRaw, type PostEntry } from "@/lib/tina/posts";
+import { getSettings } from "@/lib/tina/settings";
 import { getPath } from "@/utils/getPath";
 
 type Props = {
@@ -42,6 +43,9 @@ const {
 // PostEntry strips the hidden Tina metadata that tinaField() needs.
 const tinaResult = await getBlogRaw(post.slug);
 const tinaPost = tinaResult.data?.blog;
+
+// Editable site chrome (header nav, footer socials).
+const settings = (await getSettings()).data.settings;
 
 let ogImageUrl: string | undefined;
 
@@ -95,7 +99,9 @@ const nextPost =
 ---
 
 <Layout {...layoutProps}>
-  <Header />
+  <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
+    <Header settings={settings} />
+  </TinaIsland>
   {/* Full-bleed hero with metadata overlay */}
   {
     initOgImage ? (
@@ -224,7 +230,12 @@ const nextPost =
       }
     </div>
   </main>
-  <Footer />
+  <TinaIsland
+    name="settings-footer"
+    wrapper={islands["settings-footer"].wrapper}
+  >
+    <Footer settings={settings} />
+  </TinaIsland>
 </Layout>
 
 
