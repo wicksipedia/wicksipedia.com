@@ -299,18 +299,31 @@ export function sanitizeInlineHtml(value: string): string {
 }
 
 /**
- * Sanitise a block of author HTML against the allowlist above. The parser throws
- * on some malformed input (an unpaired closing tag, for one), so failure drops
- * the block rather than taking the build down or, worse, passing it through.
+ * Sanitise a block of author HTML against the allowlist above.
+ *
+ * Both the parse and the walk are inside the try. Previously only the parse was,
+ * so a throw from `clean` escaped into RichText's walk and killed the Astro
+ * build — which a Tina Cloud editor could trigger with no commit access.
+ *
+ * On failure this rethrows rather than returning "". parse5 is spec-compliant
+ * and recovers from malformed markup instead of throwing — measured across a
+ * dozen malformed inputs, it threw on none — so a throw here cannot come from
+ * unusual author content. It means this sanitiser has a defect. Swallowing that
+ * would silently delete the post's content and hide the bug, which is how the
+ * next hole stays hidden; a failed build is visible, and the previous build
+ * keeps serving. The offending value is named so it can be found.
  */
 export function sanitizeBlockHtml(value: string): string {
-	let fragment: Parse5Node;
 	try {
-		fragment = parseFragment(value) as unknown as Parse5Node;
-	} catch {
-		return "";
+		const fragment = parseFragment(value) as unknown as Parse5Node;
+		return (fragment.childNodes ?? []).map(clean).join("");
+	} catch (cause) {
+		const excerpt = value.length > 200 ? `${value.slice(0, 200)}…` : value;
+		throw new Error(
+			`sanitizeBlockHtml failed on author HTML — this is a sanitiser bug, not bad input, because parse5 does not throw on malformed markup. Offending node: ${JSON.stringify(excerpt)}`,
+			{ cause },
+		);
 	}
-	return (fragment.childNodes ?? []).map(clean).join("");
 }
 
 /** Dispatch on the Tina node type. */

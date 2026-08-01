@@ -279,6 +279,24 @@ function structureOf(html) {
 	return parts.join("|");
 }
 
+// A sanitiser defect must surface, not be swallowed into an empty string: the
+// walk is inside the try now, and the catch rethrows with the node named.
+{
+	checked++;
+	const brokenPolicy = "<div><constructor id=x>y</constructor></div>";
+	let outcome;
+	try {
+		outcome = sanitizeAuthorHtml(brokenPolicy, "html");
+	} catch (e) {
+		outcome = `THREW: ${e.message}`;
+	}
+	if (outcome !== "<div></div>") {
+		failed++;
+		err("FAIL: inherited-member element must be dropped without throwing");
+		err(`  actual: ${JSON.stringify(outcome)}`);
+	}
+}
+
 // Every html node in the real corpus must survive the sanitiser unchanged;
 // if one does not, a published post is about to lose content.
 let corpusNodes = 0;
