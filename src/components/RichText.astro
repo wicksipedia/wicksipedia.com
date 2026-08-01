@@ -1,0 +1,86 @@
+---
+import { getImage } from "astro:assets";
+import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
+import type { TinaRichTextContent } from "@tinacms/astro/types";
+import { resolveBlogImage } from "@/lib/tina/images";
+import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
+
+/**
+ * Renders a Tina rich-text body. Two things the default renderer would drop are
+ * rebuilt in a single AST walk before handing the tree to <TinaMarkdown>:
+ *
+ *  - `code_block` nodes become `html` nodes holding dual-theme Shiki output.
+ *    (Not a `components.code_block` override: that API only receives `value`
+ *    and `lang`, so fence meta like `title="~/.zshrc"` would be lost.)
+ *  - `img` nodes pointing at colocated `/blog/<slug>/<file>` refs get their url
+ *    rewritten to the optimised `/_astro/*.webp` from getImage().
+ */
+interface Props {
+	content: TinaRichTextContent | null;
+	/** Post folder slug, so colocated image refs resolve to the right folder. */
+	slug: string;
+}
+
+const { content, slug } = Astro.props;
+
+type AstNode = {
+	type?: string;
+	url?: string;
+	lang?: string;
+	meta?: string;
+	value?: string;
+	children?: AstNode[];
+	[key: string]: unknown;
+};
+
+const highlighter = await getHighlighter();
+
+function highlight(node: AstNode): AstNode {
+	const lang =
+		node.lang && highlighter.getLoadedLanguages().includes(node.lang)
+			? node.lang
+			: "text";
+	const html = highlighter.codeToHtml(node.value ?? "", {
+		lang,
+		themes: SHIKI_THEMES,
+		defaultColor: false,
+		// Shiki reads the raw fence meta from `__raw`; transformerFileName turns
+		// `title="~/.zshrc"` into the filename label above the block.
+		meta: { __raw: node.meta ?? "" },
+		transformers: [
+			...SHIKI_TRANSFORMERS,
+			{
+				name: "astro-code-class",
+				pre(el) {
+					const cls = (el.properties.class as string | undefined) ?? "";
+					el.properties.class = `astro-code ${cls}`.trim();
+				},
+			},
+		],
+	});
+	return { type: "html", value: html };
+}
+
+async function walk(node: AstNode): Promise<AstNode> {
+	if (node.type === "code_block") return highlight(node);
+
+	let next = node;
+	if (node.type === "img" && typeof node.url === "string") {
+		const resolved = resolveBlogImage(slug, node.url);
+		if (resolved && typeof resolved !== "string") {
+			const optimised = await getImage({ src: resolved, format: "webp" });
+			next = { ...node, url: optimised.src };
+		}
+	}
+	if (next.children?.length) {
+		next = { ...next, children: await Promise.all(next.children.map(walk)) };
+	}
+	return next;
+}
+
+const resolved = content
+	? ((await walk(content as AstNode)) as TinaRichTextContent)
+	: null;
+---
+
+{resolved && <TinaMarkdown content={resolved} />}

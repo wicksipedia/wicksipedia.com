@@ -1,16 +1,11 @@
 import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
-import {
-	transformerNotationDiff,
-	transformerNotationHighlight,
-	transformerNotationWordHighlight,
-} from "@shikijs/transformers";
 import tailwindcss from "@tailwindcss/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import { defineConfig, envField, fontProviders } from "astro/config";
 import { SITE } from "./src/config";
-import { transformerFileName } from "./src/utils/transformers/fileName";
+import { SHIKI_THEMES, SHIKI_TRANSFORMERS } from "./src/shiki";
 
 export default defineConfig({
 	site: SITE.website,
@@ -37,15 +32,10 @@ export default defineConfig({
 		// entirely — post bodies stop going through Astro's Markdown pipeline.
 		processor: unified({ gfm: true, smartypants: true }),
 		shikiConfig: {
-			themes: { light: "min-light", dark: "night-owl" },
+			themes: SHIKI_THEMES,
 			defaultColor: false,
 			wrap: false,
-			transformers: [
-				transformerFileName({ style: "v2", hideDot: false }),
-				transformerNotationHighlight(),
-				transformerNotationWordHighlight(),
-				transformerNotationDiff({ matchAlgorithm: "v3" }),
-			],
+			transformers: SHIKI_TRANSFORMERS,
 		},
 	},
 
