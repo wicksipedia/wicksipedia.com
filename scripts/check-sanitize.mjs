@@ -144,6 +144,26 @@ const CASES = [
 	],
 	// --- url and style policy ---
 	[
+		// The WHATWG parser folds `\` to `/`, so this site-relative-looking path
+		// is fetched from evil.example.
+		"backslash cannot smuggle a host past the protocol-relative guard",
+		'<a href="/\\evil.example/phish">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
+		"backslash beacon in an img src is dropped",
+		'<img src="/\\evil.example/beacon.gif">',
+		"html",
+		"<img>",
+	],
+	[
+		"doubled backslash is dropped",
+		'<a href="\\\\evil.example/x">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
 		"protocol-relative link href is dropped",
 		'<a href="//evil.example/">x</a>',
 		"html",
@@ -166,6 +186,13 @@ const CASES = [
 		'<img src="/a.png" srcset="//evil.example/b.png 2x">',
 		"html",
 		'<img src="/a.png">',
+	],
+
+	[
+		"oversized node is refused before parsing",
+		`<div>${"a".repeat(70000)}</div>`,
+		"html",
+		"",
 	],
 
 	// --- iframe and style are no longer expressible from a post at all ---
@@ -248,6 +275,29 @@ const EMBED_CASES = [
 	["missing videoId is refused", '<youTubeEmbed title="x" />', null],
 	["a different element is not an embed", "<div>x</div>", null],
 	[
+		// The element NAME must be checked. A mutant accepting any name survived
+		// the suite before this case existed, because every other negative case
+		// failed on something else first.
+		"an element with embed-shaped attributes but another name is refused",
+		'<notAnEmbed videoId="SJtuU_6mags" title="x" />',
+		null,
+	],
+	[
+		"a close-but-wrong name is refused",
+		'<youTubeEmbeds videoId="SJtuU_6mags" />',
+		null,
+	],
+	[
+		"control characters and runaway length are stripped from the title",
+		'<youTubeEmbed videoId="SJtuU_6mags" title="a\u0000b\nc" />',
+		{ videoId: "SJtuU_6mags", title: "a b c" },
+	],
+	[
+		"an empty title falls back rather than emitting a bare attribute",
+		'<youTubeEmbed videoId="SJtuU_6mags" title="" />',
+		{ videoId: "SJtuU_6mags", title: "YouTube video" },
+	],
+	[
 		"an iframe is never treated as an embed",
 		'<iframe src="https://www.youtube.com/embed/SJtuU_6mags"></iframe>',
 		null,
@@ -282,6 +332,36 @@ for (const [name, input, type, want] of CASES) {
 if (checked !== CASES.length + EMBED_CASES.length) {
 	err(`FAIL: ran ${checked} of ${CASES.length + EMBED_CASES.length} cases`);
 	process.exit(1);
+}
+
+// Deep nesting used to overflow the stack inside `clean` and get rethrown as
+// "a sanitiser bug, not bad input" — killing the build, from a post body. Depth
+// is input. Asserted as properties rather than an exact string, because what
+// matters is that it terminates and stays bounded, not the precise truncation.
+{
+	checked++;
+	const deep = `${"<div>".repeat(3000)}x`;
+	let out;
+	try {
+		out = sanitizeAuthorHtml(deep, "html");
+	} catch (e) {
+		out = null;
+		failed++;
+		err(
+			`FAIL: deeply nested input threw ${e.constructor.name} instead of being bounded`,
+		);
+	}
+	if (out !== null) {
+		const depth = (out.match(/<div>/g) ?? []).length;
+		if (depth === 0 || depth > 101) {
+			failed++;
+			err(`FAIL: depth limit did not bound the output — kept ${depth} levels`);
+		}
+		if (out.includes("x")) {
+			failed++;
+			err("FAIL: content past the depth limit was kept");
+		}
+	}
 }
 
 // A sanitiser defect must surface, not be swallowed into an empty string: the
@@ -355,6 +435,14 @@ for (const dir of readdirSync(BASE).sort()) {
 }
 
 // A loop over an empty set passes identically to success. Refuse to pass here.
+// The exemption at the embed branch above could go vacuous silently — if no
+// corpus node were an embed, it would prove nothing while still passing.
+if (corpusEmbeds === 0) {
+	err(
+		`FAIL: no embed block found under ${BASE} — the embed exemption proves nothing`,
+	);
+	process.exit(1);
+}
 if (corpusNodes === 0) {
 	err(
 		`FAIL: no html nodes found under ${BASE} — the corpus check ran over nothing`,

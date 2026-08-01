@@ -122,6 +122,11 @@ function isSafeUrl(value: string): boolean {
 	const trimmed = value.trim();
 	// Protocol-relative borrows the page's scheme and the attacker's host.
 	if (trimmed.startsWith("//")) return false;
+	// A backslash is never part of a legitimate URL, and the WHATWG parser folds
+	// it to `/` for special schemes — so `/\evil.example/x`, which reads as a
+	// site-relative path, is fetched from evil.example. Refusing the character
+	// outright is the only check that does not have to model that folding.
+	if (trimmed.includes("\\")) return false;
 
 	if (trimmed.startsWith("/") || trimmed.startsWith("#")) return true;
 	let url: URL;
@@ -158,6 +163,18 @@ const VOID_ELEMENTS = new Set([
 	"wbr",
 ]);
 
+/**
+ * Limits on the shape of a single author HTML node.
+ *
+ * `clean` recurses per child, so deep nesting overflows the stack: 2,165 opening
+ * `<div>`s — under 11 KB, and no closing tags needed — was enough. parse5 is
+ * also superlinear on depth, taking minutes on a few hundred thousand. Neither
+ * is a defect to fix, both are input to refuse: real prose is not 100 elements
+ * deep, and the largest legitimate html node in this repo is under half a KB.
+ */
+const MAX_HTML_BYTES = 64 * 1024;
+const MAX_DEPTH = 100;
+
 type Parse5Node = {
 	nodeName: string;
 	tagName?: string;
@@ -170,7 +187,8 @@ const escapeText = (value: string) =>
 	value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /** Serialise a parsed tree, keeping only what the policy allows. */
-function clean(node: Parse5Node): string {
+function clean(node: Parse5Node, depth = 0): string {
+	if (depth > MAX_DEPTH) return "";
 	// Text is escaped, never copied through. parse5 has already decoded entities,
 	// so this re-encodes exactly once.
 	if (node.nodeName === "#text") return escapeText(node.value ?? "");
@@ -193,7 +211,9 @@ function clean(node: Parse5Node): string {
 
 	const open = `<${name}${attrs.length ? ` ${attrs.join(" ")}` : ""}>`;
 	if (VOID_ELEMENTS.has(name)) return open;
-	const inner = (node.childNodes ?? []).map(clean).join("");
+	const inner = (node.childNodes ?? [])
+		.map((child) => clean(child, depth + 1))
+		.join("");
 	return `${open}${inner}</${name}>`;
 }
 
@@ -216,19 +236,34 @@ export function sanitizeInlineHtml(value: string): string {
  * so a throw from `clean` escaped into RichText's walk and killed the Astro
  * build — which a Tina Cloud editor could trigger with no commit access.
  *
- * On failure this rethrows rather than returning "". parse5 is spec-compliant
- * and recovers from malformed markup instead of throwing — measured across a
- * dozen malformed inputs, it threw on none — so a throw here cannot come from
- * unusual author content. It means this sanitiser has a defect. Swallowing that
- * would silently delete the post's content and hide the bug, which is how the
- * next hole stays hidden; a failed build is visible, and the previous build
- * keeps serving. The offending value is named so it can be found.
+ * On failure this rethrows rather than returning "" — with one exception.
+ *
+ * parse5 recovers from malformed markup instead of throwing; measured across a
+ * dozen malformed inputs it threw on none. But that was a measurement of parse5,
+ * not of this file, and `clean` recurses: deeply nested input overflowed the
+ * stack and was then rethrown as "a sanitiser bug, not bad input", which is both
+ * wrong and a build-time denial of service reachable by anyone who can publish a
+ * post. Depth is input. So a RangeError fails closed, and the size and depth
+ * limits above stop it arising in the first place.
+ *
+ * Any other throw really is a defect here. Swallowing it would silently delete
+ * the post's content and hide the bug, which is how the last hole stayed hidden;
+ * a failed build is visible, and the previous build keeps serving. The offending
+ * value is named so it can be found.
  */
 export function sanitizeBlockHtml(value: string): string {
+	// Refused before parsing: parse5's own cost grows superlinearly with depth,
+	// so an oversized node is a build-time denial of service whatever this
+	// function then does with the tree.
+	if (value.length > MAX_HTML_BYTES) return "";
 	try {
 		const fragment = parseFragment(value) as unknown as Parse5Node;
-		return (fragment.childNodes ?? []).map(clean).join("");
+		return (fragment.childNodes ?? []).map((child) => clean(child, 0)).join("");
 	} catch (cause) {
+		// A stack overflow is a statement about the input's shape, not a defect
+		// here, so it fails closed like any other refused content. Everything
+		// else still rethrows — see below.
+		if (cause instanceof RangeError) return "";
 		const excerpt = value.length > 200 ? `${value.slice(0, 200)}…` : value;
 		throw new Error(
 			`sanitizeBlockHtml failed on author HTML — this is a sanitiser bug, not bad input, because parse5 does not throw on malformed markup. Offending node: ${JSON.stringify(excerpt)}`,

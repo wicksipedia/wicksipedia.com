@@ -26,6 +26,25 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const SELF_CLOSING_ELEMENT = /^<\s*youTubeEmbed\s+([^>]*?)\/?>$/i;
 const ATTRIBUTE = /([a-zA-Z][a-zA-Z0-9-]*)\s*=\s*"([^"]*)"/g;
 
+/**
+ * The title reaches an attribute, where Astro escapes it. That escaping is the
+ * thing standing between an author and markup, and it belongs to Astro rather
+ * than to this file — so the value is also bounded and stripped of control
+ * characters here. Defence in depth: if the rendering ever moves somewhere that
+ * escapes differently, this is still not a usable injection point.
+ */
+const MAX_TITLE_LENGTH = 200;
+
+function cleanTitle(raw: string | undefined): string {
+	const collapsed = (raw ?? "")
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping them is the point
+		.replace(/[\u0000-\u001f\u007f]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim()
+		.slice(0, MAX_TITLE_LENGTH);
+	return collapsed || "YouTube video";
+}
+
 export type YouTubeEmbed = {
 	videoId: string;
 	title: string;
@@ -48,5 +67,5 @@ export function matchYouTubeEmbed(value: string): YouTubeEmbed | null {
 	const videoId = attributes.get("videoid") ?? "";
 	if (!YOUTUBE_ID.test(videoId)) return null;
 
-	return { videoId, title: attributes.get("title") ?? "YouTube video" };
+	return { videoId, title: cleanTitle(attributes.get("title")) };
 }
