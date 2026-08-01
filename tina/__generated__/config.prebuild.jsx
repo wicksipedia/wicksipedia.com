@@ -11,7 +11,10 @@ var blogCollection = {
   // MDX expressions.
   format: "md",
   match: {
-    // Only per-post index files; `_`-prefixed draft directories are excluded.
+    // Matches every `index` file under any subdirectory depth, including
+    // `_`-prefixed directories — this mirrors the Astro content collection's
+    // prior glob (`**/[^_]*.mdx`), whose `[^_]` guards the filename, not the
+    // directory, so `_`-prefixed dirs were never excluded there either.
     include: "**/index"
   },
   ui: {
