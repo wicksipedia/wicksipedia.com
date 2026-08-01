@@ -119,26 +119,40 @@ for (const tag of INLINE_TAGS) {
 const URL_ATTRIBUTES = new Set(["href", "src", "cite"]);
 
 /**
- * The value a URL parser will actually see.
+ * The value a URL parser will actually see, per the WHATWG URL spec: leading and
+ * trailing C0 controls and spaces removed, all ASCII tab/LF/CR removed anywhere,
+ * and `\` folded to `/` as special schemes do.
  *
- * Judging the raw string is how this check kept being wrong. A browser strips
- * ASCII tab, LF and CR anywhere in a URL and folds `\` to `/` for special
- * schemes, so `/\evil.example/x` and `/<TAB>/evil.example/x` both resolve to
- * evil.example while reading as a site-relative path. Two rounds of review each
- * found one more hostile literal than the guard enumerated. Normalising the same
- * way the parser does, and only then validating, ends that: the check no longer
- * has a list of characters to keep up to date.
+ * Judging one string and emitting another is how this check kept being wrong.
+ * Three rounds found three different characters living in that gap — `\`, then
+ * tab/LF/CR, then the rest of the C0 controls, each "fixed" by naming one more
+ * literal. `.trim()` strips whitespace; a URL parser strips more than
+ * whitespace, so `\u0001//evil.example/x` validated as a path and resolved to
+ * evil.example.
+ *
+ * The fix is not another character. `clean` now emits this normalised value, so
+ * the string that was validated is the string the browser gets, and any
+ * character the parser ignores is irrelevant by construction.
  */
 function normalizeUrl(value: string): string {
-	return value
-		.trim()
-		.replace(/[\t\n\r]/g, "")
-		.replace(/\\/g, "/");
+	// The control characters below are the ones a URL parser strips; matching
+	// them is the entire point, hence the suppressions.
+	return (
+		value
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: leading C0 strip
+			.replace(/^[\u0000-\u0020]+/, "")
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: trailing C0 strip
+			.replace(/[\u0000-\u0020]+$/, "")
+			.replace(/[\t\n\r]/g, "")
+			.replace(/\\/g, "/")
+	);
 }
 
-function isSafeUrl(value: string): boolean {
-	const trimmed = normalizeUrl(value);
-	// Protocol-relative borrows the page's scheme and the attacker's host.
+/** Expects an already-normalised value — see the emit site in `clean`. */
+function isSafeUrl(trimmed: string): boolean {
+	// Not a security boundary on its own: the policy already permits an absolute
+	// `https://evil.example`, so this stops a cross-origin URL *masquerading* as
+	// a same-origin path, not cross-origin URLs as such.
 	if (trimmed.startsWith("//")) return false;
 
 	if (trimmed.startsWith("/") || trimmed.startsWith("#")) return true;
@@ -223,8 +237,14 @@ function clean(node: Parse5Node, depth = 0): string {
 	for (const { name: rawKey, value: rawValue } of node.attrs ?? []) {
 		const key = rawKey.toLowerCase();
 		if (!allowed.has(key)) continue;
-		if (URL_ATTRIBUTES.has(key) && !isSafeUrl(rawValue)) continue;
-		attrs.push(rawValue === "" ? key : `${key}="${escapeAttribute(rawValue)}"`);
+		// The validated string and the emitted string must be the same string.
+		// Every URL bypass in this file has come from them differing.
+		let value = rawValue;
+		if (URL_ATTRIBUTES.has(key)) {
+			value = normalizeUrl(rawValue);
+			if (!isSafeUrl(value)) continue;
+		}
+		attrs.push(value === "" ? key : `${key}="${escapeAttribute(value)}"`);
 	}
 
 	const open = `<${name}${attrs.length ? ` ${attrs.join(" ")}` : ""}>`;
@@ -278,9 +298,15 @@ export function sanitizeBlockHtml(value: string): string {
 		const fragment = parseFragment(value) as unknown as Parse5Node;
 		return (fragment.childNodes ?? []).map((child) => clean(child, 0)).join("");
 	} catch (cause) {
-		// A stack overflow is a statement about the input's shape, not a defect
-		// here, so it fails closed like any other refused content. Everything
-		// else still rethrows — see below.
+		// Defence in depth that NO KNOWN INPUT REACHES. The depth cap returns
+		// before `clean` can recurse far enough to overflow, and MAX_HTML_LENGTH
+		// refuses anything large enough to trouble parse5 — a reviewer failed to
+		// throw here across ten nesting shapes at the cap, and the 3,000-div
+		// fixture returns at MAX_DEPTH instead. It stays because a stack overflow
+		// is a statement about the input's shape rather than a defect here, so if
+		// some future shape does reach it, failing closed beats failing the build
+		// with a misleading "sanitiser bug" message. It is not covered by a
+		// fixture, and this comment exists so it does not look as though it is.
 		if (cause instanceof RangeError) return "";
 		const excerpt = value.length > 200 ? `${value.slice(0, 200)}…` : value;
 		throw new Error(

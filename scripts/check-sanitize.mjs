@@ -108,6 +108,20 @@ const CASES = [
 		"",
 	],
 	[
+		// Guards the ^...$ anchors on sanitizeInlineHtml's pattern. Unanchored,
+		// this whole value — including the script — is returned verbatim.
+		"an inline value with trailing markup is refused, not returned verbatim",
+		"<b>x<script>alert(1)</script>",
+		"html_inline",
+		"",
+	],
+	[
+		"an inline value with leading markup is refused",
+		"<script>alert(1)</script><b>",
+		"html_inline",
+		"",
+	],
+	[
 		// Not a valid tag-name start, so parse5 keeps it as text and the escaper
 		// neutralises it. Safe by a different route than the allowlist.
 		"prototype-polluting tag name is escaped as text",
@@ -216,6 +230,57 @@ const CASES = [
 		'<div class="a&lt;b">x</div>',
 		"html",
 		'<div class="a&lt;b">x</div>',
+	],
+	[
+		// .trim() strips whitespace; a URL parser strips every C0 control. Each of
+		// these validated as a path and resolved to evil.example.
+		"a C0 control cannot reconstitute a protocol-relative url",
+		'<a href="\u0001//evil.example/x">y</a>',
+		"html",
+		"<a>y</a>",
+	],
+	[
+		"a backspace control cannot reconstitute a protocol-relative url",
+		'<a href="\u0008//evil.example/x">y</a>',
+		"html",
+		"<a>y</a>",
+	],
+	[
+		"a unit-separator control cannot reconstitute a protocol-relative url",
+		'<a href="\u001f//evil.example/x">y</a>',
+		"html",
+		"<a>y</a>",
+	],
+	[
+		"a leading space cannot hide a protocol-relative url",
+		'<a href=" //evil.example/x">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
+		"a trailing control character is stripped from the emitted url",
+		'<a href="/ok\u0001">x</a>',
+		"html",
+		'<a href="/ok">x</a>',
+	],
+	[
+		// The emitted value must BE the validated value: a tab inside an
+		// otherwise-fine path is removed on the way out, not passed through.
+		"the emitted url is the normalised one",
+		'<a href="/a\tb/c">x</a>',
+		"html",
+		'<a href="/ab/c">x</a>',
+	],
+	[
+		// Guards `&` -> `&amp;` in escapeAttribute. isSafeUrl sees parse5's
+		// once-decoded value, which has no colon and so passes; the browser
+		// decodes whatever is emitted. Unescaped, this emits
+		// href="&#x6a;avascript&#x3a;alert(1)", which the browser reads as
+		// javascript:alert(1).
+		"a double-encoded javascript scheme cannot be reassembled by the browser",
+		'<a href="&amp;#x6a;avascript&amp;#x3a;alert(1)">x</a>',
+		"html",
+		'<a href="&amp;#x6a;avascript&amp;#x3a;alert(1)">x</a>',
 	],
 	[
 		"protocol-relative link href is dropped",

@@ -17,6 +17,22 @@ import { BODY_FIELD } from "./lib/body-field.mjs";
 
 const BASE = "src/data/blog";
 
+/**
+ * Ceiling on a raw post body.
+ *
+ * parseMDX is superlinear on some inline runs — a body of `[` characters takes
+ * 273ms at 32 KB and 972ms at 64 KB, roughly quadratic — so a large enough body
+ * is a build-time denial of service before any of it reaches the sanitiser.
+ * MAX_HTML_LENGTH cannot help: it is per-`html`-node and applies after the parse
+ * that would already have hung.
+ *
+ * The largest real post is 12 KB, so this is five times the biggest thing anyone
+ * has written here. It bounds the parse rather than expressing an editorial
+ * opinion, and a post that trips it should be split rather than have the cap
+ * raised.
+ */
+const MAX_BODY_LENGTH = 64 * 1024;
+
 /** @param {string} message */
 const out = (message) => process.stdout.write(`${message}\n`);
 /** @param {string} message */
@@ -46,6 +62,17 @@ for (const dir of dirs) {
 		continue;
 	}
 	const body = raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
+	// Checked before parsing, because the parse is the expensive part.
+	if (body.length > MAX_BODY_LENGTH) {
+		failed++;
+		err(
+			`FAIL: ${dir} — body is ${body.length} characters, over the ${MAX_BODY_LENGTH} limit`,
+		);
+		err("  parseMDX is superlinear on some inline runs, so an oversized body");
+		err("  is a build-time denial of service. Split the post.");
+		checked++;
+		continue;
+	}
 	const ast = parseMDX(body, BODY_FIELD, (s) => s);
 	const invalid = (ast.children ?? []).filter(
 		(node) => node.type === "invalid_markdown",

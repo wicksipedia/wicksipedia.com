@@ -64,6 +64,24 @@ var blogCollection = {
       name: "body",
       label: "Body",
       isBody: true,
+      ui: {
+        // Editor-side companion to the hard cap in scripts/check-content.mjs.
+        // parseMDX is superlinear on some inline runs, so an oversized body
+        // hangs the build before anything reaches the sanitiser. This tells
+        // an author at the point of writing instead of at deploy; the build
+        // gate is the one that actually protects the site, since nothing
+        // obliges a commit to have gone through the CMS.
+        //
+        // The rich-text value is an AST, not a string, so the serialised
+        // size is a proxy rather than the body length the build measures.
+        // It is deliberately looser than the build cap so it never rejects
+        // something the build would accept.
+        validate: (value) => {
+          if (!value) return void 0;
+          const size = JSON.stringify(value)?.length ?? 0;
+          return size > 256 * 1024 ? "This post is too large to build reliably. Split it into several posts." : void 0;
+        }
+      },
       // A YouTube block, so no post has to hand-write iframe HTML.
       //
       // `match` is load-bearing, not decoration. Without it the markdown
@@ -73,6 +91,13 @@ var blogCollection = {
       // deleting whatever the author just filled in. With it, the same
       // parser produces a real mdxJsxFlowElement and writes the shortcode
       // back symmetrically. Verified in both directions.
+      //
+      // It also RESERVES `{{<` and `>}}` across every post body. An
+      // unrelated shortcode in prose — `{{< ref "x" >}}`, which this blog is
+      // likely to write about, given the subject matter — still renders, but
+      // Tina escapes it to `{{\< ref "x" >}}` when it next writes the file.
+      // Inside a code fence or inline code it is untouched, which is where
+      // such an example belongs anyway.
       templates: [
         {
           name: "youTubeEmbed",
