@@ -105,7 +105,7 @@ Is this an issue? Depending on your circumstances this may or may not be an issu
 
 > It depends.
 >
-> <cite>Every consultant ever</cite>
+> (<cite>Every consultant ever</cite>)
 
 OK, let's assume that this is a a hole that needs to be plugged.
 

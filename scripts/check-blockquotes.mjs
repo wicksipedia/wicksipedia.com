@@ -126,9 +126,17 @@ const CASES = [
 
 	// --- documented limit, pinned so it is noticed if the parser ever changes ---
 	{
-		name: "KNOWN LIMIT: boundary at an inline-HTML join is unrecoverable",
+		name: "KNOWN LIMIT: a paragraph starting with inline HTML is undetectable",
 		md: "> It depends.\n>\n> <cite>Every consultant ever</cite>",
 		want: "It depends.<cite>Every consultant ever</cite>",
+	},
+	{
+		// The content workaround for that limit: begin the paragraph with text.
+		// Parenthesised, matching the attribution style the other quotes use, and
+		// because .vale.ini bans em dashes in prose.
+		name: "a parenthesised attribution restores the boundary",
+		md: "> It depends.\n>\n> (<cite>Every consultant ever</cite>)",
+		want: "It depends. || (<cite>Every consultant ever</cite>)",
 	},
 ];
 
@@ -159,8 +167,7 @@ if (checked !== CASES.length) {
 
 /**
  * Recorded shape of every blockquote in the corpus. All but
- * `github-settings-as-code#0` match the pre-TinaCMS Astro build exactly; that
- * one is the documented inline-HTML limit. Regenerate deliberately.
+ * these match the pre-TinaCMS Astro build exactly. Regenerate deliberately.
  */
 const CORPUS = [
 	[
@@ -172,8 +179,12 @@ const CORPUS = [
 		"Them: We are working in test at the moment, We'll merge it back afterwards, it works for us.",
 	],
 	[
+		// Restored to two paragraphs by starting the attribution with text. A
+		// paragraph beginning with an inline HTML element is invisible to the
+		// rule — see the KNOWN LIMIT in blockquote.ts — so this pins the content
+		// fix and goes red if the parentheses are ever removed.
 		"github-settings-as-code#0",
-		"It depends.<cite>Every consultant ever</cite>",
+		"It depends. || (<cite>Every consultant ever</cite>)",
 	],
 	[
 		"peon-ping-setup#0",

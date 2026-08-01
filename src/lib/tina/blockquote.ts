@@ -18,17 +18,20 @@
  * alone. That is a structural fact about the parser, not a heuristic about
  * punctuation, so it cannot split a sentence.
  *
- * KNOWN LIMIT — a boundary that falls between a `text` node and an inline-HTML
- * node is not recoverable, because the parser emits byte-identical ASTs for
+ * KNOWN LIMIT — a paragraph that *starts with an inline HTML element* cannot be
+ * detected, because the rule needs two adjacent text nodes and there is only one
+ * here. It is not merely undetected by this rule; the information is absent. The
+ * parser emits ASTs that differ by a single trailing space, which a genuine
+ * one-paragraph quote can have too:
  *
- *   `> It depends.` / `>` / `> <cite>X</cite>`     (two paragraphs)
- *   `> It depends.<cite>X</cite>`                  (one paragraph)
+ *   two paragraphs → ["text:'It depends.'",  "html_inline:'<cite>'", …]
+ *   one paragraph  → ["text:'It depends. '", "html_inline:'<cite>'", …]
  *
- * Both render as one paragraph. This affects the quote in
- * `github-settings-as-code`, whose `<cite>` attribution now sits on the same
- * line as the quote. Authors who need the break should put the attribution in a
- * separate blockquote. Verified by comparing the two parses directly, so no
- * change to this function can fix it.
+ * So this is fixed in content, not in code — adding any heuristic here is the
+ * mistake earlier rounds already made twice. Start the paragraph with text:
+ * `github-settings-as-code` wraps its attribution in parentheses, matching the
+ * style the other quotes already use, and avoiding the em dash that .vale.ini
+ * bans. Pinned in scripts/check-blockquotes.mjs.
  */
 
 export type BlockquoteChild = {
