@@ -35,7 +35,9 @@
 			"!**/public/pagefind",
 			"!**/public/admin",
 			"!**/tina/__generated__",
+			"!**/tina/tina-lock.json",
 			"!**/.claude",
+			"!**/.wrangler",
 			"!**/node_modules",
 			"!**/*.html"
 		]

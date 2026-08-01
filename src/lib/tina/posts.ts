@@ -42,7 +42,7 @@ export type PostEntry = {
 };
 
 /** Raw Tina `Blog` node — the subset this site consumes. */
-type BlogNode = {
+export type BlogNode = {
 	title: string;
 	description: string;
 	pubDatetime: string;
@@ -60,7 +60,7 @@ type BlogNode = {
 	_sys: { relativePath: string };
 };
 
-function normalize(node: BlogNode): PostEntry {
+export function normalize(node: BlogNode): PostEntry {
 	const relativePath = node._sys.relativePath;
 	const slug = relativePath.replace(/\/index\.mdx?$/i, "");
 	const tags = (node.tags ?? []).filter((t): t is string => Boolean(t));
@@ -112,13 +112,34 @@ export async function getPostByPath(relativePath: string): Promise<PostEntry> {
 }
 
 /**
+ * Untagged Tina query for one post. Split out from `getBlogRaw` so the island
+ * route can inspect a document (is it a draft? is it scheduled?) and still hand
+ * the *same* promise to `requestWithMetadata`, rather than paying for a second
+ * round trip. Promises are idempotent, so awaiting it in both places is one
+ * network call. `slug` is the folder slug and must already have been validated
+ * by `isValidBlogSlug` — this interpolates it straight into a relativePath.
+ */
+export function queryBlogDocument(slug: string) {
+	return client.queries.blog({ relativePath: `${slug}/index.md` });
+}
+
+/** The in-flight (or settled) result of `queryBlogDocument`. */
+export type BlogDocumentSource = ReturnType<typeof queryBlogDocument>;
+
+/**
+ * Attach the hidden Tina metadata `tinaField()` reads to a document promise.
+ * Must be called inside the island route's forms-store scope: this is what
+ * registers the form payload the admin builds its editor from.
+ */
+export function tagBlogDocument(source: BlogDocumentSource) {
+	return requestWithMetadata(source, { priority: "primary" });
+}
+
+/**
  * Raw, metadata-tagged query for one post — used by the visual-editing islands.
  * The result carries the hidden Tina metadata `tinaField()` reads, which the
  * normalised PostEntry intentionally strips. `slug` is the folder slug.
  */
 export function getBlogRaw(slug: string) {
-	return requestWithMetadata(
-		client.queries.blog({ relativePath: `${slug}/index.md` }),
-		{ priority: "primary" },
-	);
+	return tagBlogDocument(queryBlogDocument(slug));
 }

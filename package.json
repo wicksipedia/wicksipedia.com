@@ -4,23 +4,24 @@
 	"version": "5.5.1",
 	"scripts": {
 		"dev": "tinacms dev -c \"astro dev\"",
-		"check": "bun run check:content && bun run check:blockquotes && bun run check:sanitize && bun run check:smartypants",
-		"build": "bun run check && astro check && astro build && pagefind --site dist && cp -r dist/pagefind public/",
-		"build:local": "tinacms build --local --skip-cloud-checks -c \"bun run check && astro check && astro build\"",
-		"preview": "astro build && npx wrangler dev",
-		"deploy": "npx wrangler deploy",
+		"check": "bun run check:content && bun run check:blockquotes && bun run check:sanitize && bun run check:smartypants && bun run check:island-guard",
+		"build": "tinacms build --content=local --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
+		"build:local": "tinacms build --local --skip-cloud-checks --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
+		"preview": "bun run build:local && npx wrangler dev -c dist/server/wrangler.json",
+		"deploy": "npx wrangler deploy -c dist/server/wrangler.json",
 		"sync": "astro sync",
 		"astro": "astro",
 		"check:content": "node scripts/check-content.mjs",
 		"check:blockquotes": "node scripts/check-blockquotes.mjs",
 		"check:sanitize": "node scripts/check-sanitize.mjs",
 		"check:smartypants": "node scripts/check-smartypants.mjs",
+		"check:island-guard": "node scripts/check-island-guard.mjs",
 		"format:check": "biome format .",
 		"format": "biome format --write .",
 		"lint": "biome check ."
 	},
 	"dependencies": {
-		"@astrojs/cloudflare": "^12.6.12",
+		"@astrojs/cloudflare": "^14.1",
 		"@astrojs/markdown-remark": "^7.2.2",
 		"@astrojs/mdx": "^7",
 		"@astrojs/rss": "^4.0.19",
@@ -57,6 +58,6 @@
 		"react": "^19.2",
 		"react-dom": "^19.2",
 		"typescript": "^5.9.3",
-		"wrangler": "^4.60.0"
+		"wrangler": "^4.83"
 	}
 }
