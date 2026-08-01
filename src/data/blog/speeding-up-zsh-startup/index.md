@@ -49,7 +49,7 @@ I usually use GitHub Copilot for my day-to-day coding, but this week I decided t
 
 I pasted my `zprof` output into Claude and asked it to analyze the results. Within seconds, it identified the major culprits, and `zoxide` wasn't one of them.
 
-1. `compinit` was being called twice—once by Antigen, once by Oh-My-Zsh
+1. `compinit` was being called twice: once by Antigen, once by Oh-My-Zsh
 2. The plugin manager itself was eating 300ms+
 3. I had previously put in a quick fix for some plugins not working, and the full Oh-My-Zsh was loading when I only needed a handful of features
 4. I was loading a built in and external fzf plugin
@@ -64,7 +64,7 @@ Here's what made it valuable: **this wasn't just handing off the problem**. I as
 - "What's the difference between these fzf plugins?"
 - "Can we keep the OMZ git plugin features I use?"
 
-We debugged the ZLE warnings together, and I understood each change we made. It felt more like pair programming than autocomplete — and I ended up with a configuration I still understand.
+We debugged the ZLE warnings together, and I understood each change we made. It felt more like pair programming than autocomplete, and I ended up with a configuration I still understand.
 
 ## What Actually Worked
 
@@ -274,31 +274,33 @@ export PATH="$HOME/.aspire/bin:$PATH"
 
 ## Try It Yourself
 
-1. **First, profile your current setup**:
-   ```bash
-   # Add to top of ~/.zshrc
-   zmodload zsh/zprof
+**1. First, profile your current setup:**
 
-   ...
+```bash
+# Add to top of ~/.zshrc
+zmodload zsh/zprof
 
-   # Add to bottom of ~/.zshrc
-   zprof
-   ```
+...
 
-2. **Measure your startup time**:
-   ```bash
-   for i in {1..5}; do /usr/bin/time zsh -i -c exit 2>&1 | grep real; done
-   ```
+# Add to bottom of ~/.zshrc
+zprof
+```
 
-3. **Review the `zprof` output** to identify your actual bottlenecks (don't guess like I did!)
+**2. Measure your startup time:**
 
-4. **Optimize based on what the data shows**
+```bash
+for i in {1..5}; do /usr/bin/time zsh -i -c exit 2>&1 | grep real; done
+```
 
-5. **Measure again** to verify your improvements
+**3. Review the `zprof` output** to identify your actual bottlenecks (don't guess like I did!)
+
+**4. Optimize based on what the data shows**
+
+**5. Measure again** to verify your improvements
 
 ## Wrapping Up
 
-Your terminal is where you spend a huge chunk of your dev time. If yours feels sluggish, don't guess — profile it first. My intuition was completely wrong, and two minutes with `zprof` saved me from going down the wrong rabbit hole.
+Your terminal is where you spend a huge chunk of your dev time. If yours feels sluggish, don't guess: profile it first. My intuition was completely wrong, and two minutes with `zprof` saved me from going down the wrong rabbit hole.
 
 **Data > Intuition.** Always.
 

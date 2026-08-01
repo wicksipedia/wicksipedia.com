@@ -10,6 +10,7 @@
 		"deploy": "npx wrangler deploy",
 		"sync": "astro sync",
 		"astro": "astro",
+		"check:content": "node scripts/check-content.mjs",
 		"format:check": "biome format .",
 		"format": "biome format --write .",
 		"lint": "biome check ."

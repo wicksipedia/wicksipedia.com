@@ -21,14 +21,14 @@ Only a Sith deals in absolutes. I cringe a little since it completely misses the
 
 IMHO, AI isn't going to 100% automate software engineering. Yes, we are going to be able to automate a lot of tasks, especially repetitive ones or ones that we usually identify as things we should do but the ROI never justifies it as a drop all things item. I admit, this alone will be huge.
 
-I think it's going to make the industry double down on the fundamentals we already know are critical: documentation, clean coding practices, patterns, and—maybe most importantly—testing.
+I think it's going to make the industry double down on the fundamentals we already know are critical: documentation, clean coding practices, patterns, and, maybe most importantly, testing.
 
 ### What Software Engineering Really Is
 
 Software engineering is about:
 
 - **Understanding problems** - AI can suggest solutions all day long, but actually understanding the problem space? That requires deep domain knowledge and human insight
-- **Making architectural decisions** - Choosing the right architecture, weighing patterns and trade-offs—this stuff requires experience, judgment, and someone willing to own the decision
+- **Making architectural decisions** - Choosing the right architecture, weighing patterns and trade-offs: this stuff requires experience, judgment, and someone willing to own the decision
 - **Communicating with stakeholders** - Translating business needs into technical requirements and vice versa (and trust me, this is harder than it sounds)
 - **Maintaining and improving systems** - Here's a reality check: most software engineering work isn't writing greenfield code. It's maintaining and improving existing systems
 
@@ -54,7 +54,8 @@ Saying it has near-zero marginal cost? That's honestly pretty superficial. It co
 The developer's role hasn't really changed. You still need a person who understands the system, can rationalize trade offs, identify novel improvements, and understands how to identify business value.
 
 > Maybe we'll be called builders instead of developers, but the core skills remain the same.
-> - Me
+
+(Me)
 
 AI's effect on software engineering? It's just history repeating itself:
 
@@ -71,7 +72,8 @@ Spreadsheets let financial people do more complex financial analysis.. rather th
 ### Slowing Down to Go Fast... to 10x or to 0.1x
 
 > You are absolutely right...
-> - GPT-4, Jan 2024
+
+(GPT-4, Jan 2024)
 
 There's no 2 ways about it, AI is sycophantic AF. What's worse is that it'll use overly confident language to agree with a terrible idea just to please you. Which means you now have the ability to ruin things much faster than before. Fun, right?
 

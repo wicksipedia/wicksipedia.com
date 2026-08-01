@@ -28,12 +28,12 @@ He wanted to see all the changes from when he last worked on the Xamarin project
 
 3. Good choice - Grab the SHA of the last commit he worked on and run a quick git command - here's an example for the repo that creates this site
 
-   ```sh
-   git diff 741d760 df32e83b -- gatsby-*.js 
-   ```
+```sh
+git diff 741d760 df32e83b -- gatsby-*.js 
+```
 
-    If we break this command down, it looks like: `sh•git diff <start commitish> <end commitish> -- <folder/file filter>` (the -- is there to separate the commits and the path)
-    ![This will produce a diff with all the interim changes squashed down](./git-diff.png)
+If we break this command down, it looks like: `sh•git diff <start commitish> <end commitish> -- <folder/file filter>` (the -- is there to separate the commits and the path)
+![This will produce a diff with all the interim changes squashed down](./git-diff.png)
 
 After he ran this command, he was able to scroll through and see what had changed on the project - which helped him track down the issue (and when it was introduced).
 

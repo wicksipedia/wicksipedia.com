@@ -30,63 +30,65 @@ UPDATE: 1Password now does this for me and was much easier to setup - [https://d
 
 Old way:
 
-1. Install gnupg2
+**Step 1.** Install gnupg2:
 
-    ```sh
-    brew install gnupg2
-    brew link --overwrite gnupg
-    ```
+```sh
+brew install gnupg2
+brew link --overwrite gnupg
+```
 
-2. I didn't like the sound of *GPG Suite*, so I went for Pinetry for Mac to store the passphrase of the PGP key in the OS keychain
+**Step 2.** I didn't like the sound of *GPG Suite*, so I went for Pinetry for Mac to store the passphrase of the PGP key in the OS keychain:
 
-    ```sh
-    brew install pinentry-mac
-    echo "pinentry-program /usr/local/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf
-    killall gpg-agent
-    ```
+```sh
+brew install pinentry-mac
+echo "pinentry-program /usr/local/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf
+killall gpg-agent
+```
 
-3. Now that the tools are installed, we can generate a PGP key that GitHub can use. You will need to enter your name and email address (make sure they match the ones used in your Git config - don't ask why I know 😉)
+**Step 3.** Now that the tools are installed, we can generate a PGP key that GitHub can use. You will need to enter your name and email address (make sure they match the ones used in your Git config - don't ask why I know 😉):
 
-    ```sh
-    gpg --default-new-key-algo rsa4096 --gen-key
-    ```
+```sh
+gpg --default-new-key-algo rsa4096 --gen-key
+```
 
-4. You'll need a passphrase for the PGP key - I recommend using a password manager to generate and store (I use [1Password](https://1password.com/))
+**Step 4.** You'll need a passphrase for the PGP key - I recommend using a password manager to generate and store (I use [1Password](https://1password.com/))
 
-5. Let's grab the secret's key
-   In the GitHub example: 4096R/3AA5C34371567BD2 we can see that:
-   - it's using 4096bit RSA
-   - the key is 3AA5C34371567BD2
+**Step 5.** Let's grab the secret's key. In the GitHub example: 4096R/3AA5C34371567BD2 we can see that:
 
-    ```sh
-    $ gpg --list-secret-keys --keyid-format LONG
-    /Users/hubot/.gnupg/secring.gpg
-    ------------------------------------
-    sec   4096R/3AA5C34371567BD2 2016-03-10 [expires: 2017-03-10]
-    uid                          Hubot 
-    ssb   4096R/42B317FD4BA89E7A 2016-03-10
-    ```
+- it's using 4096bit RSA
+- the key is 3AA5C34371567BD2
 
-6. Export and copy the key (make sure to include the *-----BEGIN PGP PUBLIC KEY BLOCK-----* and *-----END PGP PUBLIC KEY BLOCK-----*)
+```sh
+$ gpg --list-secret-keys --keyid-format LONG
+/Users/hubot/.gnupg/secring.gpg
+------------------------------------
+sec   4096R/3AA5C34371567BD2 2016-03-10 [expires: 2017-03-10]
+uid                          Hubot 
+ssb   4096R/42B317FD4BA89E7A 2016-03-10
+```
 
-    ```sh
-    gpg --armor --export 3AA5C34371567BD2
-    ```
+**Step 6.** Export and copy the key (make sure to include the *-----BEGIN PGP PUBLIC KEY BLOCK-----* and *-----END PGP PUBLIC KEY BLOCK-----*):
 
-7. Go to [Github - SSH and GPG Keys](https://github.com/settings/keys) and 
-   1. Click *New GPG Key*
-   2. Paste the key in the textbox
-   3. Click *Add GPG Key*
-   ![Screenshot of GitHub settings page showing where to add SSH and GPG keys with navigation tabs and key management interface](./github-keys.png)
+```sh
+gpg --armor --export 3AA5C34371567BD2
+```
 
-8. Now let's tell Git to sign commits and which PGP key to use
+**Step 7.** Go to [Github - SSH and GPG Keys](https://github.com/settings/keys) and:
 
-    ```sh
-    git config --global user.signingkey 3AA5C34371567BD2
-    git config --global commit.gpgsign true
-    ```
+- Click *New GPG Key*
+- Paste the key in the textbox
+- Click *Add GPG Key*
 
-9. You're done! Commit and push your signed commits!
+![Screenshot of GitHub settings page showing where to add SSH and GPG keys with navigation tabs and key management interface](./github-keys.png)
+
+**Step 8.** Now let's tell Git to sign commits and which PGP key to use:
+
+```sh
+git config --global user.signingkey 3AA5C34371567BD2
+git config --global commit.gpgsign true
+```
+
+**Step 9.** You're done! Commit and push your signed commits!
 
 Once you've got commit signing set up, you can take your GitHub workflow to the next level by managing [repository settings as code](/blog/github-settings-as-code), which makes branch protection and other repo configurations as trackable as your commits.
 

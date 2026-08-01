@@ -25,8 +25,8 @@ You can't dismiss a blur. You can't snooze it. Your screen is blurry and you can
 
 Posturr has two tracking modes:
 
-1. **Camera Mode** — Uses your Mac's camera and Apple's Vision framework to track your head and body position.
-2. **AirPods Mode** — Uses the motion sensors in AirPods Pro/Max to detect head tilt. No camera needed. Requires macOS 14.0+.
+1. **Camera Mode**: Uses your Mac's camera and Apple's Vision framework to track your head and body position.
+2. **AirPods Mode**: Uses the motion sensors in AirPods Pro/Max to detect head tilt. No camera needed. Requires macOS 14.0+.
 
 I usually have my AirPods in when I'm working, so AirPods mode was a no brainer.
 
