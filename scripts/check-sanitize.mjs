@@ -164,6 +164,60 @@ const CASES = [
 		"<a>x</a>",
 	],
 	[
+		// A URL parser strips ASCII tab/LF/CR before parsing, so each of these
+		// reconstitutes `//` and reads as site-relative while resolving off-site.
+		"tab cannot reconstitute a protocol-relative url",
+		'<a href="/\t/evil.example/phish">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
+		"line feed cannot reconstitute a protocol-relative url",
+		'<a href="/\n/evil.example/phish">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
+		"carriage return cannot reconstitute a protocol-relative url",
+		'<a href="/\r/evil.example/phish">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
+		"tab-split url is refused on img src too",
+		'<img src="/\t/evil.example/beacon.gif">',
+		"html",
+		"<img>",
+	],
+	[
+		"tab-split url is refused on blockquote cite too",
+		'<blockquote cite="/\t/evil.example/x">y</blockquote>',
+		"html",
+		"<blockquote>y</blockquote>",
+	],
+	[
+		"tab cannot split a javascript scheme",
+		'<a href="java\tscript:alert(1)">x</a>',
+		"html",
+		"<a>x</a>",
+	],
+	[
+		// Without attribute escaping this becomes
+		// <div class="a" onmouseover="alert(1)">x</div> — a live event handler.
+		// parse5 decodes the entity, so only re-encoding on output holds the
+		// attribute context closed.
+		"a quote in an attribute value cannot break out of the attribute",
+		'<div class="a&quot; onmouseover=&quot;alert(1)">x</div>',
+		"html",
+		'<div class="a&quot; onmouseover=&quot;alert(1)">x</div>',
+	],
+	[
+		"an angle bracket in an attribute value is escaped",
+		'<div class="a&lt;b">x</div>',
+		"html",
+		'<div class="a&lt;b">x</div>',
+	],
+	[
 		"protocol-relative link href is dropped",
 		'<a href="//evil.example/">x</a>',
 		"html",
@@ -345,6 +399,27 @@ if (checked !== EXPECTED) {
 	process.exit(1);
 }
 
+// An embed inside a blockquote produces `invalid_markdown` rather than a node,
+// so the block would silently vanish from the page. It does not reach that far:
+// check:content fails the post outright, and the corpus assertion below fails
+// too because the expected embed is then missing. Pinned here so neither guard
+// can be relaxed without this going red.
+{
+	checked++;
+	const quoted = '> {{< youTubeEmbed videoId="SJtuU_6mags" title="t" >}}';
+	const kinds = (parseMDX(quoted, BODY_FIELD, (s) => s).children ?? []).map(
+		(n) => n.type,
+	);
+	if (!kinds.includes("invalid_markdown")) {
+		failed++;
+		err(
+			"FAIL: an embed inside a blockquote no longer parses as invalid_markdown",
+		);
+		err(`  got ${JSON.stringify(kinds)} — if it now renders, good, but the`);
+		err("  content-loss guard this pins has moved and needs rechecking.");
+	}
+}
+
 // Deep nesting used to overflow the stack inside `clean` and get rethrown as
 // "a sanitiser bug, not bad input" — killing the build, from a post body. Depth
 // is input. Asserted as properties rather than an exact string, because what
@@ -478,3 +553,13 @@ if (failed > 0) {
 out(
 	`OK: ${checked} cases, ${corpusNodes} corpus html nodes sanitised, ${corpusEmbeds} embed block(s) parsed as templates`,
 );
+
+/**
+ * EQUIVALENT MUTANT — not a coverage gap:
+ *
+ *  - Dropping `\r` from the URL normalisation. parse5 normalises CR to LF in
+ *    attribute values per the HTML spec, so no carriage return can reach
+ *    isSafeUrl through the block path; the LF strip already covers it. The `\r`
+ *    stays in the pattern because the function is also reachable with values
+ *    that never went through parse5.
+ */

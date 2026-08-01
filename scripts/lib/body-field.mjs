@@ -20,5 +20,24 @@ if (!body) {
 	);
 }
 
-/** Tina infers the parser from the collection's `format`, which is `md`. */
-export const BODY_FIELD = { ...body, parser: { type: "markdown" } };
+/**
+ * Tina infers the parser from the collection's `format`. Deriving it here rather
+ * than hardcoding `markdown` means a future `format: "md"` -> `"mdx"` change
+ * cannot silently recreate the drift this module exists to prevent: the checks
+ * would follow the collection instead of quietly parsing posts a way the build
+ * no longer does.
+ */
+const PARSER_FOR_FORMAT = {
+	md: "markdown",
+	markdown: "markdown",
+	mdx: "mdx",
+};
+
+const parserType = PARSER_FOR_FORMAT[blogCollection.format ?? "md"];
+if (!parserType) {
+	throw new Error(
+		`blog collection has format "${blogCollection.format}", which these checks do not know how to parse`,
+	);
+}
+
+export const BODY_FIELD = { ...body, parser: { type: parserType } };

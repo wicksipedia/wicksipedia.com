@@ -118,15 +118,28 @@ for (const tag of INLINE_TAGS) {
  */
 const URL_ATTRIBUTES = new Set(["href", "src", "cite"]);
 
+/**
+ * The value a URL parser will actually see.
+ *
+ * Judging the raw string is how this check kept being wrong. A browser strips
+ * ASCII tab, LF and CR anywhere in a URL and folds `\` to `/` for special
+ * schemes, so `/\evil.example/x` and `/<TAB>/evil.example/x` both resolve to
+ * evil.example while reading as a site-relative path. Two rounds of review each
+ * found one more hostile literal than the guard enumerated. Normalising the same
+ * way the parser does, and only then validating, ends that: the check no longer
+ * has a list of characters to keep up to date.
+ */
+function normalizeUrl(value: string): string {
+	return value
+		.trim()
+		.replace(/[\t\n\r]/g, "")
+		.replace(/\\/g, "/");
+}
+
 function isSafeUrl(value: string): boolean {
-	const trimmed = value.trim();
+	const trimmed = normalizeUrl(value);
 	// Protocol-relative borrows the page's scheme and the attacker's host.
 	if (trimmed.startsWith("//")) return false;
-	// A backslash is never part of a legitimate URL, and the WHATWG parser folds
-	// it to `/` for special schemes — so `/\evil.example/x`, which reads as a
-	// site-relative path, is fetched from evil.example. Refusing the character
-	// outright is the only check that does not have to model that folding.
-	if (trimmed.includes("\\")) return false;
 
 	if (trimmed.startsWith("/") || trimmed.startsWith("#")) return true;
 	let url: URL;
@@ -171,8 +184,13 @@ const VOID_ELEMENTS = new Set([
  * also superlinear on depth, taking minutes on a few hundred thousand. Neither
  * is a defect to fix, both are input to refuse: real prose is not 100 elements
  * deep, and the largest legitimate html node in this repo is under half a KB.
+ *
+ * The length limit counts UTF-16 code units, not bytes — `String.length` — so
+ * multibyte prose gets a proportionally larger byte ceiling. That is fine for
+ * what this bounds, which is parser work rather than transfer size, and the name
+ * says so rather than implying a byte count it does not measure.
  */
-const MAX_HTML_BYTES = 64 * 1024;
+const MAX_HTML_LENGTH = 64 * 1024;
 const MAX_DEPTH = 100;
 
 type Parse5Node = {
@@ -255,7 +273,7 @@ export function sanitizeBlockHtml(value: string): string {
 	// Refused before parsing: parse5's own cost grows superlinearly with depth,
 	// so an oversized node is a build-time denial of service whatever this
 	// function then does with the tree.
-	if (value.length > MAX_HTML_BYTES) return "";
+	if (value.length > MAX_HTML_LENGTH) return "";
 	try {
 		const fragment = parseFragment(value) as unknown as Parse5Node;
 		return (fragment.childNodes ?? []).map((child) => clean(child, 0)).join("");
