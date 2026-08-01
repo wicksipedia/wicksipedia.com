@@ -101,10 +101,16 @@ Defined in `src/styles/global.css` as CSS custom properties with light and dark 
 |---|---|---|---|
 | `--background` | `#faf9f6` (warm off-white) | `#0f1117` (deep navy) | Page background |
 | `--foreground` | `#1a1a1a` | `#e8e6e3` | Body text |
-| `--accent` | `#d4550a` (burnt orange) | `#ff7a1a` (bright orange) | **Primary accent — links, buttons, tags, hover states, active indicators** |
+| `--accent` | `#ae4508` (burnt orange) | `#ff7a1a` (bright orange) | **Primary accent — links, buttons, tags, hover states, active indicators** |
 | `--muted` | `#e8e5df` | `#1e2130` | Card backgrounds, subtle fills |
 | `--border` | `#d6d3cc` | `#2a2d3a` | Borders, dividers |
 | `--hero-*` | Various | Various | Hero section colors (theme-responsive) |
+
+Values verified against `src/styles/global.css`; the other rows already matched.
+The light `--accent` was documented as `#d4550a` long after it had been darkened
+to `#ae4508` for contrast — `#ae4508` on `#faf9f6` is 5.46:1 and passes AA,
+`#d4550a` was 3.91:1 and did not. A reviewer trusting this table over the
+stylesheet reported a contrast failure that does not exist, so keep it accurate.
 
 **Rules:**
 - **Orange is the accent.** Use `var(--accent)` / Tailwind `text-accent`, `bg-accent`, `border-accent` etc. for all interactive elements, highlights, hover states, and decorative flourishes.
