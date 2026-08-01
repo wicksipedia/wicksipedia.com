@@ -33,3 +33,6 @@ vale
 vale_*.tar.gz
 # Superpowers SDD scratch
 .superpowers/
+
+# local build baseline
+.baseline/
