@@ -21,7 +21,7 @@ When making visual/design changes, go bold on the first pass. The user prefers d
 ## Commands
 
 ```bash
-bun run dev          # Dev server at localhost:4321
+bun run dev          # Dev server at https://localhost:4321 (TinaCMS admin: /admin/index.html)
 bun run build        # Type check (astro check) + build + pagefind index
 bun run preview      # Build + preview with wrangler dev
 bun run deploy       # Deploy to Cloudflare Workers via wrangler
@@ -32,6 +32,35 @@ vale src/data/blog/  # Prose linting (banned words/phrases)
 ```
 
 Search requires a build before it works locally (pagefind indexes `dist/`).
+
+### The `dev` script looks odd on purpose
+
+```
+tinacms dev --datalayer-port 9007 -c "trap 'astro dev stop' EXIT INT TERM; astro dev && astro dev logs --follow"
+```
+
+Astro 7 **daemonises** `astro dev` — it starts the server in the background and
+exits 0 immediately. Plain `tinacms dev -c "astro dev"` therefore sees its child
+exit, tears down the GraphQL server on 4001, and leaves a detached Astro daemon
+serving `TypeError: fetch failed` on every page. Each piece here earns its place:
+
+- `astro dev logs --follow` blocks, which keeps `tinacms dev` alive holding the
+  GraphQL server, and streams Astro's output so the terminal behaves normally.
+- The `trap` stops the daemon on Ctrl-C. Without it the daemon **survives** the
+  interrupt, keeps port 4321, and serves 500s once Tina is gone — and the next
+  `bun run dev` silently attaches to that poisoned server. All three signals are
+  trapped because a non-interactive shell will not run an `EXIT` trap when it is
+  killed by an untrapped `INT`.
+- `--datalayer-port 9007` matches the build scripts. Tina's datalayer defaults
+  to 9000, which another tool on this machine holds; that has broken a build.
+
+Notes: the dev server is **https** (`@vitejs/plugin-basic-ssl`), so `curl` needs
+`-k`. The admin SPA is served from `public/`, and Vite does not resolve
+directory indexes there — `/admin/` is a 404 in dev, `/admin/index.html` is the
+URL (which is what TinaCMS's own startup banner prints).
+
+If a dev server is ever stranded — a hard kill, a crashed terminal — clear it
+with `bunx astro dev stop`; `bunx astro dev status` reports what is running.
 
 ## Blog Post Writing
 

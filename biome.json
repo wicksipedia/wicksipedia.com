@@ -37,6 +37,7 @@
 			"!**/tina/__generated__",
 			"!**/tina/tina-lock.json",
 			"!**/.claude",
+			"!**/.omc",
 			"!**/.wrangler",
 			"!**/node_modules",
 			"!**/*.html"

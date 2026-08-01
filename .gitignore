@@ -48,3 +48,8 @@ tina/__generated__/*.js
 # the secret.
 tina/__generated__/client.ts
 tina/__generated__/.cache/
+
+# Agent-harness session state (oh-my-claudecode HUD). Written into the repo
+# while an agent is running and keyed by session id, so it is never content —
+# and every agent here stages with `git add -A`.
+.omc/

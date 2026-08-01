@@ -3,7 +3,7 @@
 	"type": "module",
 	"version": "5.5.1",
 	"scripts": {
-		"dev": "tinacms dev -c \"astro dev\"",
+		"dev": "tinacms dev --datalayer-port 9007 -c \"trap 'astro dev stop' EXIT INT TERM; astro dev && astro dev logs --follow\"",
 		"check": "bun run check:content && bun run check:blockquotes && bun run check:sanitize && bun run check:smartypants && bun run check:island-guard",
 		"build": "tinacms build --content=local --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
 		"build:local": "tinacms build --local --skip-cloud-checks --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
