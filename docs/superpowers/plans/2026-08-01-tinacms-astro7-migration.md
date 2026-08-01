@@ -709,6 +709,18 @@ bun run check:content
 
 Expected: `OK: 17 posts parse cleanly`.
 
+- [ ] **Step 4a: Assert TinaCMS actually indexes all 17 documents**
+
+`bun run check:content` proves the files *parse*. It does not prove TinaCMS *sees* them — the collection glob could be wrong and every command above would still pass. Before this task, `tinacms build` exited 0 while matching **zero** documents, because Tina treats an empty collection as valid. That is the failure this step exists to catch.
+
+```bash
+bunx tinacms audit -v --datalayer-port 9001 2>&1 | grep -A2 'blog collection'
+```
+
+Expected: `Checking blog collection.` followed by `17 Documents`.
+
+If it reports `0 Documents` — or any count other than 17 — STOP. The files converted but Tina cannot see them, which means the collection's `path`, `format`, or `match.include` is wrong. Do not proceed to Task 1.3: `getAllPosts()` would return an empty list and the site would build every page with no posts, successfully.
+
 - [ ] **Step 5: Prove the check can fail**
 
 ```bash
