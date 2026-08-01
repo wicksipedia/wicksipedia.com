@@ -13,7 +13,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
-import { ELEMENT_NODE, parse } from "ultrahtml";
 import { matchYouTubeEmbed } from "../src/lib/tina/embeds.ts";
 import { sanitizeAuthorHtml } from "../src/lib/tina/sanitize-html.ts";
 
@@ -285,25 +284,6 @@ if (checked !== CASES.length + EMBED_CASES.length) {
 	process.exit(1);
 }
 
-/** Elements, their attributes and text content — ignoring source formatting. */
-function structureOf(html) {
-	const parts = [];
-	const visit = (n) => {
-		if (n.type === ELEMENT_NODE) {
-			const attrs = Object.entries(n.attributes ?? {})
-				.map(([k, v]) => `${k.toLowerCase()}=${v}`)
-				.sort()
-				.join(",");
-			parts.push(`<${n.name.toLowerCase()} ${attrs}>`);
-		} else if (typeof n.value === "string" && n.value.trim()) {
-			parts.push(n.value.trim().replace(/\s+/g, " "));
-		}
-		for (const c of n.children ?? []) visit(c);
-	};
-	visit(parse(html));
-	return parts.join("|");
-}
-
 // A sanitiser defect must surface, not be swallowed into an empty string: the
 // walk is inside the try now, and the catch rethrows with the node named.
 {
@@ -339,16 +319,18 @@ const collect = (node, dir) => {
 		const got = sanitizeAuthorHtml(node.value, node.type);
 		// Attribute whitespace may be normalised; elements, attributes and text
 		// may not change. That is the invariant that matters for published posts.
-		// Inline nodes are single tags returned verbatim, so they must match
-		// exactly; blocks are re-serialised, so compare structure not formatting.
-		const before =
-			node.type === "html_inline" ? node.value : structureOf(node.value);
-		const after = node.type === "html_inline" ? got : structureOf(got);
-		if (before !== after) {
+		// Exact comparison, for both inline and block nodes. structureOf() used to
+		// relax this for blocks, but it compared using ultrahtml — the parser the
+		// sanitiser dropped for tokenizing incorrectly — so it could not be
+		// trusted to notice a difference parse5 would. With `style` and `iframe`
+		// gone the only thing it existed to tolerate is gone too. If a future
+		// block node normalises, this fails loudly and a human decides, which is
+		// right: it means published markup changed.
+		if (node.value !== got) {
 			failed++;
 			err(`FAIL: corpus ${dir} — sanitiser altered existing content`);
-			err(`  before: ${before.slice(0, 200)}`);
-			err(`  after:  ${after.slice(0, 200)}`);
+			err(`  before: ${JSON.stringify(node.value).slice(0, 200)}`);
+			err(`  after:  ${JSON.stringify(got).slice(0, 200)}`);
 		}
 		if (sanitizeAuthorHtml(got, node.type) !== got) {
 			failed++;
