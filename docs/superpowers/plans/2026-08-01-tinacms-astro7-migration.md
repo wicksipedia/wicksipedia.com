@@ -527,6 +527,14 @@ export default defineConfig({
 	media: {
 		tina: {
 			mediaRoot: "uploads",
+			// SUPERSEDED — this shipped as `publicFolder: "src/assets"`.
+			// `public/` is copied verbatim and never processed by Astro, so an
+			// editor-uploaded image shipped at full source size (the avatar was
+			// 134,770 B against 6,476 B at 160px). Moving the media root under
+			// `src/` lets <Image> optimise uploads; the cost is that the admin's
+			// media thumbnails need a dev-only URL rewrite, which
+			// `serveTinaUploadsInDev()` in astro.config.ts provides. See the
+			// comment on `media` in tina/config.ts for the full reasoning.
 			publicFolder: "public",
 		},
 	},
@@ -2422,7 +2430,14 @@ blocks:
 ---
 ```
 
-The avatar moves from `src/assets/images/avatar.png` to Tina's media root so the editor can swap it:
+The avatar moves from `src/assets/images/avatar.png` to Tina's media root so the editor can swap it.
+
+> **SUPERSEDED.** The media root shipped as `src/assets/uploads`, not `public/uploads` — see the note on `media` in the Task 1.1 config sample above. `public/` is never optimised by Astro, so the commands below would ship the avatar at its full 134,770 B. What actually landed:
+>
+> ```bash
+> mkdir -p src/assets/uploads
+> git mv src/assets/images/avatar.png src/assets/uploads/avatar.png
+> ```
 
 ```bash
 mkdir -p public/uploads
@@ -2874,6 +2889,33 @@ git commit -m "feat: render home and about from Tina page blocks"
 ---
 
 ## Phase 4 — Tina Cloud and deployment
+
+### Task 4.0: Pre-flight — the deferrals that come due here
+
+**Read this before Task 4.1.** Everything below was deferred during Phases 1–3 with the note "safe today because only a git committer can write content." Phase 4 is the step that ends that. Each item was logged in the SDD ledger and nowhere else, which is how a deferral becomes a forget — hence this section.
+
+Three whole-branch reviews (accessibility/UX, security, spec) ran at the end of Phase 3. Their verdict was **merge the branch, do not switch on Tina Cloud yet**. What follows is what "not yet" means.
+
+- [ ] **Decide how `TINA_TOKEN` reaches the Worker.** Measured with the empty placeholder: `dist/server/chunks/_name__*.mjs` already contains `token: ""` and `localhost:4001` — the generated Tina client is bundled into the `/tina-island/[name]` chunk. A real token therefore lands in the deployed Worker script. Either read it from a Cloudflare secret binding at request time, or accept a build-time secret and **add a CI guard that fails the build if the token value appears anywhere in `dist/`**. Do not leave this implicit.
+
+- [ ] **Rate-limit and time-bound `/tina-island/[name]`.** It is an unauthenticated public POST endpoint, and after Phase 4 each request costs a Tina Cloud GraphQL round trip — unmetered quota exhaustion and Worker CPU burn by anyone who can spell the path. There is no timeout either (`AbortSignal.timeout(5000)` on the Tina fetch). Consider requiring the Tina session cookie: the endpoint exists only to serve the authenticated admin preview.
+
+- [ ] **Add security headers to `public/_headers`.** It currently holds caching plus one Giscus CORS rule. No CSP, no `X-Content-Type-Options: nosniff`, no `Referrer-Policy`, no `frame-ancestors`. A CSP without `unsafe-inline` would have neutralised both XSS findings the security review turned up. Note the JSON-LD blocks are inline `<script>` and need a hash or nonce.
+
+- [ ] **Restrict media uploads to raster types.** `tina/config.ts` sets no `accept`, and the upload glob in `src/lib/tina/images.ts` includes `svg`. An uploaded SVG is served same-origin; inert inside `<img>`, but a document with executing scripts when navigated to directly. Pair with `nosniff` and `Content-Disposition: attachment` for `/_astro/*.svg`.
+
+- [ ] **Narrow `vite.server.cors`.** `astro.config.ts` sets `cors: true`, which emits `Access-Control-Allow-Origin: *` and overrides Vite 8's localhost-only default. Vite dev serves the project root, so any page visited while `bun run dev` runs can read project files cross-origin — including the generated client, which after this phase holds the real token. The Giscus need is already met in production by the path-scoped rule in `public/_headers`. Use `cors: { origin: ["https://giscus.app"] }`.
+
+- [ ] **Rich-text link hrefs still route through `@tinacms/astro`'s own `sanitizeHref`**, which does not fold `\` to `/` — `/\evil.example/x` survives it as `evil.example`. Our `normalizeUrl` fixes this and now wraps every call site we control, but `LinkNode.astro` is inside the library and cannot be intercepted. Either patch upstream or supply our own link renderer.
+
+- [ ] **`robots.txt` does not disallow `/admin`.** Assessed as *not worth changing* — robots.txt is not access control, the deployed admin bundle carries no client ID or token, and adding the line advertises the path while stopping nothing. The better question is whether the admin SPA needs to ship to the public production origin at all. Recorded so it is a decision rather than an oversight.
+
+- [ ] **Merging to `main` breaks the nightly deploy until this phase lands.** `.github/workflows/daily-deploy.yml` runs `bun run build`, which needs Tina Cloud credentials. Either land Phase 4 in the same window, or point the cron at `build:local` in the interim.
+
+- [ ] **Re-scan the regenerated `tina/__generated__/` before committing anything**, once real credentials exist. `PUBLIC_TINA_CLIENT_ID` is public by design; `TINA_TOKEN` must never appear:
+      `git ls-files tina/ | xargs grep -lEi '[a-f0-9]{32,}|Bearer [A-Za-z0-9]'`
+
+- [ ] **Verify 404 behaviour on the deployed Worker.** `wrangler.jsonc` lost `assets.not_found_handling: "404-page"` during the migration with no recorded reason. Code-reading says the adapter's `prerenderedErrorPageFetch` still serves `/404.html` for unmatched routes, but that is inference. One command settles it: `bunx wrangler dev -c dist/server/wrangler.json` then `curl -I localhost:8787/nonexistent`.
 
 ### Task 4.1: Wire Tina Cloud and deploy the Worker
 

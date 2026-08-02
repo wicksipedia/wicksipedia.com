@@ -121,56 +121,74 @@ first is still using. Run one at a time.
 When writing or editing blog posts, always run Vale before considering the post done:
 
 ```bash
-vale src/data/blog/path-to-post/index.mdx
+vale src/data/blog/path-to-post/index.md
 ```
 
 Vale is configured (`.vale.ini` + `styles/Wicksipedia/`) to catch banned words and phrases that sound too "AI-generated" or corporate. All Vale errors must be resolved before a post is considered finished.
 
+Vale reads **Markdown bodies only**. Prose stored in YAML frontmatter — which is where the CMS page collection keeps every `prose` block body — is invisible to it. `scripts/check-page-prose.mjs` extracts those bodies and lints them separately; it runs as part of `bun run check`. Vale has silently linted zero files twice on this repo, so if you change where prose lives, check the trailing "in N files" count, not the exit code.
+
 ## Architecture
 
-Astro 5 static site blog deployed to Cloudflare Workers. Uses TypeScript (strict), React (for interactive components only), and TailwindCSS 4.
+Astro 7 static site blog, content managed by **TinaCMS**, deployed to Cloudflare Workers. TypeScript (strict) and TailwindCSS 4. No React in the site bundle — React is a devDependency only, used to build the Tina admin SPA.
 
 **Path alias:** `@/` maps to `./src/`
 
 ### Content System
 
-Blog posts live in `src/data/blog/` as MDX files in subdirectories (`post-slug/index.mdx`). Each post directory can contain its own images.
+All content is TinaCMS collections, defined in `tina/collections/` and assembled in `tina/config.ts`. Nothing uses Astro content collections; `src/content.config.ts` no longer exists.
 
-- Content collection defined in `src/content.config.ts` using glob loader (pattern: `**/[^_]*.mdx`)
-- Directories prefixed with `_` are excluded from URL generation but not from builds (useful for drafts)
-- Frontmatter requires: `title`, `description`, `pubDatetime`
-- Posts filtered by `draft` flag and `pubDatetime` (future posts hidden with 15min margin) via `src/utils/postFilter.ts`
-- OG images auto-generated per post using Satori SVG→PNG (`src/utils/generateOgImages.ts`)
-- Slug/URL derived from file path via `src/utils/getPath.ts` (strips numeric prefixes and `_` prefixes from directory names)
+| Collection | On disk | What it is |
+|---|---|---|
+| `blog` | `src/data/blog/<slug>/index.md` | 17 posts, images colocated in the same folder |
+| `settings` | `content/settings/index.json` | Singleton: header nav, footer socials |
+| `page` | `content/pages/*.mdx` | CMS pages assembled from blocks (`home`, `about`) |
+
+- Post bodies are **Markdown (`.md`)**, parsed by Tina and rendered by `src/components/RichText.astro` — not by Astro's Markdown pipeline, which this site no longer uses at all.
+- Tina's parser rejects some valid CommonMark. See `docs/` and the comments in `src/lib/tina/blockquote.ts`; the short version is no code fences inside list items, and no nested lists.
+- Frontmatter requires `title`, `description`, `pubDatetime`.
+- `draft` and future `pubDatetime` (15 min margin) are filtered by `src/utils/postFilter.ts`. It intentionally lets both through when `import.meta.env.DEV`, so drafts are previewable — which is why the build scripts set `NODE_ENV=production` explicitly.
+- Directories prefixed with `_` are **not** excluded — the glob guards the filename, and every post is named `index`. Tina matches exactly what the old Astro glob matched.
+- Slug/URL comes from `src/utils/getPath.ts`.
+
+Data reaches pages through adapters in `src/lib/tina/`, never through direct client calls: `posts.ts`, `pages.ts`, `settings.ts`. Each **throws on an empty result** rather than returning `[]`, because Tina reports success on an empty collection and a silent zero would build the whole site with no content and exit 0.
+
+### Visual editing
+
+Static pages, plus one on-demand route. `src/lib/islands.ts` is the registry of editable regions; `src/pages/tina-island/[name].ts` re-renders one region on demand for the admin preview. It is an **unauthenticated public POST endpoint** — every island must declare a gate in `islandGates`, and slugs off the URL must pass the allowlists in `src/lib/tina/island-guard.ts`. Read that file's header before adding a region.
 
 ### Key Config Files
 
-- `src/config.ts` — Site metadata, pagination settings, edit post URLs, timezone
-- `src/constants.ts` — Social links, share links, Giscus (GitHub Discussions comments) config
-- `astro.config.ts` — Integrations, Shiki syntax highlighting (min-light/night-owl themes), code transformers (diff, highlight, word highlight, file names)
+- `src/config.ts` — Site metadata, pagination, edit-post URLs, timezone
+- `content/settings/index.json` — Nav and socials (**CMS-managed**; `src/constants.ts` holds share links and Giscus config only)
+- `tina/config.ts` — Collections, media root (`src/assets/uploads`)
+- `astro.config.ts` — Integrations, the Cloudflare adapter, and `sharpAtBuildTime()`. Syntax highlighting lives in `src/shiki.ts`, imported by `RichText.astro` — **not** configured here.
 
 ### Routing
 
 File-based routing in `src/pages/`:
+- `index.astro` — Homepage, renders the `home` page document
+- `[...slug].astro` — **Catch-all for CMS pages**, routes built from the page collection, so creating a page in the admin publishes it with no code change. Do not add per-page `.astro` routes.
 - `[...slug]/index.astro` — Individual blog posts
-- `blog/[...page].astro` — Paginated blog listing
-- `tags/[tag]/[...page].astro` — Tag-filtered listing
-- `blog/[...slug]/index.png.ts` — Dynamic OG image per post
+- `blog/[...page].astro`, `tags/[tag]/[...page].astro` — Paginated listings
+- `blog/[...slug]/index.png.ts` — Per-post OG image (only fires for posts with no `ogImage`; currently none)
+- `tina-island/[name].ts` — The one on-demand route (`prerender = false`)
 - `rss.xml.ts`, `robots.txt.ts` — Generated feeds
 
 ### Styling
 
-TailwindCSS 4 with CSS custom properties for light/dark themes defined in `src/styles/global.css`. Theme toggle persists via localStorage with inline script to prevent FOUC (`src/scripts/theme.ts`).
+TailwindCSS 4 with CSS custom properties for light/dark themes in `src/styles/global.css`. Theme toggle persists via localStorage with an inline script to prevent FOUC (`src/scripts/theme.ts`).
 
 ### Components
 
-- `.astro` files for most components (Header, Footer, Card, Pagination, Tag, Datetime, ShareLinks)
-- `.tsx` for React components requiring interactivity (Comments via Giscus)
+All components are `.astro` — there are no `.tsx` files. Comments are `Comments.astro` (Giscus via a script tag).
 
 ### Images
 
-- Place in `src/assets/images/` or post subdirectory for Sharp optimization
-- Place in `public/` for unoptimized static serving
+- **Post images:** colocate in the post's own folder. `src/lib/tina/images.ts` globs them eagerly so `<Image>` can optimise them. That glob means **any image in a post folder ships whether referenced or not** — `bun run check` fails on orphans.
+- **CMS uploads:** `src/assets/uploads/` (Tina's media root), resolved by `resolveUploadImage`.
+- **`public/`** is copied verbatim and never optimised. Do not put content images there.
+- `imageService: "compile"` alone does **not** give you Sharp — see the long comment on `sharpAtBuildTime()` in `astro.config.ts`. Without it every derivative is an unresized copy of its source, and the build still exits 0.
 
 ## Design System
 
