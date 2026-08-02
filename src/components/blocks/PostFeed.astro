@@ -115,8 +115,9 @@ const allPostsLabel = data.allPostsLabel ?? "All posts";
                   <Image
                     src={heroPost.data.ogImage}
                     alt=""
-                    widths={[360, 640, 992, 1280, 1984]}
+                    widths={[360, 480, 640, 768, 864, 992, 1280, 1600]}
                     sizes="(max-width: 895px) calc(100vw - 2rem), (max-width: 1279px) 864px, 992px"
+                    quality={65}
                     loading="eager"
                     fetchpriority="high"
                     class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"

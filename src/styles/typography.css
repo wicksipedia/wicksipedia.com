@@ -1,3 +1,7 @@
+/* Definitions only, no output: this file is its own entry now, and every
+   `@apply` below needs global.css's theme tokens and utilities in scope. */
+@reference "./global.css";
+
 @plugin "@tailwindcss/typography";
 
 @layer base {
