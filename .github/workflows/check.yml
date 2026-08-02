@@ -36,4 +36,22 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install
 
+      # check:page-prose shells out to Vale, because the CMS page collection
+      # keeps its prose in YAML frontmatter where Vale's own file globs cannot
+      # reach it. Vale is a Go binary, not an npm package, so `bun install` does
+      # not provide it — installed the same way vale.yml does.
+      #
+      # Its absence is not silently survivable and should not be: the first run
+      # of this workflow failed with "could not read Vale's file count from its
+      # output", because that suite refuses to report a pass it cannot evidence.
+      # A version that shrugged off a missing binary would have gone green while
+      # linting nothing, which is the failure .vale.ini already produced twice on
+      # this repo.
+      - name: Install Vale
+        run: |
+          gh release download --repo errata-ai/vale --pattern 'vale_*_Linux_64-bit.tar.gz' --dir /tmp
+          tar xzf /tmp/vale_*_Linux_64-bit.tar.gz -C /usr/local/bin vale
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - run: bun run check
