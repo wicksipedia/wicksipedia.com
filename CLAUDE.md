@@ -22,8 +22,10 @@ When making visual/design changes, go bold on the first pass. The user prefers d
 
 ```bash
 bun run dev          # Dev server at http://localhost:4321 (TinaCMS admin: /admin/index.html)
-bun run build        # Type check (astro check) + build + pagefind index
-bun run preview      # Build + preview with wrangler dev
+bun run build:local  # The build that works TODAY — no Tina Cloud credentials needed
+bun run build        # --content=local: local content, TinaCloud-pointing client. NEEDS creds.
+bun run build:cloud  # Content fetched from Tina Cloud. NEEDS creds.
+bun run preview      # build:local + preview with wrangler dev
 bun run deploy       # Deploy to Cloudflare Workers via wrangler
 bun run format:check # Biome format check
 bun run format       # Biome format write

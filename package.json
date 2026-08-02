@@ -6,6 +6,7 @@
 		"dev": "tinacms dev --datalayer-port 9007 -c \"trap 'astro dev stop' EXIT INT TERM; astro dev && astro dev logs --follow\"",
 		"check": "bun run check:content && bun run check:blockquotes && bun run check:sanitize && bun run check:smartypants && bun run check:island-guard && bun run check:page-prose",
 		"build": "tinacms build --content=local --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
+		"build:cloud": "tinacms build --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
 		"build:local": "tinacms build --local --skip-cloud-checks --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
 		"preview": "bun run build:local && npx wrangler dev -c dist/server/wrangler.json",
 		"deploy": "npx wrangler deploy -c dist/server/wrangler.json",

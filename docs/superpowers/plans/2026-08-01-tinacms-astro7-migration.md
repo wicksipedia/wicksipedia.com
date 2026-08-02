@@ -2910,7 +2910,19 @@ Three whole-branch reviews (accessibility/UX, security, spec) ran at the end of 
 
 - [ ] **`robots.txt` does not disallow `/admin`.** Assessed as *not worth changing* — robots.txt is not access control, the deployed admin bundle carries no client ID or token, and adding the line advertises the path while stopping nothing. The better question is whether the admin SPA needs to ship to the public production origin at all. Recorded so it is a decision rather than an oversight.
 
-- [ ] **Merging to `main` breaks the nightly deploy until this phase lands.** `.github/workflows/daily-deploy.yml` runs `bun run build`, which needs Tina Cloud credentials. Either land Phase 4 in the same window, or point the cron at `build:local` in the interim.
+- [ ] **Switch the build scripts over.** There are three, and they differ in which *client* gets generated, not only where content comes from:
+
+  | script | flags | content from | generated client | works today |
+  |---|---|---|---|---|
+  | `build:local` | `--local --skip-cloud-checks` | filesystem | local (`localhost:4001`) | **yes** |
+  | `build` | `--content=local` | filesystem | production (TinaCloud) | no — needs creds |
+  | `build:cloud` | *(none)* | TinaCloud | production (TinaCloud) | no — needs creds |
+
+  Verified: `bun run build` today exits with `ERR_MISSING_CLOUD_CREDS` — *"--content=local requires clientId, token to be configured, since the generated client must point to TinaCloud"*. So `.github/workflows/daily-deploy.yml` and the `build-and-routes` gate both currently run `build:local`.
+
+  **The moment the secrets exist, switch both to `bun run build`.** That is what fixes the deployed admin's live preview: `--local` bakes `url: 'http://localhost:4001/graphql'` into the client, which is harmless for all 59 prerendered pages but leaves `/tina-island/[name]` — the one on-demand route — pointing at localhost on the Worker. `--content=local` keeps builds fast (no content round trip) while emitting a client that reaches TinaCloud at runtime.
+
+  This is the same underlying decision as the `TINA_TOKEN` item above: both are "what does the generated client look like in a production build".
 
 - [ ] **Re-scan the regenerated `tina/__generated__/` before committing anything**, once real credentials exist. `PUBLIC_TINA_CLIENT_ID` is public by design; `TINA_TOKEN` must never appear:
       `git ls-files tina/ | xargs grep -lEi '[a-f0-9]{32,}|Bearer [A-Za-z0-9]'`

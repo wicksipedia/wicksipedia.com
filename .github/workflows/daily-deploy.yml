@@ -16,11 +16,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules/.astro
-          key: astro-build-${{ hashFiles('src/assets/images/**', 'src/data/blog/**/*.{png,jpg,jpeg,gif,webp,svg,avif}') }}
+          key: astro-build-${{ hashFiles('src/assets/images/**', 'src/assets/uploads/**', 'src/data/blog/**/*.{png,jpg,jpeg,gif,webp,svg,avif}') }}
           restore-keys: |
             astro-build-
 
-      - run: bun run build
+      # build:local, not build, until Phase 4 wires Tina Cloud. `bun run build`
+      # is --content=local, which the CLI refuses without clientId+token because
+      # the client it generates has to point at TinaCloud
+      # (ERR_MISSING_CLOUD_CREDS). Switch this to `bun run build` the moment the
+      # secrets exist — see Task 4.0 in the migration plan.
+      - run: bun run build:local
       - run: bun run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
