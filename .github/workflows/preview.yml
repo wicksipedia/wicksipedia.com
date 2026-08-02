@@ -1,0 +1,127 @@
+# Builds a PR and uploads it as a Cloudflare Workers VERSION, then comments the
+# preview URL on the PR.
+#
+# `wrangler versions upload` is not `wrangler deploy`. It uploads a version and
+# returns a preview URL for it; it does NOT take production traffic. deploy.yml
+# stays the only thing that promotes a version, and it still runs only on main.
+#
+# Workers Assets has no automatic per-branch preview the way Cloudflare Pages
+# did — a version has to be uploaded explicitly, which is why nothing appeared
+# on PRs before this file existed.
+#
+# The build steps deliberately mirror deploy.yml (Vale, the derivative cache,
+# NODE_OPTIONS, the credential guard). A preview built differently from
+# production is a preview of something that will never ship.
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# Per-PR, and cancellable: unlike deploy.yml, an interrupted `versions upload`
+# leaves production untouched, so racing a superseded push costs nothing.
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    # Fork PRs get no secrets — TINA_TOKEN and CLOUDFLARE_API_TOKEN both resolve
+    # to empty strings and the build fails on the guard below. Skipping is
+    # honest; failing every outside contribution on a missing secret is not.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+
+      # See deploy.yml: check:page-prose shells out to Vale, which is a Go
+      # binary that `bun install` does not provide.
+      - name: Install Vale
+        run: |
+          gh release download --repo errata-ai/vale --pattern 'vale_*_Linux_64-bit.tar.gz' --dir /tmp
+          tar xzf /tmp/vale_*_Linux_64-bit.tar.gz -C /usr/local/bin vale
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache generated image derivatives
+        uses: actions/cache@v4
+        with:
+          # Same key as deploy.yml so a PR restores the derivatives main already
+          # built and only re-encodes what the PR actually changed.
+          path: node_modules/.astro
+          key: astro-assets-${{ hashFiles('src/assets/**', 'src/data/blog/**/*.{png,jpg,jpeg,gif,webp,svg,avif}', 'astro.config.ts') }}
+          restore-keys: |
+            astro-assets-
+
+      - name: Build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+          PUBLIC_TINA_CLIENT_ID: ${{ vars.PUBLIC_TINA_CLIENT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+        run: |
+          missing=""
+          [ -z "$PUBLIC_TINA_CLIENT_ID" ] && missing="$missing PUBLIC_TINA_CLIENT_ID(repo variable)"
+          [ -z "$TINA_TOKEN" ] && missing="$missing TINA_TOKEN(repo secret)"
+          if [ -n "$missing" ]; then
+            echo "FAIL: missing credentials:$missing"
+            exit 1
+          fi
+          bun run build
+
+      - name: Upload version
+        id: upload
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -o pipefail
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "FAIL: CLOUDFLARE_API_TOKEN (repo secret) is empty."
+            exit 1
+          fi
+          bun run versions:upload 2>&1 | tee /tmp/upload.log
+
+          # Parse rather than trust: wrangler's exit code is 0 whether or not a
+          # preview URL came back, and a version with no URL is a preview job
+          # that reported success while producing nothing to look at.
+          url=$(grep -oE 'https://[A-Za-z0-9._-]+\.workers\.dev' /tmp/upload.log | head -1)
+          if [ -z "$url" ]; then
+            echo "FAIL: wrangler uploaded a version but returned no preview URL."
+            echo "Preview URLs are per-Worker and can be turned off. Check"
+            echo "Cloudflare -> Workers -> wicksipedia-dot-com -> Settings ->"
+            echo "Domains & Routes -> Preview URLs."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Preview: $url"
+
+      - name: Comment the preview URL
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          URL: ${{ steps.upload.outputs.url }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          marker='<!-- preview-url -->'
+          body="$marker
+          **Preview:** $URL
+
+          Built from \`${SHA:0:7}\` as a Workers version. It does not serve production traffic.
+          Search needs a build to work, and this one has it — pagefind indexes \`dist/\` during \`bun run build\`."
+
+          # Update our own previous comment instead of adding one per push. Keyed
+          # on the marker, not on "last comment by this actor", so an unrelated
+          # bot comment is never overwritten.
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+                 --jq "[.[] | select(.body | contains(\"$marker\"))] | .[0].id // empty")
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -f body="$body" --silent
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$body" --silent
+          fi
