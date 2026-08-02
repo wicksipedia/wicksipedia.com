@@ -52,7 +52,6 @@
 		"@tailwindcss/typography": "^0.5.19",
 		"@tinacms/cli": "^2.5",
 		"@types/lodash.kebabcase": "^4.1.9",
-		"@vitejs/plugin-basic-ssl": "^2.1.4",
 		"gray-matter": "^4.0.3",
 		"pagefind": "^1.4.0",
 		"react": "^19.2",

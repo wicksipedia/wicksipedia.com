@@ -3,7 +3,6 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import tina from "@tinacms/astro/integration";
 import { tinaAdminDevRedirect } from "@tinacms/astro/vite";
-import basicSsl from "@vitejs/plugin-basic-ssl";
 import type { AstroIntegration } from "astro";
 import {
 	defineConfig,
@@ -15,7 +14,11 @@ import type { PluginOption } from "vite";
 import { SITE } from "./src/config";
 
 /**
- * Puts real Sharp back into the build process.
+ * The two places the Cloudflare adapter's image wiring has to be corrected: the
+ * build (Sharp) and dev (the `/_image` endpoint). Both are `image.*` overrides
+ * applied after the adapter, which is why they share one integration.
+ *
+ * ── 1. Sharp, at build time ───────────────────────────────────────────────
  *
  * `imageService: "compile"` does NOT mean "Sharp at build time" on its own. The
  * adapter replaces `image.service` with `@astrojs/cloudflare/image-service-workerd`
@@ -52,13 +55,58 @@ import { SITE } from "./src/config";
  * fires after the runner closes, and (b) blow up in `baseService.getURL`, which
  * reads `import.meta.env.BASE_URL` — defined inside a Vite bundle, `undefined`
  * in a plain Node import. Both were observed.
+ *
+ * ── 2. A `/_image` endpoint that exists in Node ───────────────────────────
+ *
+ * `imageService: "compile"` also picks the endpoint serving `/_image`, and its
+ * choice is wrong in exactly one mode — dev:
+ *
+ *   const endpoint = command === "dev" || runtimeService === "cloudflare-binding"
+ *     ? { entrypoint: "@astrojs/cloudflare/image-transform-endpoint" }
+ *     : CLOUDFLARE_PASSTHROUGH_ENDPOINT;
+ *   (dist/utils/image-config.js, `case "compile"`)
+ *
+ * That endpoint opens with `import { env } from "cloudflare:workers"`
+ * (dist/entrypoints/image-transform-endpoint.js:1), a module that exists only
+ * inside workerd. `astro dev` runs in Node, so it cannot resolve, and the first
+ * page requesting an optimised image dies with
+ * `FailedToLoadModuleSSR: Could not import 'cloudflare:workers'` — taking the
+ * whole render down, not just the image. Every page here has an <Image>.
+ *
+ * Broken since the adapter landed, and invisible until now because every gate on
+ * this branch is build-time and `command === "dev"` is the one case they cannot
+ * reach. `scripts/check-dev-smoke.mjs` is the gate that can.
+ *
+ * `astro/assets/endpoint/generic` is Astro's own, and it is what the adapter
+ * itself uses for the `passthrough` and `cloudflare` dev branches
+ * (`GENERIC_ENDPOINT`, same file). It reads whatever `image.service` resolves
+ * to, which under this adapter is the workerd passthrough — `transform()`
+ * returns the input buffer untouched (dist/entrypoints/image-service-workerd.js).
+ * So dev serves images UNOPTIMISED at their source size, while the build still
+ * optimises through Sharp above. That is the right trade: dev pages render, and
+ * nobody is measuring image weight against a dev server.
+ *
+ * That endpoint does not read the source off disk — it re-fetches it over HTTP
+ * from the origin it is running on (`new URL(transform.src, url.origin)`, then
+ * `loadImage`, then a bare 404 if that came back empty). Worth knowing because it
+ * is only sound while dev is PLAIN HTTP. Measured under the https dev server this
+ * repo used to run: over HTTP/2 `request.url` lost its port (`createRequest`
+ * strips the `:authority` pseudo-header) so the loopback went to :443, and over
+ * HTTP/1.1 workerd refused the self-signed origin — both surfaced as a silent
+ * 404 on every image. Removing `basicSsl()` for the CMS's sake removed this too.
+ * Re-adding TLS to the dev server brings it back.
+ *
+ * Dev only. Leaving the build's endpoint alone keeps the deployed Worker on
+ * `CLOUDFLARE_PASSTHROUGH_ENDPOINT`, which is correct there — the derivatives
+ * are already written to `_astro` at build time.
  */
-function sharpAtBuildTime(): AstroIntegration {
+function imagePipelineFixups(): AstroIntegration {
 	const SHARP = "astro/assets/services/sharp";
+	const GENERIC_ENDPOINT = "astro/assets/endpoint/generic";
 	return {
-		name: "sharp-at-build-time",
+		name: "image-pipeline-fixups",
 		hooks: {
-			"astro:config:setup": ({ updateConfig }) => {
+			"astro:config:setup": ({ command, updateConfig }) => {
 				updateConfig({
 					// Sharp reads `config.service.config.kernel` and
 					// `config.service.config.limitInputPixels` unguarded
@@ -67,8 +115,16 @@ function sharpAtBuildTime(): AstroIntegration {
 					// declared under `image.service` below. Merge it back on.
 					// Integrations run after the adapter
 					// (astro/dist/integrations/hooks.js:128-129 unshifts it), so this
-					// lands on the adapter's replacement rather than being overwritten.
-					image: { service: { config: { limitInputPixels: false } } },
+					// lands on the adapter's replacement rather than being overwritten
+					// — which is also what makes the endpoint override below land.
+					image: {
+						service: { config: { limitInputPixels: false } },
+						// `command` is "dev" | "build" | "preview". Only dev gets the
+						// swap; see part 2 of this function's comment.
+						...(command === "dev" && {
+							endpoint: { entrypoint: GENERIC_ENDPOINT },
+						}),
+					},
 					vite: {
 						plugins: [
 							{
@@ -137,7 +193,7 @@ export default defineConfig({
 	output: "static",
 	// imageService "compile": no runtime transform on the Worker — /_astro
 	// derivatives are written at build time and served as static assets. It does
-	// NOT by itself make those derivatives real: see sharpAtBuildTime() above,
+	// NOT by itself make those derivatives real: see imagePipelineFixups() above,
 	// which is what actually puts Sharp in the build process.
 	// prerenderEnvironment "node": prerender in Node, not workerd, so the
 	// build-time OG pipeline (satori + the resvg native addon) can run.
@@ -152,7 +208,7 @@ export default defineConfig({
 	session: { driver: sessionDrivers.lruCache() },
 
 	integrations: [
-		sharpAtBuildTime(),
+		imagePipelineFixups(),
 		sitemap({
 			filter: (page) => {
 				if (!SITE.showArchives && page.endsWith("/archives")) return false;
@@ -175,7 +231,26 @@ export default defineConfig({
 	vite: {
 		plugins: [
 			tailwindcss(),
-			basicSsl(),
+			// NO basicSsl() — dev is deliberately plain http, and re-adding TLS
+			// here breaks the CMS.
+			//
+			// TinaCMS's dev server is http on :4001 and the admin SPA loads
+			// `@vite/client`, `src/main.tsx` and `@react-refresh` from it. Served
+			// over https, that is active mixed content, which every browser blocks
+			// outright — the page loads, every one of its scripts is refused, and
+			// the admin never boots. Fetching /admin/index.html still returns 200,
+			// so only a browser sees it.
+			//
+			// Nothing here needs a secure context. `navigator.clipboard.writeText`
+			// (the copy-code button in PostDetails.astro) is the only such API in
+			// src/, and `http://localhost` is a "potentially trustworthy origin" per
+			// W3C Secure Contexts, so it keeps working — MEASURED in Chrome, not
+			// assumed: `window.isSecureContext === true` on http://localhost:4321.
+			// Giscus is fine too; an http parent embedding an https iframe is an
+			// upgrade, and the block only happens the way round we had it.
+			//
+			// basicSsl() arrived on main in 24ca582 with an empty commit body and no
+			// recorded reason.
 			// Makes a bare /admin reachable during `astro dev`.
 			tinaAdminDevRedirect(),
 			// Keeps the admin's media thumbnails working now that the media root
@@ -220,7 +295,7 @@ export default defineConfig({
 		// Under the Cloudflare adapter this whole `service` object is discarded —
 		// entrypoint and config both — and replaced with the workerd passthrough.
 		// It is kept because it is the correct declaration for an adapter-less
-		// build, and because it names the config sharpAtBuildTime() re-merges.
+		// build, and because it names the config imagePipelineFixups() re-merges.
 		service: {
 			entrypoint: "astro/assets/services/sharp",
 			config: {

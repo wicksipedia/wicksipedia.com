@@ -21,7 +21,7 @@ When making visual/design changes, go bold on the first pass. The user prefers d
 ## Commands
 
 ```bash
-bun run dev          # Dev server at https://localhost:4321 (TinaCMS admin: /admin/index.html)
+bun run dev          # Dev server at http://localhost:4321 (TinaCMS admin: /admin/index.html)
 bun run build        # Type check (astro check) + build + pagefind index
 bun run preview      # Build + preview with wrangler dev
 bun run deploy       # Deploy to Cloudflare Workers via wrangler
@@ -55,8 +55,22 @@ serving `TypeError: fetch failed` on every page. Each piece here earns its place
 - `--datalayer-port 9007` matches the build scripts. Tina's datalayer defaults
   to 9000, which another tool on this machine holds; that has broken a build.
 
-Notes: the dev server is **https** (`@vitejs/plugin-basic-ssl`), so `curl` needs
-`-k`. The admin SPA is served out of `public/admin`, and in dev the three URLs
+Notes: the dev server is **plain http** — `http://localhost:4321`, no `curl -k`.
+
+It used to be https via `@vitejs/plugin-basic-ssl`, which was removed because it
+made the CMS unusable: TinaCMS's dev server is http on :4001, and the admin SPA
+loads `@vite/client`, `src/main.tsx` and `@react-refresh` from it. An https admin
+page pulling those is active mixed content, so the browser blocked every script
+and the admin never booted — while `/admin/index.html` went on returning a
+healthy 200, which is why no gate noticed.
+
+Nothing here needs TLS in dev. `navigator.clipboard.writeText` (the copy-code
+button) is the only secure-context API in `src/`, and `http://localhost` is a
+"potentially trustworthy origin" per W3C Secure Contexts — measured in Chrome on
+`http://localhost:4321`: `isSecureContext === true`, `navigator.clipboard` is an
+object and `writeText` a function. Do not re-add `basicSsl()`.
+
+The admin SPA is served out of `public/admin`, and in dev the three URLs
 behave differently — measured, not assumed:
 
 | URL | dev |
@@ -69,6 +83,17 @@ The trailing-slash 404 is `trailingSlash: "never"` (`astro.config.ts`): Astro
 answers `/admin/` itself before Tina's redirect middleware runs, even though
 that middleware explicitly tries to catch `/admin/`. Use `/admin` or the full
 `/admin/index.html`.
+
+Images in dev are served at their **source size**, unoptimised — the Cloudflare
+adapter swaps in a passthrough image service, and only the build puts Sharp back.
+`imagePipelineFixups()` in `astro.config.ts` also has to replace the `/_image`
+endpoint in dev, because `imageService: "compile"` points it at a module whose
+first line imports `cloudflare:workers`; under `astro dev` that is a Node process,
+so any page with an `<Image>` died outright. The build is unaffected.
+
+That endpoint re-fetches each image from the dev server over HTTP, which is sound
+only while dev is plain http — under the old https server it silently 404'd every
+image. One more reason not to re-add `basicSsl()`.
 
 If a dev server is ever stranded — a hard kill, a crashed terminal — clear it
 with `bunx astro dev stop`; `bunx astro dev status` reports what is running.
