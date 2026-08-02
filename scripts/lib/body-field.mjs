@@ -33,11 +33,26 @@ const PARSER_FOR_FORMAT = {
 	mdx: "mdx",
 };
 
-const parserType = PARSER_FOR_FORMAT[blogCollection.format ?? "md"];
-if (!parserType) {
-	throw new Error(
-		`blog collection has format "${blogCollection.format}", which these checks do not know how to parse`,
-	);
+/**
+ * Same derivation for any collection. `check-page-prose.mjs` needs it for the
+ * `page` collection, which is `format: "mdx"` — and the two parsers genuinely
+ * disagree: `<img src=x onerror=alert(1)>` is an `html` node under `markdown`
+ * and a whole-body `invalid_markdown` under `mdx`. A check that guessed the
+ * parser would be describing a document the build never renders.
+ *
+ * @param {string | undefined} format
+ * @param {string} collectionName
+ */
+export function parserForFormat(format, collectionName) {
+	const parserType = PARSER_FOR_FORMAT[format ?? "md"];
+	if (!parserType) {
+		throw new Error(
+			`${collectionName} collection has format "${format}", which these checks do not know how to parse`,
+		);
+	}
+	return parserType;
 }
+
+const parserType = parserForFormat(blogCollection.format, "blog");
 
 export const BODY_FIELD = { ...body, parser: { type: parserType } };

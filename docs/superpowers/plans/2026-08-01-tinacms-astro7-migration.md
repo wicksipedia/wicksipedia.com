@@ -2363,7 +2363,18 @@ export const pageCollection: Collection = {
 			isTitle: true,
 			required: true,
 			description:
-				"Browser tab and search results only — not shown on the page. To change the visible heading, edit the Hero block's Name below.",
+				"Browser tab and search results only — not shown on the page. To change the visible heading, use Page Heading below, or the Hero block's Name.",
+		},
+		{
+			// Added in b8bd4e8, after this plan section was written; the rule it
+			// enforces is implemented in `PageBlocks.astro` — see the correction
+			// under Task 3.2 Step 6. `seoTitle` above is the fallback that makes a
+			// page with no hero and no heading impossible.
+			type: "string",
+			name: "heading",
+			label: "Page Heading",
+			description:
+				"Overrides Meta Title as the visible <h1> at the top of the page. Leave blank to use Meta Title. Ignored entirely when the page starts with a Hero block, which supplies its own heading.",
 		},
 		{
 			type: "object",
@@ -2633,15 +2644,36 @@ import { getPage } from "@/lib/tina/pages";
 import { getSettings } from "@/lib/tina/settings";
 ...
 	page: {
-		fetch: (_request, params) => getPage(params.get("slug") ?? "home"),
+		fetch: (request, params) =>
+			tagPageDocument(pageSource(request, params.get("slug") ?? "")),
 		component: PageBlocks,
-		wrapper: { tag: "main" },
+		wrapper: { tag: "div", className: "contents" },
 		// biome-ignore lint/suspicious/noExplicitAny: registry data is loosely typed
 		propsFromData: (data: any) => ({ data: data.data?.page }),
 	},
 ```
 
-The island re-render does not have the settings result, so `PageBlocks` defaults `socials` to `[]` — the hero's social row is driven by the `settings` island, which refreshes independently.
+> **CORRECTED IN TASK 3.2.** This step originally read
+> `fetch: (_request, params) => getPage(params.get("slug") ?? "home")` with
+> `wrapper: { tag: "main" }` and no gate. Both were wrong:
+>
+> - **No guard.** `getPage` interpolates the slug straight into a relativePath
+>   and Tina *resolves* `..` rather than rejecting it. The slug comes off an
+>   unauthenticated URL, so it needs `isValidPageSlug` — and it now gets it in
+>   three independent places (`pageGate`, `pageSource`, `queryPageDocument`)
+>   plus an entry in `islandGates`, which `[name].ts` refuses without. The
+>   `?? "home"` default was also wrong: a missing slug should be refused, not
+>   silently served as the homepage.
+> - **No gate entry.** `src/pages/tina-island/[name].ts` refuses any island
+>   missing from `islandGates`, so this island would 404 as written.
+> - **`wrapper: { tag: "main" }`.** `IslandWrapper` is `{ tag, className }`
+>   with no `id` (see `@tinacms/astro/dist/island-route.d.ts`), and this region
+>   must carry `id="main-content"` — the skip-link target `Header.astro` points
+>   every page at. So `PageBlocks.astro` renders the `<main>` itself behind a
+>   `display: contents` wrapper, the same trick and the same reason as the
+>   settings islands.
+
+The island re-render does not have the settings result, so `PageBlocks` defaults `socials` to `[]`. Note the reason given here originally — "the hero's social row is driven by the `settings` island" — is **wrong**: the hero's socials render inside the `page` island, so a page-island refresh drops them from the admin preview until a reload. The statically built page always has them.
 
 - [ ] **Step 5: Rewrite `src/pages/index.astro`**
 
@@ -2685,7 +2717,14 @@ const socials = (settings?.socials ?? []).filter((s) => s !== null);
 </script>
 ```
 
-The island wrapper is `<main>`, so `PostFeed.astro` must carry the `id="main-content"` and `data-layout="index"` attributes the back-button script reads — move them onto its outer element.
+> **CORRECTED IN TASK 3.2.** This step originally said `PostFeed.astro` must
+> carry `id="main-content"` and `data-layout="index"`. `id="main-content"` must
+> NOT go there: `Header.astro` renders `href="#main-content"` on **every** page
+> and the About page has no post feed, so that would leave one page's skip link
+> pointing at nothing. Both attributes live on the `<main>` that
+> `PageBlocks.astro` renders. `data-layout="index"` is emitted only when the
+> document is `home`, derived from `_sys.filename` so it survives an island
+> re-render, where `propsFromData` supplies only `data`.
 
 - [ ] **Step 6: Write the catch-all route `src/pages/[...slug].astro` and delete the MDX page**
 
@@ -2737,7 +2776,25 @@ const socials = (settings?.socials ?? []).filter((s) => s !== null);
 git rm src/pages/about.mdx src/layouts/AboutLayout.astro
 ```
 
-The About page's `<h1>About</h1>` heading and its `border-b border-border/50` rule move into `Prose.astro` so the page keeps its current header treatment.
+> **CORRECTED IN TASK 3.2.** This step originally said the About page's
+> `<h1>About</h1>` and its `border-b border-border/50` rule "move into
+> `Prose.astro`". They must not: a page with two prose blocks would render two
+> `<h1>`s. The heading is a page-level concern and lives in
+> `PageBlocks.astro`, inside the island so it live-updates, with
+> `data-tina-field={tinaField(data, "heading")}`.
+>
+> It is also not read straight off the `heading` field, because that field is
+> optional and both failure modes stay reachable if the rule lives only in a
+> description string. The rendering decides:
+>
+> - first block is `PageBlocksHero` → **no** page-level `<h1>`, whatever
+>   `heading` holds. The hero owns it, so two `<h1>`s cannot happen.
+> - otherwise → `<h1>{heading || seoTitle}</h1>`. `seoTitle` is
+>   `required: true`, so zero `<h1>`s cannot happen either. `||` rather than
+>   `??` because clearing the field in the admin writes an empty string.
+>
+> That makes `heading: About` redundant in `content/pages/about.mdx` and it is
+> removed there — two independently-editable copies of one string drift.
 
 - [ ] **Step 7: Drop the now-unused MDX toolchain**
 

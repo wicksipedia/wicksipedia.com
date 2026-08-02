@@ -32,13 +32,21 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { extname, join } from "node:path";
+import { parseMDX } from "@tinacms/mdx";
 import matter from "gray-matter";
 import { githubStatsBlockSchema } from "../src/components/blocks/github-stats.template.ts";
 import { heroBlockSchema } from "../src/components/blocks/hero.template.ts";
 import { postFeedBlockSchema } from "../src/components/blocks/post-feed.template.ts";
 import { proseBlockSchema } from "../src/components/blocks/prose.template.ts";
+import { parserForFormat } from "./lib/body-field.mjs";
 
 const PAGES_BASE = "content/pages";
 /** Scratch directory. `.vale.ini` has a section matching this path — see above. */
@@ -71,13 +79,45 @@ const richTextFields = new Map(
 
 // If no template declares a rich-text field, every loop below is vacuous and
 // the script reports success having linted nothing.
+/**
+ * The rich-text field object Tina would parse this body with, carrying the
+ * parser the collection's format implies.
+ *
+ * Guessing `markdown` would be measuring a document the build never renders:
+ * the two parsers genuinely disagree, and `<img src=x onerror=alert(1)>` is an
+ * `html` node under one and a whole-body `invalid_markdown` under the other.
+ *
+ * The format is taken from the document's own extension rather than by
+ * importing `tina/collections/page.ts` — that file imports its block templates
+ * without file extensions, which Vite resolves and Node's ESM loader does not.
+ * Reading the extension is not a guess: it is the same thing Tina derives the
+ * parser from, and it cannot drift silently, because a collection that changed
+ * format would rename its documents and the glob below would find none, which
+ * trips the vacuity guard.
+ *
+ * @param {string} file @param {string} templateName @param {string} fieldName
+ */
+function richTextField(file, templateName, fieldName) {
+	const template = TEMPLATES.find((t) => t.name === templateName);
+	const field = (template?.fields ?? []).find((f) => f.name === fieldName);
+	if (!field) {
+		throw new Error(
+			`no rich-text field ${templateName}.${fieldName} in the block schemas`,
+		);
+	}
+	const format = extname(file).slice(1);
+	return { ...field, parser: { type: parserForFormat(format, "page") } };
+}
+
 const declaredRichTextFields = [...richTextFields.values()].flat();
 if (declaredRichTextFields.length === 0) {
 	err("FAIL: no block template declares a rich-text field — check is vacuous");
 	process.exit(1);
 }
 
-const files = readdirSync(PAGES_BASE).filter((entry) => entry.endsWith(".mdx"));
+const files = readdirSync(PAGES_BASE).filter(
+	(entry) => entry.endsWith(".mdx") || entry.endsWith(".md"),
+);
 if (files.length === 0) {
 	err(`FAIL: no page documents found under ${PAGES_BASE} — check is vacuous`);
 	process.exit(1);
@@ -92,6 +132,7 @@ try {
 	let blocksSeen = 0;
 	let bodiesLinted = 0;
 	let emptyBodies = 0;
+	let parseFailures = 0;
 	let words = 0;
 	/** @type {Array<[string, string]>} scratch file → source location */
 	const provenance = [];
@@ -100,7 +141,7 @@ try {
 		const raw = readFileSync(join(PAGES_BASE, file), "utf8");
 		const { data } = matter(raw);
 		pagesParsed++;
-		const slug = file.slice(0, -".mdx".length);
+		const slug = file.slice(0, -extname(file).length);
 		const blocks = Array.isArray(data.blocks) ? data.blocks : [];
 
 		for (const [index, block] of blocks.entries()) {
@@ -112,9 +153,37 @@ try {
 					emptyBodies++;
 					continue;
 				}
+				// The other half of "actually linted": a body Tina cannot parse
+				// becomes ONE `invalid_markdown` node and the whole block renders
+				// as escaped source inside a <pre> — silently, with a green build.
+				// Measured: `<img src=x onerror=alert(1)>` in a page body does
+				// exactly this. `check-content.mjs` has caught the same failure for
+				// posts since Task 1.2; pages had nothing.
+				const ast = parseMDX(
+					body,
+					richTextField(file, block._template, field),
+					(v) => v,
+				);
+				const invalid = (ast.children ?? []).filter(
+					(node) => node.type === "invalid_markdown",
+				);
+				if (invalid.length > 0) {
+					parseFailures++;
+					err(
+						`FAIL: ${PAGES_BASE}/${file} → blocks[${index}].${field} does not parse`,
+					);
+					for (const node of invalid) {
+						err(`  line ${node.position?.start?.line}: ${node.message}`);
+					}
+					err("  The whole block renders as escaped source in a <pre>.");
+				}
+
 				const name = `${slug}__blocks-${index}-${field}.md`;
 				writeFileSync(join(SCRATCH, name), `${body.trim()}\n`, "utf8");
-				provenance.push([name, `${PAGES_BASE}/${file} → blocks[${index}].${field}`]);
+				provenance.push([
+					name,
+					`${PAGES_BASE}/${file} → blocks[${index}].${field}`,
+				]);
 				bodiesLinted++;
 				words += body.trim().split(/\s+/).filter(Boolean).length;
 			}
@@ -134,6 +203,11 @@ try {
 		);
 		err(`  rich-text fields looked for: ${declaredRichTextFields.join(", ")}`);
 		err("  Vale would report success over an empty set. Refusing to.");
+		process.exit(1);
+	}
+
+	if (parseFailures > 0) {
+		err(`\n${parseFailures} page prose body/bodies failed to parse`);
 		process.exit(1);
 	}
 
@@ -160,9 +234,7 @@ try {
 	}
 	const valeRead = Number(seen[1]);
 	if (valeRead !== bodiesLinted) {
-		err(
-			`FAIL: wrote ${bodiesLinted} prose file(s) but Vale read ${valeRead}.`,
-		);
+		err(`FAIL: wrote ${bodiesLinted} prose file(s) but Vale read ${valeRead}.`);
 		err(
 			`  ${SCRATCH}/ is matched by a section in .vale.ini; if that section is`,
 		);
@@ -178,7 +250,7 @@ try {
 		exitCode = 1;
 	} else {
 		out(
-			`OK: ${bodiesLinted} page prose bodies (${words} words) from ${pagesParsed} page(s) and ${blocksSeen} block(s) lint clean; Vale confirms it read ${valeRead} file(s)`,
+			`OK: ${bodiesLinted} page prose bodies (${words} words) from ${pagesParsed} page(s) and ${blocksSeen} block(s) parse without invalid_markdown and lint clean (${emptyBodies} empty rich-text field(s) skipped); Vale confirms it read ${valeRead} file(s)`,
 		);
 	}
 } finally {
