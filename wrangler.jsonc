@@ -1,6 +1,9 @@
 {
 	"name": "wicksipedia-dot-com",
-	"assets": { "html_handling": "drop-trailing-slash", "not_found_handling": "404-page" },
+	"assets": {
+		"html_handling": "drop-trailing-slash",
+		"not_found_handling": "404-page"
+	},
 	"compatibility_date": "2026-01-26",
 	"compatibility_flags": ["nodejs_compat"],
 	"observability": {
