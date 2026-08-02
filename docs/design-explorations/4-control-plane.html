@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4 · Control Plane — Wicksipedia design exploration</title>
+<!-- Static design mock. No build step. Direction: the blog as an instrumented pipeline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Google+Sans+Code:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg: #101214;
+    --fg: #E6E8EA;
+    --accent: #5CA0F2;
+    --ok: #3FB950;
+    --warn: #D29922;
+    --muted: #9BA3AB;
+    --hairline: #23272B;
+    --panel: #14171A;
+    --panel-2: #191D21;
+    --row-hover: #171B1F;
+  }
+  :root[data-theme="light"] {
+    --bg: #F7F8FA;
+    --fg: #17191C;
+    --accent: #1D4ED8;
+    --ok: #1A7F37;
+    --warn: #9A6700;
+    --muted: #565C63;
+    --hairline: #D9DDE2;
+    --panel: #FFFFFF;
+    --panel-2: #EFF1F4;
+    --row-hover: #ECEFF3;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  .mono { font-family: "Google Sans Code", ui-monospace, monospace; }
+  .num { font-family: "Google Sans Code", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  /* ============ segmented pipeline (reading progress) ============ */
+  .pipeline {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    gap: 3px;
+    padding: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .pipeline .seg {
+    flex: 1;
+    height: 4px;
+    background: var(--hairline);
+    position: relative;
+  }
+  .pipeline .seg.done { background: var(--ok); }
+  .pipeline .seg.active { background: var(--accent); }
+  .pipeline .seg:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    top: 8px;
+    left: 0;
+    font-family: "Google Sans Code", monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    padding: 2px 8px;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  /* ============ chrome ============ */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 0.65rem 1.5rem;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--panel);
+    font-size: 13.5px;
+    flex-wrap: wrap;
+  }
+  .wordmark {
+    font-family: "Google Sans Code", monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+  .wordmark .slash { color: var(--accent); }
+  .env {
+    font-family: "Google Sans Code", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ok);
+    border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+    padding: 0.05rem 0.5rem;
+    border-radius: 2px;
+  }
+  .topbar nav { display: flex; gap: 0.2rem; }
+  .topbar nav a {
+    color: var(--muted);
+    padding: 0.25rem 0.8rem;
+    border-radius: 3px;
+  }
+  .topbar nav a:hover { color: var(--fg); background: var(--panel-2); text-decoration: none; }
+  .topbar nav a.active {
+    color: var(--fg);
+    background: var(--panel-2);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .topbar .right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    font-family: "Google Sans Code", monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .theme-btn {
+    font-family: "Google Sans Code", monospace;
+    font-size: 11.5px;
+    background: none;
+    border: 1px solid var(--hairline);
+    color: var(--fg);
+    cursor: pointer;
+    padding: 0.25rem 0.7rem;
+    border-radius: 3px;
+  }
+  .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .shell { max-width: 76rem; margin: 0 auto; padding: 0 1.5rem 5rem; }
+
+  /* ============ homepage: status header ============ */
+  .statusgrid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: end;
+    padding: 3rem 0 1.8rem;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .statusgrid h1 {
+    font-size: clamp(1.7rem, 4vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  .statusgrid .sub { color: var(--muted); margin-top: 0.6rem; max-width: 40rem; }
+  .statusgrid .sub b { color: var(--fg); font-weight: 600; }
+  .kpis { display: flex; flex-wrap: wrap; gap: 1rem 2.4rem; text-align: right; }
+  .kpis .kpi .v { font-family: "Google Sans Code", monospace; font-size: 1.35rem; font-weight: 700; color: var(--fg); }
+  .kpis .kpi .v.ok { color: var(--ok); }
+  .kpis .kpi .l {
+    font-family: "Google Sans Code", monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+  @media (max-width: 760px) {
+    .statusgrid { grid-template-columns: 1fr; align-items: start; }
+    .kpis { text-align: left; }
+  }
+
+  .sect-label {
+    font-family: "Google Sans Code", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 2.6rem 0 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .sect-label::after { content: ""; flex: 1; border-top: 1px solid var(--hairline); }
+
+  /* ============ latest deploy panel ============ */
+  .latest {
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: 1.5rem 1.7rem;
+    color: inherit;
+    position: relative;
+  }
+  .latest:hover {
+    background: var(--row-hover);
+    text-decoration: none;
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .latest .statusline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.6rem;
+    font-family: "Google Sans Code", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+  .dot-ok { color: var(--ok); }
+  .dot-warn { color: var(--warn); }
+  .latest h2 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; }
+  .latest:hover h2 { color: var(--accent); }
+  .latest p.desc { color: var(--muted); margin-top: 0.6rem; max-width: 46rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .chip {
+    font-family: "Google Sans Code", monospace;
+    font-size: 11px;
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    padding: 0.1rem 0.55rem;
+    border-radius: 2px;
+  }
+
+  /* ============ ledger table ============ */
+  .ledgerwrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 4px; background: var(--panel); }
+  table.ledger { border-collapse: collapse; width: 100%; min-width: 52rem; font-size: 14px; }
+  table.ledger th {
+    font-family: "Google Sans Code", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: left;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--panel-2);
+  }
+  table.ledger td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--hairline);
+    vertical-align: baseline;
+  }
+  table.ledger tbody tr { cursor: pointer; }
+  table.ledger tbody tr:hover td { background: var(--row-hover); }
+  table.ledger tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+  table.ledger tbody tr:last-child td { border-bottom: none; }
+  .ledger .id { font-family: "Google Sans Code", monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .ledger .title { font-weight: 600; color: var(--fg); }
+  .ledger tbody tr:hover .title { color: var(--accent); }
+  .ledger .status { font-family: "Google Sans Code", monospace; font-size: 12px; white-space: nowrap; }
+  .ledger .ts { font-family: "Google Sans Code", monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .ledger .rt { font-family: "Google Sans Code", monospace; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .ledger .tg { font-family: "Google Sans Code", monospace; font-size: 11.5px; color: var(--muted); }
+
+  /* ============ divider ============ */
+  .cut {
+    margin: 4.5rem 0 3.5rem;
+    border-top: 1px dashed var(--hairline);
+    position: relative;
+    text-align: center;
+  }
+  .cut span {
+    position: relative;
+    top: -0.8em;
+    background: var(--bg);
+    padding: 0 1.2rem;
+    font-family: "Google Sans Code", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ============ post page ============ */
+  .post-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    gap: 3.5rem;
+  }
+  @media (max-width: 900px) {
+    .post-grid { grid-template-columns: minmax(0, 1fr); }
+    .rail { display: none; }
+  }
+
+  .post-head { border-bottom: 1px solid var(--hairline); padding-bottom: 1.6rem; margin-bottom: 2rem; }
+  .post-head .statusline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.6rem;
+    font-family: "Google Sans Code", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+  }
+  .post-head h1 {
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+  .post-head .desc { color: var(--muted); margin-top: 0.7rem; max-width: 46rem; }
+
+  .rail { position: relative; }
+  .rail-inner {
+    position: sticky;
+    top: 1.6rem;
+    border-left: 1px solid var(--hairline);
+    padding-left: 1.2rem;
+    font-size: 13px;
+  }
+  .rail-inner .rl {
+    font-family: "Google Sans Code", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.8rem;
+  }
+  .rail-inner a {
+    display: block;
+    color: var(--muted);
+    padding: 0.3rem 0;
+  }
+  .rail-inner a:hover { color: var(--fg); text-decoration: none; }
+  .rail-inner a.here {
+    color: var(--accent);
+    margin-left: calc(-1.2rem - 1px);
+    padding-left: calc(1.2rem - 1px);
+    border-left: 2px solid var(--accent);
+  }
+  .rail-inner a .seg-ix { font-family: "Google Sans Code", monospace; font-size: 11px; margin-right: 0.5rem; color: var(--muted); }
+  .rail-meta {
+    margin-top: 1.6rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--hairline);
+    font-family: "Google Sans Code", monospace;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 2;
+  }
+  .rail-meta b { color: var(--fg); font-weight: 500; }
+
+  .prose { max-width: 44rem; }
+  .prose p { margin: 1.1rem 0; }
+  .prose h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 2.6rem 0 1rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--hairline);
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+  }
+  .prose h2 .h-ix {
+    font-family: "Google Sans Code", monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .prose em { font-style: italic; }
+  .prose strong { font-weight: 600; }
+  .prose ul, .prose ol { margin: 1rem 0 1rem 1.4rem; }
+  .prose li { margin: 0.4rem 0; }
+  .prose li::marker { color: var(--accent); }
+  .prose code {
+    font-family: "Google Sans Code", monospace;
+    font-size: 0.87em;
+    background: var(--panel-2);
+    border: 1px solid var(--hairline);
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+  }
+
+  /* code block */
+  .codeblock {
+    margin: 1.8rem 0;
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    background: var(--panel);
+    overflow: hidden;
+  }
+  .codeblock .cb-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.45rem 1rem;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--panel-2);
+    font-family: "Google Sans Code", monospace;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .codeblock .cb-head .lang { color: var(--accent); }
+  .codeblock pre {
+    font-family: "Google Sans Code", monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+  }
+  .c-com { color: var(--muted); }
+  .c-cmd { color: var(--accent); font-weight: 500; }
+  .c-arg { color: var(--fg); }
+  .c-str { color: var(--ok); }
+  .c-op { color: var(--warn); }
+
+  /* figure */
+  figure.shot { margin: 2rem 0; }
+  .shot-frame {
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    aspect-ratio: 16 / 9;
+    background:
+      linear-gradient(var(--hairline) 1px, transparent 1px) 0 0 / 100% 2rem,
+      linear-gradient(90deg, var(--hairline) 1px, transparent 1px) 0 0 / 2rem 100%,
+      var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .shot-frame .t { font-family: "Google Sans Code", monospace; font-size: 12.5px; color: var(--accent); }
+  .shot-frame .d { font-family: "Google Sans Code", monospace; font-size: 11px; color: var(--muted); }
+  figcaption {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 0.55rem;
+    font-family: "Google Sans Code", monospace;
+  }
+  figcaption b { color: var(--fg); font-weight: 500; }
+
+  /* blockquote */
+  blockquote {
+    margin: 1.8rem 0;
+    border-left: 3px solid var(--accent);
+    background: var(--panel);
+    padding: 0.9rem 1.3rem;
+    border-radius: 0 4px 4px 0;
+    color: var(--fg);
+  }
+  blockquote p { font-style: italic; margin: 0; }
+
+  /* data table */
+  .tablewrap { overflow-x: auto; margin: 1.8rem 0; border: 1px solid var(--hairline); border-radius: 4px; }
+  table.data { border-collapse: collapse; width: 100%; font-size: 13.5px; background: var(--panel); }
+  table.data th {
+    font-family: "Google Sans Code", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: left;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--panel-2);
+  }
+  table.data td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--hairline); }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tr:hover td { background: var(--row-hover); }
+  table.data td code { background: none; border: none; padding: 0; color: var(--accent); font-size: 12.5px; }
+
+  /* footer */
+  .foot {
+    margin-top: 4rem;
+    border-top: 1px solid var(--hairline);
+    padding-top: 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    font-family: "Google Sans Code", monospace;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .foot .ok { color: var(--ok); }
+</style>
+</head>
+<body>
+
+  <!-- ======= segmented pipeline progress ======= -->
+  <div class="pipeline" aria-label="Reading progress: one segment per section">
+    <div class="seg done" data-label="00 · intro"></div>
+    <div class="seg done" data-label="01 · the problem"></div>
+    <div class="seg active" data-label="02 · the potential solutions"></div>
+    <div class="seg" data-label="03 · reference"></div>
+    <div class="seg" data-label="04 · wrap-up"></div>
+  </div>
+
+  <!-- ======= chrome ======= -->
+  <header class="topbar">
+    <span class="wordmark">wicksipedia<span class="slash">/</span></span>
+    <span class="env">● prod</span>
+    <nav aria-label="Site">
+      <a href="#" class="active">Blog</a>
+      <a href="#">Tags</a>
+      <a href="#">About</a>
+      <a href="#">Archives</a>
+    </nav>
+    <span class="right">
+      <span>build d56a1b1</span>
+      <button class="theme-btn" id="theme-toggle" aria-label="Toggle light/dark theme">theme: dark</button>
+    </span>
+  </header>
+
+  <div class="shell">
+
+    <!-- ======= HOMEPAGE TREATMENT ======= -->
+    <section class="statusgrid">
+      <div>
+        <h1>Matt Wicks — Solution Architect at SSW</h1>
+        <p class="sub">CI/CD, cloud-native, and clean code. <b>Opinions held loosely, pipelines held tightly.</b></p>
+      </div>
+      <div class="kpis num" aria-label="Site metrics">
+        <div class="kpi"><div class="v">17</div><div class="l">posts</div></div>
+        <div class="kpi"><div class="v ok">passing</div><div class="l">pipeline</div></div>
+        <div class="kpi"><div class="v">2026-06-07</div><div class="l">last deploy</div></div>
+      </div>
+    </section>
+
+    <p class="sect-label">latest deploy</p>
+    <a class="latest" href="#post">
+      <span class="statusline">
+        <span><span class="dot-ok">●</span> published</span>
+        <span>2026-06-07T00:00:00Z</span>
+        <span>~9m 12s read</span>
+        <span>rev d56a1b1</span>
+      </span>
+      <h2>Aspire led me to the pit of success (but things were broken on the first deploy)</h2>
+      <p class="desc">A 5-minute prod 500 fix that taught me why doing the boring observability work upfront is always worth it, and where .NET Aspire's managed-identity story still has a gap.</p>
+      <span class="chips">
+        <span class="chip">dotnet</span><span class="chip">azure</span><span class="chip">aspire</span><span class="chip">debugging</span><span class="chip">software-engineering</span>
+      </span>
+    </a>
+
+    <p class="sect-label">post ledger</p>
+    <div class="ledgerwrap">
+      <table class="ledger">
+        <thead>
+          <tr><th>id</th><th>title</th><th>status</th><th>published</th><th>read</th><th>tags</th></tr>
+        </thead>
+        <tbody>
+          <tr onclick="location.hash='post'">
+            <td class="id">#016</td>
+            <td class="title">Git Worktrees Are Great Until You Forget Which One You're Running</td>
+            <td class="status"><span class="dot-ok">●</span> published</td>
+            <td class="ts">2026-03-06</td>
+            <td class="rt">~6m 40s</td>
+            <td class="tg">git, zsh, shell</td>
+          </tr>
+          <tr onclick="location.hash='post'">
+            <td class="id">#015</td>
+            <td class="title">My Fast Zsh Setup Without Oh My Zsh (But With Its Best Plugins)</td>
+            <td class="status"><span class="dot-ok">●</span> published</td>
+            <td class="ts">2026-03-05</td>
+            <td class="rt">~9m 05s</td>
+            <td class="tg">macos, zsh, terminal</td>
+          </tr>
+          <tr onclick="location.hash='post'">
+            <td class="id">#014</td>
+            <td class="title">One CLI to Rule npm, yarn, pnpm, and bun</td>
+            <td class="status"><span class="dot-ok">●</span> published</td>
+            <td class="ts">2026-03-05</td>
+            <td class="rt">~4m 20s</td>
+            <td class="tg">productivity, developer-setup</td>
+          </tr>
+          <tr onclick="location.hash='post'">
+            <td class="id">#013</td>
+            <td class="title">It Does What It Says on the Tin: Why Naming Matters More with AI</td>
+            <td class="status"><span class="dot-ok">●</span> published</td>
+            <td class="ts">2026-03-02</td>
+            <td class="rt">~5m 45s</td>
+            <td class="tg">ai, software-engineering</td>
+          </tr>
+          <tr onclick="location.hash='post'">
+            <td class="id">#012</td>
+            <td class="title">Your Mac Can See You Slouching</td>
+            <td class="status"><span class="dot-ok">●</span> published</td>
+            <td class="ts">2026-02-16</td>
+            <td class="rt">~4m 50s</td>
+            <td class="tg">macos, productivity, health</td>
+          </tr>
+          <tr onclick="location.hash='post'">
+            <td class="id">#011</td>
+            <td class="title">Speeding Up My Zsh Startup by 81%: From 640ms to 120ms</td>
+            <td class="status"><span class="dot-ok">●</span> published</td>
+            <td class="ts">2026-02-16</td>
+            <td class="rt">~7m 30s</td>
+            <td class="tg">macos, zsh, shell</td>
+          </tr>
+          <tr onclick="location.hash='post'">
+            <td class="id">#010</td>
+            <td class="title">The Future of Software Engineering Is Not What You Think</td>
+            <td class="status"><span class="dot-warn">●</span> revised</td>
+            <td class="ts">2026-01-22</td>
+            <td class="rt">~8m 15s</td>
+            <td class="tg">ai, software-engineering, career</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ======= DIVIDER ======= -->
+    <div class="cut" role="separator" aria-label="Post page treatment below"><span>post view</span></div>
+
+    <!-- ======= POST PAGE TREATMENT ======= -->
+    <article id="post" class="post-grid">
+      <div>
+        <header class="post-head">
+          <p class="statusline">
+            <span><span class="dot-ok">●</span> published</span>
+            <span>2020-08-16T00:00:00Z</span>
+            <span>~4m 30s read</span>
+            <span class="chip" style="border-radius:2px;">git</span>
+          </p>
+          <h1>How to Compare Git Diffs Across Multiple Commits in Git</h1>
+          <p class="desc">Learn how to diff changes across multiple commits in Git and Azure DevOps. Compare file changes over time with these practical diffing techniques and examples.</p>
+        </header>
+
+        <div class="prose">
+          <p>A while back one of my colleagues was investigating an issue on a project he had just re-joined. There had been a lot of work done on various facets of the codebase (from memory there were React and Xamarin front ends and a .NET Core API).</p>
+
+          <h2 id="s1"><span class="h-ix">01/</span>The Problem</h2>
+          <p>He wanted to see all the changes from when he last worked on the Xamarin project while he was away. If we unpack and abstract it, he wanted:</p>
+          <ul>
+            <li>for a set of commits from <em>start</em> to <em>end</em></li>
+            <li>for a given path (folder/file)</li>
+            <li>squash the commits and show the changes</li>
+          </ul>
+
+          <h2 id="s2"><span class="h-ix">02/</span>The Potential Solutions</h2>
+          <ol>
+            <li><strong>Bad choice</strong> — go to the <em>File</em> view for the repo in Azure DevOps and see the list of commits. This lists the specific commits that have changed files under the path but not the <strong>actual</strong> changes, which is what he needed.</li>
+            <li><strong>Unknown choice</strong> — I'm sure there's a nice GUI that could do this with a click-click-done, but he didn't have one already so this wasn't a feasible option.</li>
+            <li><strong>Good choice</strong> — grab the SHA of the last commit he worked on and run a quick git command.</li>
+          </ol>
+
+          <figure class="shot">
+            <div class="shot-frame">
+              <span class="t">azdo-history.png</span>
+              <span class="d">1440 × 810 · screenshot placeholder</span>
+            </div>
+            <figcaption><b>fig 01</b> — In Azure DevOps you can see the history of commits for a specific folder</figcaption>
+          </figure>
+
+          <p>Here's an example for the repo that creates this site:</p>
+
+          <div class="codeblock">
+            <div class="cb-head">
+              <span>range-diff.sh</span>
+              <span class="lang">sh</span>
+            </div>
+<pre><span class="c-com"># squash every change between two commits into one diff, scoped to a path</span>
+<span class="c-cmd">git</span> <span class="c-arg">diff</span> <span class="c-str">741d760</span> <span class="c-str">df32e83b</span> <span class="c-op">--</span> <span class="c-arg">gatsby-*.js</span>
+
+<span class="c-com"># general form</span>
+<span class="c-cmd">git</span> <span class="c-arg">diff</span> <span class="c-op">&lt;start commitish&gt; &lt;end commitish&gt; --</span> <span class="c-op">&lt;folder/file filter&gt;</span></pre>
+          </div>
+
+          <p>The <code>--</code> is there to separate the commits and the path. A few related forms worth keeping in your back pocket:</p>
+
+          <div class="tablewrap">
+            <table class="data">
+              <thead>
+                <tr><th>command</th><th>output</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>git diff A B</code></td><td>every change between two commits, squashed into one diff</td></tr>
+                <tr><td><code>git diff A B -- path</code></td><td>the same, limited to a folder, file, or glob</td></tr>
+                <tr><td><code>git diff A B --stat</code></td><td>a file-level summary instead of the full patch</td></tr>
+                <tr><td><code>git log A..B --oneline</code></td><td>the commits in the range, one per line</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <blockquote>
+            <p>After he ran this command, he was able to scroll through and see what had changed on the project — which helped him track down the issue, and when it was introduced.</p>
+          </blockquote>
+
+          <p>The advantage of the terminal approach was that it can work for both folders and files (even with file globs), it can be re-scoped by changing the commit range, and if you have git installed — you can run the command.</p>
+
+          <p>I'd love to know how you go about solving this type of problem, or what tools you use to help with your git workflow. See also: <a href="#">signing your commits with GPG</a> and <a href="#">managing repository settings as code</a>.</p>
+        </div>
+      </div>
+
+      <aside class="rail" aria-label="Table of contents">
+        <div class="rail-inner">
+          <p class="rl">pipeline / sections</p>
+          <a href="#post"><span class="seg-ix">00</span>Intro</a>
+          <a href="#s1"><span class="seg-ix">01</span>The Problem</a>
+          <a href="#s2" class="here"><span class="seg-ix">02</span>The Potential Solutions</a>
+          <a href="#post"><span class="seg-ix">03</span>Reference</a>
+          <a href="#post"><span class="seg-ix">04</span>Wrap-up</a>
+          <div class="rail-meta">
+            <div>status <b class="dot-ok">● published</b></div>
+            <div>rev <b>741d760</b></div>
+            <div>words <b>612</b></div>
+            <div>read <b>~4m 30s</b></div>
+          </div>
+        </div>
+      </aside>
+    </article>
+
+    <footer class="foot">
+      <span>© 2026 wicksipedia · <span class="ok">● all pipelines green</span></span>
+      <span>deployed from d56a1b1 · cloudflare workers</span>
+    </footer>
+
+  </div>
+
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    var next = root.dataset.theme === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    this.textContent = "theme: " + next;
+  });
+</script>
+</body>
+</html>

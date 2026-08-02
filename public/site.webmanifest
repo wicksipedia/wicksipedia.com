@@ -1,17 +1,17 @@
 {
-	"name": "Your Application Name",
-	"short_name": "App",
-	"description": "Application description",
+	"name": "Wicksipedia",
+	"short_name": "Wicksipedia",
+	"description": "Articles on CI/CD, DevOps, cloud-native architecture, and clean code by Matt Wicks, Solution Architect at SSW.",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#ffffff",
-	"theme_color": "#ffffff",
+	"background_color": "#faf9f6",
+	"theme_color": "#ae4508",
 	"orientation": "portrait-primary",
 	"icons": [
 		{
-			"src": "/favicon.svg",
-			"sizes": "any",
-			"type": "image/svg+xml",
+			"src": "/favicon-96x96.png",
+			"sizes": "96x96",
+			"type": "image/png",
 			"purpose": "any"
 		},
 		{
@@ -27,7 +27,7 @@
 			"purpose": "any maskable"
 		}
 	],
-	"categories": ["productivity"],
+	"categories": ["technology"],
 	"lang": "en",
 	"dir": "ltr"
 }
