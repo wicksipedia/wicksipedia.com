@@ -296,6 +296,7 @@ export type PageBlocksHero = {
   organization?: Maybe<Scalars['String']['output']>;
   organizationUrl?: Maybe<Scalars['String']['output']>;
   avatar?: Maybe<Scalars['String']['output']>;
+  alt?: Maybe<Scalars['String']['output']>;
 };
 
 export type PageBlocksPostFeed = {
@@ -335,6 +336,7 @@ export type PageBlocksHeroFilter = {
   organization?: InputMaybe<StringFilter>;
   organizationUrl?: InputMaybe<StringFilter>;
   avatar?: InputMaybe<ImageFilter>;
+  alt?: InputMaybe<StringFilter>;
 };
 
 export type NumberFilter = {
@@ -566,6 +568,7 @@ export type PageBlocksHeroMutation = {
   organization?: InputMaybe<Scalars['String']['input']>;
   organizationUrl?: InputMaybe<Scalars['String']['input']>;
   avatar?: InputMaybe<Scalars['String']['input']>;
+  alt?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type PageBlocksPostFeedMutation = {
@@ -614,7 +617,7 @@ export type SettingsMutation = {
 
 export type BlogPartsFragment = { __typename: 'Blog', title: string, description: string, pubDatetime: string, modDatetime?: string | null, author?: string | null, ogImage?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, draft?: boolean | null, canonicalURL?: string | null, hideEditPost?: boolean | null, timezone?: string | null, noindex?: boolean | null, body?: any | null };
 
-export type PagePartsFragment = { __typename: 'Page', seoTitle: string, heading?: string | null, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null };
+export type PagePartsFragment = { __typename: 'Page', seoTitle: string, heading?: string | null, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null, alt?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null };
 
 export type SettingsPartsFragment = { __typename: 'Settings', nav?: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials?: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null };
 
@@ -642,7 +645,7 @@ export type PageQueryVariables = Exact<{
 }>;
 
 
-export type PageQuery = { __typename?: 'Query', page: { __typename: 'Page', id: string, seoTitle: string, heading?: string | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null } };
+export type PageQuery = { __typename?: 'Query', page: { __typename: 'Page', id: string, seoTitle: string, heading?: string | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null, alt?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null } };
 
 export type PageConnectionQueryVariables = Exact<{
   before?: InputMaybe<Scalars['String']['input']>;
@@ -654,7 +657,7 @@ export type PageConnectionQueryVariables = Exact<{
 }>;
 
 
-export type PageConnectionQuery = { __typename?: 'Query', pageConnection: { __typename?: 'PageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'PageConnectionEdges', cursor: string, node?: { __typename: 'Page', id: string, seoTitle: string, heading?: string | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null } | null } | null> | null } };
+export type PageConnectionQuery = { __typename?: 'Query', pageConnection: { __typename?: 'PageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'PageConnectionEdges', cursor: string, node?: { __typename: 'Page', id: string, seoTitle: string, heading?: string | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null, alt?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null } | null } | null> | null } };
 
 export type SettingsQueryVariables = Exact<{
   relativePath: Scalars['String']['input'];
@@ -708,6 +711,7 @@ export const PagePartsFragmentDoc = gql`
       organization
       organizationUrl
       avatar
+      alt
     }
     ... on PageBlocksPostFeed {
       label

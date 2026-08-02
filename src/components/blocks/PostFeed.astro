@@ -27,9 +27,21 @@ import { slugifyStr } from "@/utils/slugify";
  */
 interface Props {
 	data: PostFeedBlock;
+	/**
+	 * `id`s for the two `<section>`s, allocated by `Blocks.astro` from the page's
+	 * one slugger so a second post feed gets `featured-1` / `recent-posts-1`
+	 * rather than duplicating these. Default to the bare names for a feed
+	 * rendered outside the block pipeline.
+	 */
+	featuredId?: string;
+	recentId?: string;
 }
 
-const { data } = Astro.props;
+const {
+	data,
+	featuredId = "featured",
+	recentId = "recent-posts",
+} = Astro.props;
 
 const sortedPosts = getSortedPosts(await getAllPosts());
 const featuredPosts = sortedPosts.filter((post) => post.data.featured);
@@ -48,10 +60,16 @@ function formatEditorialDate(date: string | Date) {
 const heroPost = featuredPosts.length > 0 ? featuredPosts[0] : recentPosts[0];
 const secondaryFeatured =
 	featuredPosts.length > 1 ? featuredPosts.slice(1) : [];
+// `Math.max(0, …)` because Tina's number field accepts negatives, and a negative
+// argument to `slice` counts from the END: `limit: -1` would silently drop the
+// last post and show every other one, which reads as a content bug rather than
+// as the bad input it is. Clamping makes `-1` mean "show none", which is at
+// least visible.
+const gridLimit = Math.max(0, data.limit ?? SITE.postPerIndex);
 const gridPosts = [
 	...secondaryFeatured,
 	...(featuredPosts.length > 0 ? recentPosts : recentPosts.slice(1)),
-].slice(0, data.limit ?? SITE.postPerIndex);
+].slice(0, gridLimit);
 
 const allPostsHref = data.allPostsHref ?? "/blog";
 const allPostsLabel = data.allPostsLabel ?? "All posts";
@@ -60,7 +78,7 @@ const allPostsLabel = data.allPostsLabel ?? "All posts";
 <div class="app-layout">
   {
     heroPost && (
-      <section id="featured" class="animate-reveal-delay-1 pt-14 pb-10">
+      <section id={featuredId} class="animate-reveal-delay-1 pt-14 pb-10">
         <div class="flex items-center gap-4 mb-8">
           <span
             class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap"
@@ -163,7 +181,7 @@ const allPostsLabel = data.allPostsLabel ?? "All posts";
 
   {
     gridPosts.length > 0 && (
-      <section id="recent-posts" class="animate-reveal-delay-2 pt-10 pb-8">
+      <section id={recentId} class="animate-reveal-delay-2 pt-10 pb-8">
         <h2 class="sr-only">Recent posts</h2>
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {gridPosts.map((post) => (

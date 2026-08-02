@@ -157,7 +157,13 @@ var heroBlockSchema = {
     { type: "string", name: "jobTitle", label: "Job Title" },
     { type: "string", name: "organization", label: "Organisation" },
     { type: "string", name: "organizationUrl", label: "Organisation URL" },
-    { type: "image", name: "avatar", label: "Avatar" }
+    { type: "image", name: "avatar", label: "Avatar" },
+    {
+      type: "string",
+      name: "alt",
+      label: "Avatar Alt Text",
+      description: "What a screen reader says in place of the image. Leave blank when the image is a portrait of the person in Name above \u2014 the name is already read out, so alt text repeats it. Fill it in when this Hero has no Name, or when the image is a logo, a screenshot, or anything else that means something on its own."
+    }
   ]
 };
 
@@ -182,7 +188,14 @@ var postFeedBlockSchema = {
 var proseBlockSchema = {
   name: "prose",
   label: "Prose",
-  fields: [{ type: "rich-text", name: "body", label: "Body" }]
+  fields: [
+    {
+      type: "rich-text",
+      name: "body",
+      label: "Body",
+      overrides: { headingLevels: ["h2", "h3", "h4", "h5", "h6"] }
+    }
+  ]
 };
 
 // tina/collections/page.ts

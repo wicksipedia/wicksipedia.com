@@ -1,6 +1,5 @@
 ---
 import { tinaField } from "@tinacms/astro/tina-field";
-import GithubSlugger from "github-slugger";
 import GitHubStats from "@/components/GitHubStats.astro";
 import type { GithubStatsBlock } from "@/lib/tina/pages";
 
@@ -14,23 +13,32 @@ import type { GithubStatsBlock } from "@/lib/tina/pages";
  * it was mid-document. As the *first* child of a new `.prose` container it would
  * otherwise get `margin-top: 0` and sit flush against the paragraph above.
  *
- * `GithubSlugger` rather than `slugifyStr`: this reproduces an id that Astro's
- * Markdown pipeline generated with rehype-slug, and `RichText.astro` uses the
- * same slugger for every other heading on the site.
+ * `animate-reveal-delay-2`, not `-1`: this block follows the prose block on the
+ * About page, which is `-1`, and two adjacent sections on the same delay reveal
+ * together instead of stepping. Nothing regressed here — before the migration
+ * the stats had no reveal animation of their own — but the staggering is the
+ * documented intent (see the animation utilities section of CLAUDE.md).
  */
 interface Props {
 	data: GithubStatsBlock;
+	/**
+	 * The heading's `id`, slugged by `Blocks.astro` from the page's ONE slugger.
+	 * Slugging here instead — which this component used to do, with a fresh
+	 * `new GithubSlugger()` per block — cannot dedupe across blocks, so two of
+	 * these with the same heading both emitted `id="github-stats"`. Undefined
+	 * when the heading is blank, in which case no `<h2>` renders at all.
+	 */
+	headingId?: string;
 }
 
-const { data } = Astro.props;
+const { data, headingId } = Astro.props;
 
 const heading = data.heading ?? "";
-const headingId = heading ? new GithubSlugger().slug(heading) : undefined;
 ---
 
 <div class="app-layout">
   <section
-    class="animate-reveal-delay-1 app-prose mt-12 max-w-app font-prose"
+    class="animate-reveal-delay-2 app-prose mt-12 max-w-app font-prose"
   >
     {
       heading && (

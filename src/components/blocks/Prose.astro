@@ -1,5 +1,6 @@
 ---
 import { tinaField } from "@tinacms/astro/tina-field";
+import type GithubSlugger from "github-slugger";
 import RichText from "@/components/RichText.astro";
 import type { ProseBlock } from "@/lib/tina/pages";
 
@@ -20,12 +21,23 @@ import type { ProseBlock } from "@/lib/tina/pages";
  * resolve `./file.png` against, so relative refs resolve to `/blog/<file>` and
  * will 404 rather than silently pointing at another post's asset. Page images
  * belong in Tina's media root and arrive as absolute `/uploads/...` paths.
+ *
+ * `<h1>` cannot be authored in this body: `prose.template.ts` restricts the
+ * editor's heading levels to h2-h6, and `scripts/check-page-prose.mjs` asserts
+ * it over the committed documents as well, because the schema governs the admin
+ * UI and both of these files were seeded by hand.
  */
 interface Props {
 	data: ProseBlock;
+	/**
+	 * The page's shared slugger, so heading ids dedupe against the other blocks'
+	 * ids rather than only within this body. `Blocks.astro` owns it; a prose
+	 * block rendered outside the pipeline falls back to RichText's own.
+	 */
+	slugger?: GithubSlugger;
 }
 
-const { data } = Astro.props;
+const { data, slugger } = Astro.props;
 ---
 
 <div class="app-layout">
@@ -33,6 +45,6 @@ const { data } = Astro.props;
     class="animate-reveal-delay-1 app-prose mt-8 max-w-app font-prose prose-img:border-0 prose-img:rounded-lg prose-img:shadow-sm"
     data-tina-field={tinaField(data, "body") || undefined}
   >
-    <RichText content={data.body} slug="" />
+    <RichText content={data.body} slug="" slugger={slugger} />
   </section>
 </div>

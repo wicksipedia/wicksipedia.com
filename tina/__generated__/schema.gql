@@ -184,6 +184,7 @@ type PageBlocksHero {
   organization: String
   organizationUrl: String
   avatar: String
+  alt: String
 }
 
 type PageBlocksPostFeed {
@@ -219,6 +220,7 @@ input PageBlocksHeroFilter {
   organization: StringFilter
   organizationUrl: StringFilter
   avatar: ImageFilter
+  alt: StringFilter
 }
 
 input NumberFilter {
@@ -373,6 +375,7 @@ input PageBlocksHeroMutation {
   organization: String
   organizationUrl: String
   avatar: String
+  alt: String
 }
 
 input PageBlocksPostFeedMutation {

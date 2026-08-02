@@ -29,6 +29,7 @@ fragment PageParts on Page {
       organization
       organizationUrl
       avatar
+      alt
     }
     ... on PageBlocksPostFeed {
       label

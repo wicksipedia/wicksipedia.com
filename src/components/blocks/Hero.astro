@@ -10,11 +10,12 @@ import type { CmsSocial } from "@/lib/tina/settings";
  * avatar swap, same `text-hero-*` tokens — with the hardcoded strings replaced
  * by block fields and each marked editable.
  *
- * This block owns the page's `<h1>` when it is the FIRST hero on the page;
- * `PageBlocks.astro` suppresses the page-level heading whenever a page contains
- * a hero at all, so the two can never both render one, and a second hero
- * renders `<h2>` rather than a second page title. See `primaryHeroIndex` in
- * `src/lib/tina/pages.ts` for the whole rule.
+ * This block owns the page's `<h1>` only when it is the page's FIRST block;
+ * `PageBlocks.astro` suppresses the page-level heading in exactly that case, so
+ * the two can never both render one. A hero further down renders `<h2>` — not
+ * because a second `<h1>` would be one too many, but because the headings in
+ * the blocks above it would otherwise precede the document's only `<h1>`. See
+ * `primaryHeroIndex` in `src/lib/tina/pages.ts` for the whole rule.
  *
  * The avatar comes from Tina's media root (`public/uploads`) so an editor can
  * swap it, which means Astro cannot optimise it — `<Image>` only processes
@@ -34,32 +35,47 @@ import type { CmsSocial } from "@/lib/tina/settings";
  * eager/high-priority because it is the LCP element above 768px. Both elements
  * point at the same URL, so this is one download whatever the viewport.
  *
- * `alt=""`: the image is a portrait sitting directly beside the `<h1>` that
- * names the person, so it is decorative — repeating the name would announce it
- * twice. There is no CMS alt field to say anything more useful.
+ * The avatar's alt text DEFAULTS to `""`, and for this document that is the
+ * right answer: the two `<img>`s are breakpoint-gated so only one renders, and
+ * it is a portrait sitting directly beside the heading that names the person —
+ * `alt="Matt Wicks"` would announce the name twice. But `alt` is a real field
+ * now, because neither half of that reasoning is guaranteed to hold. `name` is
+ * optional, and `primaryHeroIndex` deliberately supports a blank-name hero used
+ * as a plain image band: that renders a column whose only content is an image
+ * with `alt=""` and no adjacent text, invisible to assistive technology with
+ * nothing an author could do about it. `avatar` is editor-swappable too, so a
+ * logo or a product shot can end up here. The field description says when to
+ * leave it blank.
  */
 interface Props {
 	data: HeroBlock;
 	socials: CmsSocial[];
 	/**
-	 * True for the first hero on the page — the one that owns the `<h1>`.
-	 * `Blocks.astro` decides; a page can hold several hero blocks and only one
-	 * of them may be the page title. Defaults true so a hero rendered outside
-	 * the block pipeline still produces a heading rather than silently none.
+	 * True for a hero that is the page's first block — the one that owns the
+	 * `<h1>`. `Blocks.astro` decides; a page can hold several hero blocks and
+	 * only `blocks[0]` may be the page title. Defaults true so a hero rendered
+	 * outside the block pipeline still produces a heading rather than none.
 	 */
 	primary?: boolean;
+	/**
+	 * The `id` for this hero's `<section>`, allocated by `Blocks.astro` from the
+	 * page's one slugger so a second hero gets `hero-1` rather than a duplicate
+	 * `hero`. Defaults to the bare name for a hero rendered outside the pipeline.
+	 */
+	sectionId?: string;
 }
 
-const { data, socials, primary = true } = Astro.props;
+const { data, socials, primary = true, sectionId = "hero" } = Astro.props;
 
 const NameTag = primary ? "h1" : "h2";
 
 const avatar = data.avatar ?? "";
 const name = data.name ?? "";
+const alt = data.alt ?? "";
 ---
 
 <section
-  id="hero"
+  id={sectionId}
   class="animate-reveal overflow-hidden bg-hero-bg transition-[background] duration-300"
 >
   <div class="app-layout">
@@ -71,7 +87,7 @@ const name = data.name ?? "";
           avatar && (
             <img
               src={avatar}
-              alt=""
+              alt={alt}
               width="160"
               height="160"
               class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
@@ -130,7 +146,7 @@ const name = data.name ?? "";
           avatar && (
             <img
               src={avatar}
-              alt=""
+              alt={alt}
               width="500"
               height="500"
               class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"

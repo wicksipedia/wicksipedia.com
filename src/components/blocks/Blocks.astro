@@ -1,5 +1,6 @@
 ---
 import { tinaField } from "@tinacms/astro/tina-field";
+import GithubSlugger from "github-slugger";
 import { type CmsPage, pageBlocks, primaryHeroIndex } from "@/lib/tina/pages";
 import type { CmsSocial } from "@/lib/tina/settings";
 import GithubStats from "./GithubStats.astro";
@@ -32,22 +33,67 @@ interface Props {
 const { data, socials } = Astro.props;
 const blocks = pageBlocks(data);
 
-// Only the first hero renders the page's `<h1>`; a second one is a section, so
-// it renders `<h2>`. Derived from the shared helper so this cannot disagree
-// with PageBlocks.astro's decision to suppress the page-level heading.
+// Only a hero sitting at `blocks[0]` renders the page's `<h1>`; any other hero
+// is a section, so it renders `<h2>` and the page keeps its own heading above
+// it. Derived from the shared helper so this cannot disagree with
+// PageBlocks.astro's decision to suppress the page-level heading.
 const heroIndex = primaryHeroIndex(blocks);
+
+/**
+ * One slugger for the whole page, so a repeated block cannot emit a repeated
+ * `id`. Every block type below carried a STATIC id — `hero`, `featured`,
+ * `recent-posts` — and `GithubStats.astro` used to build its own slugger per
+ * block, which by construction could not dedupe across blocks: two GitHub Stats
+ * blocks with the same heading both emitted `id="github-stats"`. The block list
+ * has always been repeatable (that is why `primaryHeroIndex` exists), so those
+ * ids had to become page-scoped rather than block-scoped.
+ *
+ * The slug is taken HERE, at the call site, and the resulting string is passed
+ * down — rather than handing each block the slugger and letting it slug in its
+ * own frontmatter. These expressions are interpolations inside the synchronous
+ * `blocks.map()` below, so they run in document order on every build; child
+ * frontmatter does not carry that guarantee, and an id whose value depends on
+ * component scheduling is an id that can move between builds. The first
+ * occurrence therefore always keeps the bare name, and only repeats are
+ * suffixed (`hero`, then `hero-1`), which is what keeps existing deep links
+ * working.
+ *
+ * `Prose` is the exception: its headings come out of a rich-text AST walk inside
+ * `RichText.astro`, so it takes the slugger itself. Those ids are derived from
+ * heading TEXT and the walk is synchronous, so uniqueness holds whatever order
+ * the prose blocks render in — and because every static id above is allocated
+ * during this `.map()`, prose headings always dedupe against them rather than
+ * the other way round.
+ */
+const slugger = new GithubSlugger();
 ---
 
 {
   blocks.map((block, index) => (
     <div data-tina-field={tinaField(block) || undefined}>
       {block.__typename === "PageBlocksHero" && (
-        <Hero data={block} socials={socials} primary={index === heroIndex} />
+        <Hero
+          data={block}
+          socials={socials}
+          primary={index === heroIndex}
+          sectionId={slugger.slug("hero")}
+        />
       )}
-      {block.__typename === "PageBlocksPostFeed" && <PostFeed data={block} />}
-      {block.__typename === "PageBlocksProse" && <Prose data={block} />}
+      {block.__typename === "PageBlocksPostFeed" && (
+        <PostFeed
+          data={block}
+          featuredId={slugger.slug("featured")}
+          recentId={slugger.slug("recent-posts")}
+        />
+      )}
+      {block.__typename === "PageBlocksProse" && (
+        <Prose data={block} slugger={slugger} />
+      )}
       {block.__typename === "PageBlocksGithubStats" && (
-        <GithubStats data={block} />
+        <GithubStats
+          data={block}
+          headingId={block.heading ? slugger.slug(block.heading) : undefined}
+        />
       )}
     </div>
   ))

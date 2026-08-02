@@ -43,9 +43,18 @@ interface Props {
 	content: TinaRichTextContent | null;
 	/** Post folder slug, so colocated image refs resolve to the right folder. */
 	slug: string;
+	/**
+	 * A slugger to share with the rest of the page. A blog post is one body per
+	 * document, so it wants the default — one fresh slugger, exactly as Astro
+	 * used one per file. A CMS page can hold several prose blocks alongside
+	 * blocks carrying ids of their own, and those all have to be unique within
+	 * the one document, so `Blocks.astro` passes its own down. See the slugger
+	 * comment there.
+	 */
+	slugger?: GithubSlugger;
 }
 
-const { content, slug } = Astro.props;
+const { content, slug, slugger: sharedSlugger } = Astro.props;
 
 type AstNode = {
 	type?: string;
@@ -133,11 +142,14 @@ function textContent(node: AstNode): string {
 }
 
 /**
- * One slugger per rendered post, exactly as Astro used one per file. It carries
- * the de-duplication state that turns a repeated heading into `-1`, `-2`, so it
- * must see the headings in document order — which the pre-order walk guarantees.
+ * One slugger per rendered post, exactly as Astro used one per file — or the
+ * page's shared one, when a caller passed it. It carries the de-duplication
+ * state that turns a repeated heading into `-1`, `-2`, so it must see the
+ * headings in document order, which the pre-order walk guarantees. The walk is
+ * synchronous, so two bodies sharing a slugger cannot interleave inside it
+ * however Astro schedules them: uniqueness holds either way.
  */
-const slugger = new GithubSlugger();
+const slugger = sharedSlugger ?? new GithubSlugger();
 
 function walk(node: AstNode): AstNode {
 	if (node.type === "code_block") return highlight(node);
