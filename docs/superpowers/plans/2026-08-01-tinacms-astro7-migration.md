@@ -2902,7 +2902,9 @@ Three whole-branch reviews (accessibility/UX, security, spec) ran at the end of 
 
   `scripts/check-token-leak.mjs` now runs inside all three build scripts and fails on exactly that. It reports what it found in `dist/server` rather than asserting it, so the accepted trade-off stays visible. Mutation-proved: planting the token in `dist/client` turns it red naming the file; an absent `TINA_TOKEN` reports **SKIPPED, explicitly not a pass**; a missing or empty `dist/client` is a hard failure; and a token under 12 characters is refused as too short to be a meaningful needle.
 
-- [x] **Credentials — ALREADY CONFIGURED.** `PUBLIC_TINA_CLIENT_ID` and `TINA_TOKEN` exist in the Cloudflare Workers Builds environment. **One fix outstanding: `TINA_TOKEN` is stored as a Variable, not a Secret.** Variables are plaintext, readable by anyone with dashboard access, and can surface in build logs; Secrets are encrypted at rest and write-only. `PUBLIC_TINA_CLIENT_ID` as a Variable is correct — it is public by design. Change the token's type in the dashboard; no code impact.
+- [x] **Credentials — DONE, on GitHub.** `PUBLIC_TINA_CLIENT_ID` is a repo **variable** and `TINA_TOKEN` a repo **secret**, matching what each is: the client id is public by design and ships to the browser, the token is not. The Cloudflare-side copies were deleted along with Workers Builds.
+
+  That is safe because nothing needs them at runtime: the only reads are in `tina/config.ts`, which the Tina CLI executes during the build, and `astro:env` declares only `PUBLIC_GOOGLE_SITE_VERIFICATION`. The token is baked into the generated client at build time — which is the trade recorded above — so the deployed Worker reads no environment for Tina at all.
 
 - [x] **Deploy path — SETTLED, after trying it the other way first: GitHub Actions builds, wrangler deploys.**
 

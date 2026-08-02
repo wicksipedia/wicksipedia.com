@@ -1,5 +1,5 @@
 ---
-import { Image } from "astro:assets";
+import { getImage, Image } from "astro:assets";
 import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
@@ -72,8 +72,24 @@ const ogImage = ogImageUrl
 	? new URL(ogImageUrl, Astro.url.origin).href
 	: undefined;
 
+// One transform, used by both the <img> below and the <head> preload. Computing
+// them separately is how the two drift and the browser downloads twice.
+const HERO_WIDTHS = [640, 960, 1280, 1600, 1920];
+const HERO_SIZES = "100vw";
+const hero =
+	initOgImage && typeof initOgImage !== "string"
+		? await getImage({
+				src: initOgImage,
+				widths: HERO_WIDTHS,
+				sizes: HERO_SIZES,
+			})
+		: null;
+
 const layoutProps = {
 	title: `${title} | ${SITE.title}`,
+	preloadImage: hero
+		? { srcSet: hero.srcSet.attribute, sizes: HERO_SIZES }
+		: undefined,
 	author,
 	description,
 	pubDatetime,
@@ -122,14 +138,20 @@ const nextPost =
             class="absolute inset-0 h-full w-full object-cover object-center"
           />
         ) : (
-          <Image
-            src={initOgImage}
-            alt={title}
-            widths={[640, 960, 1280, 1600, 1920]}
-            sizes="100vw"
-            loading="eager"
-            class="absolute inset-0 h-full w-full object-cover object-center"
-          />
+          hero && (
+            <img
+              src={hero.src}
+              srcset={hero.srcSet.attribute}
+              sizes={HERO_SIZES}
+              width={hero.attributes.width}
+              height={hero.attributes.height}
+              alt={title}
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              class="absolute inset-0 h-full w-full object-cover object-center"
+            />
+          )
         )}
 
         {/* Dramatic gradient overlay — strong enough for WCAG AA text contrast */}

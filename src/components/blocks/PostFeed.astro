@@ -115,7 +115,7 @@ const allPostsLabel = data.allPostsLabel ?? "All posts";
                   <Image
                     src={heroPost.data.ogImage}
                     alt=""
-                    widths={[180, 360, 480, 640]}
+                    widths={[360, 640, 992, 1280, 1984]}
                     sizes="(max-width: 895px) calc(100vw - 2rem), (max-width: 1279px) 864px, 992px"
                     loading="eager"
                     fetchpriority="high"
@@ -204,7 +204,7 @@ const allPostsLabel = data.allPostsLabel ?? "All posts";
                     <Image
                       src={post.data.ogImage}
                       alt=""
-                      widths={[320, 480]}
+                      widths={[320, 480, 640, 992]}
                       sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1279px) 432px, 496px"
                       quality={60}
                       loading="lazy"

@@ -21,6 +21,8 @@ type Props = {
 	isHomepage?: boolean;
 	breadcrumbs?: Array<{ name: string; url?: string }>;
 	noindex?: boolean;
+	/** LCP image to preload. Must match the rendered `srcset`/`sizes` exactly. */
+	preloadImage?: { srcSet: string; sizes: string };
 };
 
 const {
@@ -36,6 +38,7 @@ const {
 	isHomepage = false,
 	breadcrumbs,
 	noindex = false,
+	preloadImage,
 } = Astro.props;
 
 /**
@@ -154,6 +157,17 @@ const breadcrumbData = breadcrumbs
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
+    {
+      preloadImage && (
+        <link
+          rel="preload"
+          as="image"
+          imagesrcset={preloadImage.srcSet}
+          imagesizes={preloadImage.sizes}
+          fetchpriority="high"
+        />
+      )
+    }
 
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
     <link rel="icon" href="/favicon.ico" />

@@ -36,7 +36,7 @@ const { title, description, ogImage, tags, ...props } = data;
         <Image
           src={ogImage}
           alt=""
-          widths={[320, 480]}
+          widths={[320, 480, 640, 960, 1280]}
           sizes="(max-width: 640px) 100vw, 50vw"
           loading="lazy"
           class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
