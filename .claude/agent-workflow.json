@@ -32,8 +32,8 @@
     {
       "name": "lint",
       "command": "bun run lint",
-      "expect": "fails ONLY on DESIGN.json, src/utils/og-templates/post.js, src/utils/og-templates/site.js \u2014 all pre-existing on main. src/components/Header.astro was on this list until Task 2.1; its only complaint was a missing blank line after the imports, which the settings-prop edit supplied.",
-      "why": "Not a clean gate. Any file outside that list appearing is a regression introduced by this branch."
+      "expect": "EXACTLY 3 errors + 1 warning: 'Found 3 errors.' / 'Found 1 warning.' over 93 files. The three are DESIGN.json (format), src/utils/og-templates/post.js (format AND lint/correctness/noUnusedImports \u2014 one file, two diagnostics), src/utils/og-templates/site.js (format). All pre-existing on main. src/components/Header.astro was on this list until Task 2.1, when the settings-prop edit supplied the blank line after its imports that was its only complaint \u2014 its absence is a fix, not a regression.",
+      "why": "Not a clean gate. Any file outside that list is a regression introduced by this branch. READ THE COUNT, AND READ EVERY '\u2501\u2501\u2501' HEADER \u2014 DO NOT grep the output for a file-name pattern. Biome prints format diagnostics as 'path format' but lint/assist diagnostics as 'path:line:col rule', so a filter anchored on the filename followed by a space silently hides every assist/organizeImports failure. That is exactly how Task 2.1 reported '3 files, clean' while the gate was actually failing on 4 branch-modified files (src/constants.ts, src/layouts/AboutLayout.astro, src/pages/blog/[...page].astro, src/pages/tags/[tag]/[...page].astro). The 'Found N errors' line never reconciled with the filtered list and that was the tell."
     }
   ],
   "notes": "Migration branch feat/tinacms-astro7. Plan: docs/superpowers/plans/2026-08-01-tinacms-astro7-migration.md. Progress ledger: .superpowers/sdd/2026-08-01-tinacms-astro7-migration/progress.md. Package manager is bun, never npm/pnpm."
