@@ -50,9 +50,21 @@
  * `heroBlockSchema` so renaming either fails loudly instead of quietly matching
  * nothing.
  *
- * The set of fields to lint is derived from the block schemas rather than
- * hardcoded to `prose.body`, so a rich-text field added to any block is covered
- * the day it lands instead of the day someone remembers this file.
+ * The set of FIELDS to lint is derived from the block schemas rather than
+ * hardcoded to `prose.body`, so a rich-text field added to any of the templates
+ * below is covered the day it lands instead of the day someone remembers this
+ * file.
+ *
+ * The set of TEMPLATES is not derived from anything — it is four literal
+ * imports, and nothing reconciles it with `tina/collections/page.ts`. That used
+ * to be silent: a block whose `_template` was absent got an empty field list,
+ * `blocksSeen` incremented, `bodiesLinted` did not, and every reconciliation in
+ * this file still held. A fifth block template with a rich-text field would
+ * have shipped with no heading restriction, no corpus scan and no Vale lint,
+ * and this suite would have exited 0 while the header above claimed the
+ * opposite. An unknown `_template` is now a hard failure, so the CONTENT
+ * reconciles the list: the first page using a new block fails until its schema
+ * is imported here.
  *
  * `gray-matter` is the parser `@tinacms/graphql` reads these documents with, so
  * the check sees the same frontmatter the CMS does.
@@ -312,7 +324,25 @@ try {
 
 		for (const [index, block] of blocks.entries()) {
 			blocksSeen++;
-			const fields = richTextFields.get(block?._template) ?? [];
+			// `?? []` used to live on the lookup below, which made an unrecognised
+			// block a SILENT SKIP — see the TEMPLATES paragraph at the top. Every
+			// count in this file stayed consistent while the block went unlinted,
+			// so nothing could notice. Now it stops the run.
+			if (!richTextFields.has(block?._template)) {
+				err(
+					`FAIL: ${PAGES_BASE}/${file} → blocks[${index}] has _template ${JSON.stringify(block?._template)}, which this check has no schema for`,
+				);
+				err(`  Known templates: ${[...richTextFields.keys()].join(", ")}`);
+				err(
+					"  Import its schema into TEMPLATES here. Until then its rich-text fields",
+				);
+				err(
+					"  get no heading restriction, no corpus scan and no Vale lint, and this",
+				);
+				err("  suite would exit 0 having skipped the block entirely.");
+				process.exit(1);
+			}
+			const fields = richTextFields.get(block._template);
 			for (const field of fields) {
 				const body = block?.[field];
 				if (typeof body !== "string" || body.trim() === "") {
