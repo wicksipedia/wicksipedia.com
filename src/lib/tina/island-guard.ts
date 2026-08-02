@@ -39,6 +39,35 @@ export function isValidBlogSlug(
 }
 
 /**
+ * One path segment for a `page` document: lowercase letters, digits, hyphens.
+ *
+ * Deliberately a second constant rather than a reuse of BLOG_SLUG_PATTERN. The
+ * two allowlists describe different things — a post *folder* under
+ * `src/data/blog`, and a page *file* under `content/pages` — and the page one is
+ * pinned to what `pageCollection.ui.filename.slugify` can actually emit
+ * (`tina/collections/page.ts`: `[^a-z0-9]+` collapsed to `-`, ends trimmed,
+ * `untitled` for an empty result). Sharing one regex would silently widen
+ * whichever guard the *other* collection later needed to loosen.
+ */
+export const PAGE_SLUG_PATTERN = /^[a-z0-9-]+$/;
+
+/**
+ * True only for a page slug safe to interpolate into a Tina relativePath.
+ *
+ * `getPage` builds `${slug}.mdx`, and Tina resolves `..` inside a relativePath
+ * rather than rejecting it — the same property that let
+ * `/tina-island/blog?slug=../settings/index.json` reach another collection
+ * before `isValidBlogSlug` existed. There are now three collections to escape
+ * between, so the cross-collection cases in `scripts/check-island-guard.mjs`
+ * are load-bearing rather than hypothetical.
+ */
+export function isValidPageSlug(
+	slug: string | null | undefined,
+): slug is string {
+	return typeof slug === "string" && PAGE_SLUG_PATTERN.test(slug);
+}
+
+/**
  * The one document the `settings` collection holds, and the only relativePath
  * the settings islands may ever address.
  *

@@ -6,8 +6,14 @@
  * rather than rejecting it, so before this guard `../blog/git-and-diffs`
  * reached the real document; escape from the collection was prevented by the
  * index lookup failing, not by any check. Task 2.1 added the second collection
- * (`settings`), so there is now somewhere to escape *to* — the cross-collection
- * cases below are load-bearing rather than hypothetical.
+ * (`settings`) and Task 3.1 the third (`page`), so there is now somewhere to
+ * escape *to* — the cross-collection cases below are load-bearing rather than
+ * hypothetical.
+ *
+ * The `page` island takes its slug off the URL exactly as `blog` does
+ * (`/tina-island/page?slug=about`), and `getPage` interpolates it into
+ * `${slug}.mdx`. `isValidPageSlug` is the guard on that path and gets the same
+ * treatment here, cross-collection cases included.
  *
  * The settings islands take the other approach to the same problem: they read
  * no URL parameter at all and address one constant relativePath, checked by
@@ -30,12 +36,14 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
 	isValidBlogSlug,
+	isValidPageSlug,
 	isValidSettingsPath,
 	resolveIslandEntry,
 	SETTINGS_RELATIVE_PATH,
 } from "../src/lib/tina/island-guard.ts";
 
 const BASE = "src/data/blog";
+const PAGES_BASE = "content/pages";
 
 /** @param {string} m */
 const out = (m) => process.stdout.write(`${m}\n`);
@@ -149,6 +157,118 @@ const crossCollection = CASES.filter(([, , , group]) => group === "x").length;
 if (crossCollection < 5) {
 	err(`FAIL: only ${crossCollection} cross-collection cases left in the table`);
 	process.exit(1);
+}
+
+/**
+ * The `page` island reads `?slug=` off the URL and `getPage` interpolates it
+ * into `${slug}.mdx`, so it needs the same allowlist treatment as `blog`.
+ *
+ * The cross-collection group is tagged `x` for the same reason as above: the
+ * shapes that reach *out* of `content/pages` do not all contain a giveaway
+ * substring, and a substring test would quietly stop counting them.
+ * @type {Array<[string, string, boolean] | [string, string, boolean, "x"]>}
+ */
+const PAGE_CASES = [
+	// --- traversal and separators -----------------------------------------
+	["parent traversal", "slug=../pages/about", false],
+	["traversal mid-path", "slug=about/../about", false],
+	["absolute path", "slug=/etc/passwd", false],
+	["url-encoded separator", "slug=pages%2Fabout", false],
+	["url-encoded traversal", "slug=..%2Fabout", false],
+	["bare dot-dot", "slug=..", false],
+	["backslash separator", "slug=..\\about", false],
+	["bare backslash", "slug=a\\b", false],
+	["url-encoded backslash", "slug=a%5Cb", false],
+	["null byte", "slug=about%00.mdx", false],
+	["empty slug", "slug=", false],
+	["slug absent entirely", "other=1", false],
+	["uppercase", "slug=About", false],
+	["underscore", "slug=about_us", false],
+	// `getPage` appends `.mdx` itself; a slug carrying its own extension is
+	// either a typo or an attempt to address a different file.
+	["dot in slug", "slug=about.mdx", false],
+	["leading space", "slug=%20about", false],
+	["wildcard", "slug=*", false],
+	["nested folder", "slug=a/b", false],
+
+	// --- reaching the OTHER collections -----------------------------------
+	// `content/pages/../settings/index.json` is a real path on disk: the
+	// settings collection sits at `content/settings`, one directory up from
+	// this collection's root. This group is not theoretical.
+	["hop to settings", "slug=../settings/index", false, "x"],
+	["hop to settings, encoded", "slug=..%2Fsettings%2Findex", false, "x"],
+	[
+		"hop to the blog collection",
+		"slug=../../src/data/blog/git-and-diffs/index",
+		false,
+		"x",
+	],
+	["out to the content root", "slug=../../content/settings/index", false, "x"],
+	["settings as a subfolder", "slug=settings/index", false, "x"],
+	["bare settings document", "slug=index.json", false, "x"],
+
+	// --- shapes that must keep working ------------------------------------
+	["plain page slug", "slug=about", true],
+	["hyphenated slug", "slug=about-me", true],
+	["digits in slug", "slug=case-study-2", true],
+	["single character", "slug=a", true],
+	// What `pageCollection.ui.filename.slugify` emits for a title that
+	// slugifies to nothing, and for a title colliding with a reserved route.
+	["the untitled fallback", "slug=untitled", true],
+	["a reserved-route rename", "slug=blog-page", true],
+];
+
+let pageChecked = 0;
+for (const [name, query, want] of PAGE_CASES) {
+	pageChecked++;
+	const got = isValidPageSlug(new URLSearchParams(query).get("slug"));
+	if (got !== want) {
+		failed++;
+		err(`FAIL: page slug "${name}"`);
+		err(`  query:    ${JSON.stringify(query)}`);
+		err(`  expected: ${want ? "accepted" : "rejected"}`);
+		err(`  actual:   ${got ? "accepted" : "rejected"}`);
+	}
+}
+
+const pageNegatives = PAGE_CASES.filter(([, , want]) => !want).length;
+const pagePositives = PAGE_CASES.length - pageNegatives;
+if (pageNegatives < 20 || pagePositives < 5) {
+	err(
+		`FAIL: page case table lost coverage (${pageNegatives} reject / ${pagePositives} accept)`,
+	);
+	process.exit(1);
+}
+
+const pageCrossCollection = PAGE_CASES.filter(([, , , g]) => g === "x").length;
+if (pageCrossCollection < 6) {
+	err(
+		`FAIL: only ${pageCrossCollection} cross-collection page cases left in the table`,
+	);
+	process.exit(1);
+}
+
+// Same reason as the blog corpus: a guard tight enough to reject everything
+// passes every case above and takes every CMS page off the site. Routes are
+// INFERRED from this collection, so a rejected slug is a missing route.
+const pageSlugs = readdirSync(PAGES_BASE)
+	.filter((entry) => entry.endsWith(".mdx"))
+	.map((entry) => entry.slice(0, -".mdx".length));
+
+// An empty collection would make the loop below vacuously true. `listPages`
+// throws on the same condition at build time; this is the unit-level half.
+if (pageSlugs.length === 0) {
+	err(`FAIL: no page documents found under ${PAGES_BASE} — check is vacuous`);
+	process.exit(1);
+}
+
+let pageCorpusChecked = 0;
+for (const slug of pageSlugs) {
+	pageCorpusChecked++;
+	if (!isValidPageSlug(slug)) {
+		failed++;
+		err(`FAIL: real page slug rejected by the guard: ${slug}`);
+	}
 }
 
 /**
@@ -300,5 +420,5 @@ if (failed > 0) {
 }
 
 out(
-	`OK: ${checked} slug cases (${negatives} rejected, ${positives} accepted, ${crossCollection} cross-collection), ${corpusChecked} corpus slugs accepted, ${settingsChecked} settings-path cases, ${protoChecked} island-name cases, ${iconChecked} icon-name cases`,
+	`OK: ${checked} blog slug cases (${negatives} rejected, ${positives} accepted, ${crossCollection} cross-collection), ${corpusChecked} corpus slugs accepted, ${pageChecked} page slug cases (${pageNegatives} rejected, ${pagePositives} accepted, ${pageCrossCollection} cross-collection), ${pageCorpusChecked} corpus page slugs accepted, ${settingsChecked} settings-path cases, ${protoChecked} island-name cases, ${iconChecked} icon-name cases`,
 );
