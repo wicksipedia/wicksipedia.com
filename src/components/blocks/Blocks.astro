@@ -54,9 +54,20 @@ const heroIndex = primaryHeroIndex(blocks);
  * `blocks.map()` below, so they run in document order on every build; child
  * frontmatter does not carry that guarantee, and an id whose value depends on
  * component scheduling is an id that can move between builds. The first
- * occurrence therefore always keeps the bare name, and only repeats are
- * suffixed (`hero`, then `hero-1`), which is what keeps existing deep links
- * working.
+ * BLOCK-ALLOCATED occurrence therefore always keeps the bare name, and only
+ * repeats are suffixed (`hero`, then `hero-1`), which is what keeps existing
+ * deep links working. "First block-allocated" and not simply "first": prose
+ * heading ids are handed out later (see below), so a prose body whose heading
+ * happens to slug to `hero` takes `hero-1` even though it precedes the hero
+ * block in the document. Unique either way, which is the property that matters.
+ *
+ * Site chrome ids are NOT in this slugger's namespace — `main-content` on the
+ * island `<main>`, and `skip-to-content` / `nav-menu` / `theme-btn` and friends
+ * in `Header.astro`. A heading that slugs onto one of those still duplicates it.
+ * Left alone deliberately: seeding the slugger with them would make this file
+ * depend on the header's internals, and the practical effect is nil because
+ * `href="#main-content"` resolves to the first match in document order, which is
+ * the `<main>`.
  *
  * `Prose` is the exception: its headings come out of a rich-text AST walk inside
  * `RichText.astro`, so it takes the slugger itself. Those ids are derived from
@@ -66,6 +77,14 @@ const heroIndex = primaryHeroIndex(blocks);
  * the other way round.
  */
 const slugger = new GithubSlugger();
+
+/**
+ * `github-slugger` returns "" for a heading carrying no alphanumerics — `!!!`,
+ * `…`, a bare emoji (measured). `id=""` is not a valid HTML id, so such a
+ * heading gets no id rather than a broken one, and the `<h2>` still renders.
+ */
+const headingIdFor = (heading?: string | null) =>
+	heading ? slugger.slug(heading) || undefined : undefined;
 ---
 
 {
@@ -92,7 +111,7 @@ const slugger = new GithubSlugger();
       {block.__typename === "PageBlocksGithubStats" && (
         <GithubStats
           data={block}
-          headingId={block.heading ? slugger.slug(block.heading) : undefined}
+          headingId={headingIdFor(block.heading)}
         />
       )}
     </div>

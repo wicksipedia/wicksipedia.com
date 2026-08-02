@@ -141,26 +141,44 @@ if (declaredRichTextFields.length === 0) {
  */
 const ALLOWED_HEADING_LEVELS = new Set(["h2", "h3", "h4", "h5", "h6"]);
 
-const proseHeadingLevels =
-	proseBlockSchema.fields?.find((field) => field.name === "body")?.overrides
-		?.headingLevels ?? [];
-if (proseHeadingLevels.length === 0) {
-	err("FAIL: prose.body declares no overrides.headingLevels — the admin's");
-	err("  heading dropdown still offers Heading 1. See prose.template.ts.");
-	process.exit(1);
-}
-const schemaDisagreement = [
-	...proseHeadingLevels.filter((level) => !ALLOWED_HEADING_LEVELS.has(level)),
-	...[...ALLOWED_HEADING_LEVELS].filter(
-		(level) => !proseHeadingLevels.includes(level),
-	),
-];
-if (schemaDisagreement.length > 0) {
-	err(
-		`FAIL: prose.body allows [${proseHeadingLevels.join(", ")}] but this check enforces [${[...ALLOWED_HEADING_LEVELS].join(", ")}]`,
-	);
-	err(`  disagreeing on: ${schemaDisagreement.join(", ")}`);
-	process.exit(1);
+/**
+ * EVERY rich-text field on every block template, not just `prose.body`.
+ *
+ * `richTextFields` above derives what gets linted and heading-checked from all
+ * four templates on purpose — the file header brags about it. Asserting the
+ * schema restriction on one field BY NAME would leave that asymmetry open: a
+ * rich-text field added to `hero`, `postFeed` or `githubStats` would be
+ * heading-checked here while its editor still offered "Heading 1", and the h1
+ * would surface only once somebody authored one. Same derivation, same set.
+ */
+let schemaFieldsChecked = 0;
+for (const template of TEMPLATES) {
+	for (const field of template.fields ?? []) {
+		if (field.type !== "rich-text") continue;
+		schemaFieldsChecked++;
+		const levels = field.overrides?.headingLevels ?? [];
+		if (levels.length === 0) {
+			err(
+				`FAIL: ${template.name}.${field.name} declares no overrides.headingLevels —`,
+			);
+			err(
+				"  its editor's heading dropdown still offers Heading 1. See prose.template.ts",
+			);
+			err("  for the shape, and why toolbarOverride is not the instrument.");
+			process.exit(1);
+		}
+		const disagreement = [
+			...levels.filter((level) => !ALLOWED_HEADING_LEVELS.has(level)),
+			...[...ALLOWED_HEADING_LEVELS].filter((level) => !levels.includes(level)),
+		];
+		if (disagreement.length > 0) {
+			err(
+				`FAIL: ${template.name}.${field.name} allows [${levels.join(", ")}] but this check enforces [${[...ALLOWED_HEADING_LEVELS].join(", ")}]`,
+			);
+			err(`  disagreeing on: ${disagreement.join(", ")}`);
+			process.exit(1);
+		}
+	}
 }
 
 /**
@@ -278,7 +296,9 @@ try {
 	let emptyBodies = 0;
 	let parseFailures = 0;
 	let headingsSeen = 0;
+	let bodiesHeadingScanned = 0;
 	let headingFailures = 0;
+	let pagesWithHeading = 0;
 	let words = 0;
 	/** @type {Array<[string, string]>} scratch file → source location */
 	const provenance = [];
@@ -289,6 +309,37 @@ try {
 		pagesParsed++;
 		const slug = file.slice(0, -extname(file).length);
 		const blocks = Array.isArray(data.blocks) ? data.blocks : [];
+
+		// ZERO <h1> is the other way a page loses its heading, and it arrives by
+		// the same hand-edit path this whole file exists for.
+		// `PageBlocks.astro` falls back `heading || seoTitle`, and the doc comments
+		// there and in `pages.ts` both say seoTitle "is `required: true`, so this is
+		// never empty". But `required` is FORM validation: the generated GraphQL
+		// type is `String!`, which forbids null and says nothing about "". A
+		// hand-written `seoTitle: ""` on a page whose first block is not a named
+		// hero renders a document whose first heading is an <h2> and whose <h1>
+		// count is 0 — worse than the two-<h1> case the rest of this guards.
+		//
+		// Mirrors `primaryHeroIndex`: only `blocks[0]`, only a non-blank `name`.
+		const firstBlock = blocks[0];
+		const heroOwnsHeading =
+			firstBlock?._template === "hero" &&
+			typeof firstBlock.name === "string" &&
+			firstBlock.name.trim() !== "";
+		const pageHeading =
+			`${data.heading ?? ""}`.trim() || `${data.seoTitle ?? ""}`.trim();
+		if (heroOwnsHeading || pageHeading !== "") {
+			pagesWithHeading++;
+		} else {
+			err(`FAIL: ${PAGES_BASE}/${file} would render no <h1> at all`);
+			err(
+				"  Its first block is not a Hero with a Name, and both Page Heading and",
+			);
+			err(
+				"  Meta Title are blank. `required: true` is a form rule, not a content one.",
+			);
+			process.exit(1);
+		}
 
 		for (const [index, block] of blocks.entries()) {
 			blocksSeen++;
@@ -330,6 +381,7 @@ try {
 				// hand-edited file, which is how both of these documents were made.
 				const headings = collectHeadings(ast);
 				headingsSeen += headings.length;
+				bodiesHeadingScanned++;
 				for (const heading of disallowedHeadings(headings)) {
 					headingFailures++;
 					err(
@@ -381,6 +433,29 @@ try {
 		process.exit(1);
 	}
 
+	// The corpus legitimately contains zero headings today, so "0 disallowed" is
+	// what a WORKING scan prints and also what deleting the scan prints. Counting
+	// the bodies it walked, and reconciling against the bodies extracted, is the
+	// assertion that can tell those apart — the same trick this file already uses
+	// on Vale's "in N files" count, and for the same reason.
+	if (bodiesHeadingScanned !== bodiesLinted) {
+		err(
+			`FAIL: scanned ${bodiesHeadingScanned} of ${bodiesLinted} prose body/bodies for headings`,
+		);
+		err("  Every extracted body must be walked, or the h1 rule is unenforced");
+		err("  for the ones that were skipped.");
+		process.exit(1);
+	}
+
+	// Likewise: the zero-<h1> guard runs per page, so prove it saw every page
+	// rather than short-circuiting past some.
+	if (pagesWithHeading !== pagesParsed) {
+		err(
+			`FAIL: confirmed a heading for ${pagesWithHeading} of ${pagesParsed} page(s)`,
+		);
+		process.exit(1);
+	}
+
 	let valeOutput = "";
 	let valeFailed = false;
 	try {
@@ -420,7 +495,7 @@ try {
 		exitCode = 1;
 	} else {
 		out(
-			`OK: ${bodiesLinted} page prose bodies (${words} words) from ${pagesParsed} page(s) and ${blocksSeen} block(s) parse without invalid_markdown and lint clean (${emptyBodies} empty rich-text field(s) skipped); ${fixtureRuns} heading-level fixture run(s) and ${headingsSeen} corpus heading(s) are all within ${[...ALLOWED_HEADING_LEVELS].join("/")}; Vale confirms it read ${valeRead} file(s)`,
+			`OK: ${bodiesLinted} page prose bodies (${words} words) from ${pagesParsed} page(s) and ${blocksSeen} block(s) parse without invalid_markdown and lint clean (${emptyBodies} empty rich-text field(s) skipped); ${schemaFieldsChecked} rich-text field(s) restrict headings to ${[...ALLOWED_HEADING_LEVELS].join("/")}, ${fixtureRuns} heading-level fixture run(s) agree, and ${bodiesHeadingScanned} scanned body/bodies hold ${headingsSeen} conforming heading(s); all ${pagesWithHeading} page(s) render exactly one <h1>; Vale confirms it read ${valeRead} file(s)`,
 		);
 	}
 } finally {
