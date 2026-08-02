@@ -48,16 +48,27 @@ serving `TypeError: fetch failed` on every page. Each piece here earns its place
   GraphQL server, and streams Astro's output so the terminal behaves normally.
 - The `trap` stops the daemon on Ctrl-C. Without it the daemon **survives** the
   interrupt, keeps port 4321, and serves 500s once Tina is gone — and the next
-  `bun run dev` silently attaches to that poisoned server. All three signals are
-  trapped because a non-interactive shell will not run an `EXIT` trap when it is
-  killed by an untrapped `INT`.
+  `bun run dev` silently attaches to that poisoned server. `EXIT` alone is
+  enough on this machine's `/bin/sh` (bash 3.2 does run an `EXIT` trap when an
+  untrapped `INT` kills it — measured); `INT TERM` are listed as portability
+  belt-and-braces, not because `EXIT` is insufficient here.
 - `--datalayer-port 9007` matches the build scripts. Tina's datalayer defaults
   to 9000, which another tool on this machine holds; that has broken a build.
 
 Notes: the dev server is **https** (`@vitejs/plugin-basic-ssl`), so `curl` needs
-`-k`. The admin SPA is served from `public/`, and Vite does not resolve
-directory indexes there — `/admin/` is a 404 in dev, `/admin/index.html` is the
-URL (which is what TinaCMS's own startup banner prints).
+`-k`. The admin SPA is served out of `public/admin`, and in dev the three URLs
+behave differently — measured, not assumed:
+
+| URL | dev |
+|---|---|
+| `/admin` | 302 → `/admin/index.html` (`tinaAdminDevRedirect()`, `astro.config.ts`) |
+| `/admin/` | **404** |
+| `/admin/index.html` | 200 — the URL TinaCMS's own startup banner prints |
+
+The trailing-slash 404 is `trailingSlash: "never"` (`astro.config.ts`): Astro
+answers `/admin/` itself before Tina's redirect middleware runs, even though
+that middleware explicitly tries to catch `/admin/`. Use `/admin` or the full
+`/admin/index.html`.
 
 If a dev server is ever stranded — a hard kill, a crashed terminal — clear it
 with `bunx astro dev stop`; `bunx astro dev status` reports what is running.
