@@ -1,5 +1,5 @@
 ---
-import { Image } from "astro:assets";
+import { getImage, Image } from "astro:assets";
 import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
@@ -49,11 +49,42 @@ const settings = (await getSettings()).data.settings;
 
 let ogImageUrl: string | undefined;
 
-// Determine OG image source
+/**
+ * The `og:image` / `twitter:image` derivative.
+ *
+ * This used to be `initOgImage.src` — the RAW `ImageMetadata.src`, i.e. the
+ * untransformed source file. The covers are 0.5-2.2 MB at up to 2978px wide, and
+ * every social crawler that fetched a post pulled the whole thing. The on-page
+ * hero above is fine: it goes through <Image>. The meta tag was the gap.
+ *
+ * JPEG, not WebP. Facebook and X both handle WebP now, but LinkedIn's crawler
+ * has a long history of failing on it, and LinkedIn is one of the two socials in
+ * `content/settings/index.json`. A card that silently does not render is worse
+ * than a larger file that always does.
+ *
+ * Width 1200, aspect ratio PRESERVED — deliberately not force-cropped to the
+ * canonical 1200x630. The covers are around 2.17:1 against that box's 1.91:1, so
+ * cropping would cut content unpredictably, and every platform crops to its own
+ * taste regardless. The job is to hand them enough pixels at a sane weight.
+ * `Math.min` because `getImage` will happily upscale a small source, and two
+ * covers here are narrower than 1200.
+ *
+ * `layout: "none"` because `image.layout` in astro.config.ts is `constrained`,
+ * which makes `getImage` build a srcSet this call has no use for — only `.src`
+ * is read.
+ */
 if (typeof initOgImage === "string") {
-	ogImageUrl = initOgImage; // Remote OG image (absolute URL)
+	// Remote OG image (absolute URL) — not ours to process, so untouched.
+	ogImageUrl = initOgImage;
 } else if (initOgImage?.src) {
-	ogImageUrl = initOgImage.src; // Local asset
+	const ogDerivative = await getImage({
+		src: initOgImage,
+		width: Math.min(1200, initOgImage.width),
+		format: "jpeg",
+		quality: 80,
+		layout: "none",
+	});
+	ogImageUrl = ogDerivative.src;
 }
 
 // Use dynamic OG image if enabled and no remote|local ogImage
