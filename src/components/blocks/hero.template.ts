@@ -7,8 +7,10 @@ import type { Template } from "tinacms";
  *
  * The seed values in `content/pages/home.mdx` are the literal strings
  * `src/pages/index.astro` rendered before the page became CMS-driven; the
- * avatar lives under Tina's media root (`public/uploads`) rather than
- * `src/assets/images` so an editor can swap it.
+ * avatar lives under Tina's media root (`src/assets/uploads`, stored as
+ * `/uploads/<file>`) rather than `src/assets/images` so an editor can swap it.
+ * The media root moved out of `public/` in Task 3.3 so that <Image> can
+ * optimise it — see `tina/config.ts`.
  *
  * `alt` is optional and blank on the seed document ON PURPOSE — see the comment
  * in `Hero.astro` for why `alt=""` is the correct answer there. It exists

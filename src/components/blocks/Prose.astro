@@ -20,7 +20,9 @@ import type { ProseBlock } from "@/lib/tina/pages";
  * `slug=""` because a page is not a post: there is no colocated image folder to
  * resolve `./file.png` against, so relative refs resolve to `/blog/<file>` and
  * will 404 rather than silently pointing at another post's asset. Page images
- * belong in Tina's media root and arrive as absolute `/uploads/...` paths.
+ * belong in Tina's media root and arrive as absolute `/uploads/...` paths, which
+ * `resolveBlogImage` hands to `resolveUploadImage` — since Task 3.3 that root is
+ * `src/assets/uploads`, so they are optimised rather than served raw.
  *
  * `<h1>` cannot be authored in this body: `prose.template.ts` restricts the
  * editor's heading levels to h2-h6, and `scripts/check-page-prose.mjs` asserts

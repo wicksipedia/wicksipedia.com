@@ -64,6 +64,29 @@ var blogCollection = {
       name: "body",
       label: "Body",
       isBody: true,
+      // The `<h1>` is the post title. `PostDetails.astro` renders it from
+      // frontmatter (through `PostHero.astro`), so a body that authors one
+      // gives the document two, and the second one is not the post.
+      //
+      // Without this the rich-text editor offers "Heading 1" in its block-type
+      // dropdown, its "Turn into" menu, its slash menu and its `# ` autoformat
+      // shortcut — every route to an h1 is one click away. `headingLevels` is
+      // documented in `@tinacms/schema-tools` as restricting all four.
+      //
+      // `overrides.headingLevels` and NOT `toolbarOverride`: the latter is
+      // marked `@deprecated use overrides.toolbar` there, and its values are
+      // toolbar ITEMS (`'heading'`, `'link'`, …), so the only heading-related
+      // thing it can express is removing the heading control altogether.
+      //
+      // It is also documented as UI-ONLY — existing content carrying a
+      // disallowed level still renders — so this is half the rule. The other
+      // half is the corpus scan in `scripts/check-content.mjs`, which matters
+      // here because all 17 posts were migrated by script rather than typed
+      // into the admin this restricts. The two share
+      // `scripts/lib/headings.mjs` so they cannot disagree about what is
+      // legal. Same pairing as `prose.template.ts` +
+      // `scripts/check-page-prose.mjs`, for pages.
+      overrides: { headingLevels: ["h2", "h3", "h4", "h5", "h6"] },
       ui: {
         // Editor-side companion to the hard cap in scripts/check-content.mjs.
         // parseMDX is superlinear on some inline runs, so an oversized body
@@ -229,7 +252,14 @@ var pageCollection = {
       //
       //   blog tags archives search   real Astro routes
       //   admin                       the TinaCMS SPA in public/admin
-      //   pagefind uploads            the search index and Tina's media root
+      //   pagefind                    the search index
+      //
+      // `uploads` is the one entry that no longer names a built directory:
+      // Tina's media root moved to `src/assets/uploads` in Task 3.3, so the
+      // build emits no `/uploads/` at all. Kept anyway — it IS a live URL
+      // under `astro dev` (`serveTinaUploadsInDev()` in astro.config.ts), and
+      // a page slug that shadowed it would break the admin's media previews
+      // for whoever was editing at the time.
       //
       // `about` is deliberately absent: it *is* one of the CMS pages
       // (`content/pages/about.mdx`), and `src/pages/about.mdx` goes away in
@@ -354,7 +384,24 @@ var config_default = defineConfig({
   media: {
     tina: {
       mediaRoot: "uploads",
-      publicFolder: "public"
+      // `src/assets`, NOT `public`. Astro copies `public/` verbatim and never
+      // processes it, so an editor-uploaded image shipped at its full source
+      // size: the 640x640 hero avatar was 131.6 KB of PNG rendered at 140 CSS
+      // px on mobile. Under `src/` the same file goes through <Image> — see
+      // `resolveUploadImage` in `src/lib/tina/images.ts`, which maps the ref
+      // back to its ImageMetadata the same way blog images already were.
+      //
+      // Only the on-disk location moves. Tina's MediaModel joins
+      // publicFolder + mediaRoot to read and write, but builds the STORED ref
+      // from mediaRoot alone (`/${mediaRoot}/${file}`), so documents keep
+      // saying `/uploads/<file>` and nothing needs migrating.
+      //
+      // The cost is that `/uploads/<file>` is no longer a real URL on the
+      // built site, which is what the media manager's thumbnails and the
+      // avatar field preview point at. `serveTinaUploadsInDev()` in
+      // astro.config.ts puts that back for `astro dev`, where editing
+      // actually happens.
+      publicFolder: "src/assets"
     }
   },
   schema: {

@@ -11,6 +11,7 @@ import {
 	fontProviders,
 	sessionDrivers,
 } from "astro/config";
+import type { PluginOption } from "vite";
 import { SITE } from "./src/config";
 
 /**
@@ -89,6 +90,45 @@ function sharpAtBuildTime(): AstroIntegration {
 	};
 }
 
+/**
+ * Serves Tina's media root at `/uploads/*` during `astro dev`.
+ *
+ * `media.tina.publicFolder` is `src/assets`, not `public`, so that <Image> can
+ * optimise editor uploads (see the comment in `tina/config.ts`). The cost is
+ * that `/uploads/<file>` stops being a real URL — and that is the URL Tina's
+ * media manager and the avatar field preview put in their `<img>` tags, because
+ * `MediaModel` builds the stored src from `mediaRoot` alone.
+ *
+ * A rewrite rather than a file server. Vite already serves everything under the
+ * project root, so `src/assets/uploads/avatar.png` is reachable at its own path;
+ * this only renames the request. That hands Vite its own `fs.allow` checks,
+ * content types, ETags and range support instead of a hand-rolled static handler
+ * with a hand-rolled path-traversal guard — the guard being the part that would
+ * have been worth getting wrong.
+ *
+ * `apply: "serve"` and `enforce: "pre"`: it exists only in dev, which is where
+ * editing happens, and it must run before Astro's own routing turns an unknown
+ * path into a 404. The built site genuinely has no `/uploads/` — a stored ref
+ * that fails to resolve renders a broken image there, exactly as it would have
+ * before this moved.
+ */
+function serveTinaUploadsInDev(): PluginOption {
+	const PREFIX = "/uploads/";
+	return {
+		name: "serve-tina-uploads-in-dev",
+		apply: "serve",
+		enforce: "pre",
+		configureServer(server) {
+			server.middlewares.use((req, _res, next) => {
+				if (req.url?.startsWith(PREFIX)) {
+					req.url = `/src/assets${req.url}`;
+				}
+				next();
+			});
+		},
+	};
+}
+
 export default defineConfig({
 	site: SITE.website,
 	trailingSlash: "never",
@@ -138,6 +178,9 @@ export default defineConfig({
 			basicSsl(),
 			// Makes a bare /admin reachable during `astro dev`.
 			tinaAdminDevRedirect(),
+			// Keeps the admin's media thumbnails working now that the media root
+			// lives under src/ — dev only; see the function's own comment.
+			serveTinaUploadsInDev(),
 			{
 				// The Cloudflare adapter hardcodes rollupOptions.external = ["sharp"]
 				// and forces ssr.noExternal = true, so resvg's native `.node` binary

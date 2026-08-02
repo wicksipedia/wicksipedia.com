@@ -42,7 +42,14 @@ export const pageCollection: Collection = {
 			//
 			//   blog tags archives search   real Astro routes
 			//   admin                       the TinaCMS SPA in public/admin
-			//   pagefind uploads            the search index and Tina's media root
+			//   pagefind                    the search index
+			//
+			// `uploads` is the one entry that no longer names a built directory:
+			// Tina's media root moved to `src/assets/uploads` in Task 3.3, so the
+			// build emits no `/uploads/` at all. Kept anyway — it IS a live URL
+			// under `astro dev` (`serveTinaUploadsInDev()` in astro.config.ts), and
+			// a page slug that shadowed it would break the admin's media previews
+			// for whoever was editing at the time.
 			//
 			// `about` is deliberately absent: it *is* one of the CMS pages
 			// (`content/pages/about.mdx`), and `src/pages/about.mdx` goes away in

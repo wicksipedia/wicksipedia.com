@@ -1,7 +1,10 @@
 ---
+import { Image } from "astro:assets";
+import { sanitizeImageSrc } from "@tinacms/astro/sanitize";
 import { tinaField } from "@tinacms/astro/tina-field";
 import Socials from "@/components/Socials.astro";
 import { headingText } from "@/lib/tina/heading-text";
+import { resolveUploadImage } from "@/lib/tina/images";
 import type { HeroBlock } from "@/lib/tina/pages";
 import type { CmsSocial } from "@/lib/tina/settings";
 
@@ -18,23 +21,38 @@ import type { CmsSocial } from "@/lib/tina/settings";
  * the blocks above it would otherwise precede the document's only `<h1>`. See
  * `primaryHeroIndex` in `src/lib/tina/pages.ts` for the whole rule.
  *
- * The avatar comes from Tina's media root (`public/uploads`) so an editor can
- * swap it, which means Astro cannot optimise it — `<Image>` only processes
- * imports from `src/`.
+ * The avatar comes from Tina's media root so an editor can swap it. That media
+ * root is `src/assets/uploads` since Task 3.3, NOT `public/uploads`, which is
+ * what makes the two `<Image>`s below possible: `public/` is copied verbatim and
+ * `<Image>` only processes imports from `src/`. `resolveUploadImage` maps the
+ * stored `/uploads/<file>` ref back to its `ImageMetadata`.
  *
- * A plain `<img>`, deliberately, and NOT `<Image>` with a string src. `<Image>`
- * happily accepts a public path and then emits a srcset describing widths that
- * do not exist — `/uploads/avatar.png 160w, /uploads/avatar.png 320w` on
- * mobile and five identical candidates from 500w to 1000w on desktop. Every
- * descriptor points at the same file, so the browser is being told to choose
- * between resolutions that are all the same bytes. One `src`, no srcset, is the
- * honest description of one unprocessed file. The `data-astro-image` attributes
- * go with it: their rules are `:where()`-wrapped (zero specificity) and every
- * dimension they would supply is already set by a Tailwind class.
+ * These used to be plain `<img>`s, deliberately, because `<Image>` with a
+ * PUBLIC-path string emits a srcset describing widths that do not exist —
+ * `/uploads/avatar.png 160w, /uploads/avatar.png 320w`, every descriptor
+ * pointing at the same bytes. That argument dies with the file's location: the
+ * candidates are now real derivatives at real widths. A ref that does not
+ * resolve still gets the honest treatment, one `src` and no srcset, through
+ * `sanitizeImageSrc` — the same fallback `BlogImage.astro` uses, and the same
+ * reason: at that point the value is an unvalidated URL from the content source.
  *
- * Explicit `width`/`height` keep the layout stable, and the desktop instance is
- * eager/high-priority because it is the LCP element above 768px. Both elements
- * point at the same URL, so this is one download whatever the viewport.
+ * `layout="none"` keeps the rest of the old reasoning intact. It suppresses the
+ * `data-astro-image` attribute and its `:where()`-wrapped rules, every dimension
+ * of which is already set by a Tailwind class here, so the emitted element is
+ * the one that was there before plus a srcset.
+ *
+ * BOTH instances carry the SAME `widths` and the SAME `sizes`, which is what
+ * preserves "one download whatever the viewport". They are breakpoint-gated, but
+ * `display:none` does not reliably stop an `<img>` from being fetched, so two
+ * different candidate lists would mean two downloads on every visit. Identical
+ * lists resolve to the same URL for a given viewport and DPR. `sizes` names the
+ * `md` breakpoint (768px) because that is where the gating swaps: below it the
+ * mobile instance occupies 140-160 CSS px, above it the desktop one occupies
+ * 320-480. `width`/`height` still differ, because they describe the two
+ * elements' intrinsic boxes and keep the layout stable.
+ *
+ * The desktop instance is eager/high-priority because it is the LCP element
+ * above 768px.
  *
  * The avatar's alt text DEFAULTS to `""`, and for this document that is the
  * right answer: the two `<img>`s are breakpoint-gated so only one renders, and
@@ -70,7 +88,28 @@ const { data, socials, primary = true, sectionId = "hero" } = Astro.props;
 
 const NameTag = primary ? "h1" : "h2";
 
-const avatar = data.avatar ?? "";
+const avatarRef = data.avatar ?? "";
+const resolvedAvatar = resolveUploadImage(avatarRef);
+/** The colocated asset, when the ref resolved to one — otherwise `undefined`. */
+const avatarAsset =
+	resolvedAvatar && typeof resolvedAvatar !== "string"
+		? resolvedAvatar
+		: undefined;
+/** The fallback URL for a ref that resolved to nothing. `""` renders nothing. */
+const avatarSrc = avatarAsset
+	? ""
+	: sanitizeImageSrc(
+			typeof resolvedAvatar === "string" ? resolvedAvatar : avatarRef,
+		);
+/**
+ * One candidate list for both instances, so whichever one the viewport shows,
+ * the browser resolves the same URL. Capped at the 640px source: Astro would
+ * otherwise be asked to upscale, and `sizes` is what decides which candidate is
+ * picked, not this list's ceiling.
+ */
+const avatarWidths = [160, 320, 500, 640];
+const avatarSizes = "(min-width: 768px) 500px, 160px";
+
 // Trimmed, and the trimmed value is what renders. `primaryHeroIndex` decides
 // whether this hero owns the page's `<h1>` from the same helper, so an untrimmed
 // one here would put `<h1>   </h1>` on a page that had already suppressed its
@@ -89,17 +128,33 @@ const alt = data.alt ?? "";
     >
       <div class="text-center md:flex-1 md:py-6 md:text-left lg:py-10 xl:py-16">
         {
-          avatar && (
-            <img
-              src={avatar}
+          avatarAsset ? (
+            <Image
+              src={avatarAsset}
               alt={alt}
-              width="160"
-              height="160"
+              width={160}
+              height={160}
+              widths={avatarWidths}
+              sizes={avatarSizes}
+              layout="none"
               class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
               loading="eager"
               decoding="async"
               data-tina-field={tinaField(data, "avatar") || undefined}
             />
+          ) : (
+            avatarSrc && (
+              <img
+                src={avatarSrc}
+                alt={alt}
+                width="160"
+                height="160"
+                class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
+                loading="eager"
+                decoding="async"
+                data-tina-field={tinaField(data, "avatar") || undefined}
+              />
+            )
           )
         }
         {
@@ -148,18 +203,35 @@ const alt = data.alt ?? "";
         class="relative hidden md:block md:shrink-0 after:content-[''] after:absolute after:bottom-0 after:inset-x-0 after:h-[40%] after:pointer-events-none after:bg-gradient-to-t after:from-hero-bg after:to-transparent after:transition-[background] after:duration-300"
       >
         {
-          avatar && (
-            <img
-              src={avatar}
+          avatarAsset ? (
+            <Image
+              src={avatarAsset}
               alt={alt}
-              width="500"
-              height="500"
+              width={500}
+              height={500}
+              widths={avatarWidths}
+              sizes={avatarSizes}
+              layout="none"
               class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
               loading="eager"
               fetchpriority="high"
               decoding="async"
               data-tina-field={tinaField(data, "avatar") || undefined}
             />
+          ) : (
+            avatarSrc && (
+              <img
+                src={avatarSrc}
+                alt={alt}
+                width="500"
+                height="500"
+                class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+                data-tina-field={tinaField(data, "avatar") || undefined}
+              />
+            )
           )
         }
       </div>

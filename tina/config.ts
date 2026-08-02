@@ -28,7 +28,24 @@ export default defineConfig({
 	media: {
 		tina: {
 			mediaRoot: "uploads",
-			publicFolder: "public",
+			// `src/assets`, NOT `public`. Astro copies `public/` verbatim and never
+			// processes it, so an editor-uploaded image shipped at its full source
+			// size: the 640x640 hero avatar was 131.6 KB of PNG rendered at 140 CSS
+			// px on mobile. Under `src/` the same file goes through <Image> — see
+			// `resolveUploadImage` in `src/lib/tina/images.ts`, which maps the ref
+			// back to its ImageMetadata the same way blog images already were.
+			//
+			// Only the on-disk location moves. Tina's MediaModel joins
+			// publicFolder + mediaRoot to read and write, but builds the STORED ref
+			// from mediaRoot alone (`/${mediaRoot}/${file}`), so documents keep
+			// saying `/uploads/<file>` and nothing needs migrating.
+			//
+			// The cost is that `/uploads/<file>` is no longer a real URL on the
+			// built site, which is what the media manager's thumbnails and the
+			// avatar field preview point at. `serveTinaUploadsInDev()` in
+			// astro.config.ts puts that back for `astro dev`, where editing
+			// actually happens.
+			publicFolder: "src/assets",
 		},
 	},
 
