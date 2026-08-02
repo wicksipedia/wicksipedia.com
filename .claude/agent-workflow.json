@@ -3,7 +3,7 @@
     {
       "name": "content-parses",
       "command": "bun run check",
-      "expect": "all five suites OK, each naming how much it examined (posts, blockquotes, html nodes, text nodes, island-guard slug/settings-path/island-name cases)",
+      "expect": "all five suites print OK, each naming how much it examined: posts; blockquote fixtures + corpus blockquotes; sanitize cases + corpus html nodes + embed blocks; smartypants cases + corpus text nodes + inline-code nodes; and island-guard slug cases (incl. a cross-collection subset) + corpus slugs + settings-path cases + island-name cases + icon-name cases. Treat the numbers as floors that grow when fixtures are added — but a suite that stops naming one of those categories has lost coverage, which is the failure this line exists to catch.",
       "why": "Aggregates check:content, check:blockquotes, check:sanitize, check:smartypants and check:island-guard. Each asserts it ran over a non-empty corpus \u2014 a Tina collection, a Vale glob and an embed counter have all reported success over nothing on this branch."
     },
     {
