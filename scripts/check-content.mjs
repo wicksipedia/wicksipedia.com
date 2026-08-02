@@ -89,8 +89,8 @@ if (dirs.length === 0) {
 }
 
 /**
- * The extensions the eager glob in `images.ts` actually emits, read from the
- * glob itself.
+ * The extensions the eager glob in `images.ts` actually emits, AND the glob
+ * itself compiled to a pattern — both read from the literal.
  *
  * Not written out here as a list: an orphan check that guessed the extensions
  * would stop covering a format the moment somebody added one to the glob, and it
@@ -102,7 +102,7 @@ if (dirs.length === 0) {
  * A parse failure here is a BROKEN CHECK, not broken content, and is reported as
  * one.
  */
-function shippedImageExtensions() {
+function shippedImageGlob() {
 	const source = readFileSync(IMAGES_MODULE, "utf8");
 	const glob = source.match(/"(\/[^"]*?)\/\*\*\/\*\.\{([^}]+)\}"/);
 	if (!glob) {
@@ -131,10 +131,36 @@ function shippedImageExtensions() {
 		err(`FAIL: the image glob in ${IMAGES_MODULE} lists no extensions`);
 		process.exit(1);
 	}
-	return exts;
+
+	/**
+	 * The glob compiled, so the walk below can be reconciled against what the
+	 * PATTERN matches rather than against its own traversal.
+	 *
+	 * `**\/` matches zero or more directories, which is why a file sitting
+	 * directly in `src/data/blog` is matched; `*` does not cross a `/`, hence
+	 * `[^/]*`. The extension alternation uses the tokens VERBATIM and the regex
+	 * is case-sensitive, because the glob spells out `png,PNG,jpg,JPG,…` and an
+	 * `i` flag would claim `.PnG` ships when it does not.
+	 *
+	 * One known divergence, stated rather than hidden: picomatch's default
+	 * `dot: false` means the glob would skip a leading-dot basename and this
+	 * pattern would not. It over-approximates, so the failure mode is reporting a
+	 * dotfile as an orphan rather than missing one — and both selectors below
+	 * over-approximate identically, so they still agree.
+	 */
+	const pattern = new RegExp(
+		`^${root}/(?:.*/)?[^/]*\\.(?:${extensions
+			.split(",")
+			.map((ext) => ext.trim())
+			.filter(Boolean)
+			.join("|")})$`,
+	);
+
+	return { extensions: exts, pattern };
 }
 
-const SHIPPED_IMAGE_EXTENSIONS = shippedImageExtensions();
+const { extensions: SHIPPED_IMAGE_EXTENSIONS, pattern: SHIPPED_IMAGE_PATTERN } =
+	shippedImageGlob();
 
 /**
  * Known refs with known destinations, so `blogImageKey` is exercised whatever
@@ -452,42 +478,84 @@ if (postsScannedForImages !== checked) {
 /**
  * The orphan scan.
  *
- * `images.ts` globs eagerly, so an unreferenced file in a post folder is emitted
- * into `dist/` and served to nobody. This walks every post folder, keeps the
- * files the glob would match, and requires each to be pointed at by some post's
- * frontmatter or body.
+ * `images.ts` globs eagerly, so an unreferenced file anywhere the glob reaches
+ * is emitted into `dist/` and served to nobody. This walks everything under
+ * BASE, keeps the files the glob would match, and requires each to be pointed
+ * at by some post's frontmatter or body.
+ *
+ * FROM `BASE`, RECURSIVELY — not from `dirs`. `dirs` is `readdirSync(BASE)`
+ * filtered to DIRECTORIES not starting with `_`, and the glob it claims to
+ * cover is `**`-rooted, so two whole shapes were never inspected:
+ *
+ *   /src/data/blog/stray.png       matches the glob — not in a directory at all
+ *   /src/data/blog/_wip/cover.png  matches the glob — `_` means nothing to it
+ *
+ * Both ship, and the check printed "OK: 26 image(s) … all referenced" over
+ * them. `_` is a convention for keeping a draft POST out of URL generation; it
+ * has never kept its bytes out of the bundle, and `tina/collections/blog.ts`
+ * says as much — `**\/index` matches a `_`-prefixed directory too. An image in
+ * a draft folder is therefore an orphan unless a SCANNED post references it,
+ * which is the honest answer: it is shipping either way.
  */
 let imagesInspected = 0;
-let postFoldersWalked = 0;
 const orphans = [];
 
-for (const dir of dirs) {
-	postFoldersWalked++;
-	for (const rel of filesUnder(join(BASE, dir))) {
-		const dot = rel.lastIndexOf(".");
-		const ext = dot === -1 ? "" : rel.slice(dot).toLowerCase();
-		if (!SHIPPED_IMAGE_EXTENSIONS.has(ext)) continue;
-		imagesInspected++;
-		const key = `${BLOG_IMAGE_ROOT}/${dir}/${rel}`;
-		if (referencedImages.has(key)) continue;
-		orphans.push({
-			path: join(BASE, dir, rel),
-			bytes: statSync(join(BASE, dir, rel)).size,
-		});
-	}
+/** Every file under BASE at any depth, relative to it. */
+const filesInBlog = filesUnder(BASE);
+
+/**
+ * The same set arrived at through the PATTERN rather than the extension set.
+ *
+ * This is what turns "walked the whole tree" from a claim into an assertion:
+ * the two selectors are compiled from the same glob literal by different code
+ * — one splits its extension list, the other matches the whole path — so a
+ * `continue` added to the loop, or an extension set that stops agreeing with
+ * the pattern, fails loudly. It does NOT prove the traversal is complete; the
+ * two orphan cases named above are what prove that, and they are mutation-
+ * tested rather than asserted, because a committed orphan cannot exist.
+ */
+const globMatched = filesInBlog.filter((rel) =>
+	SHIPPED_IMAGE_PATTERN.test(`${BLOG_IMAGE_ROOT}/${rel}`),
+);
+
+for (const rel of filesInBlog) {
+	const dot = rel.lastIndexOf(".");
+	const ext = dot === -1 ? "" : rel.slice(dot).toLowerCase();
+	if (!SHIPPED_IMAGE_EXTENSIONS.has(ext)) continue;
+	imagesInspected++;
+	const key = `${BLOG_IMAGE_ROOT}/${rel}`;
+	if (referencedImages.has(key)) continue;
+	orphans.push({
+		path: join(BASE, rel),
+		bytes: statSync(join(BASE, rel)).size,
+	});
 }
 
-if (postFoldersWalked !== dirs.length) {
-	err(`FAIL: walked ${postFoldersWalked} of ${dirs.length} post folders`);
+if (imagesInspected !== globMatched.length) {
+	err(
+		`FAIL: inspected ${imagesInspected} image(s) but the glob in ${IMAGES_MODULE} matches ${globMatched.length}`,
+	);
+	err(`  pattern: ${SHIPPED_IMAGE_PATTERN}`);
+	err("  Every file the glob matches ships. The two must be the same set, or");
+	err("  the ones this walk skipped are shipping uninspected.");
 	process.exit(1);
 }
+
+/** Top-level entries under BASE that hold at least one file, for the report. */
+const locationsWalked = new Set(
+	filesInBlog.map((rel) =>
+		rel.includes("/") ? rel.slice(0, rel.indexOf("/")) : "(files at the root)",
+	),
+).size;
 
 // INPUT-DERIVED. The corpus holds 26 images; zero means the walk stopped finding
 // them — a mistyped extension set, a `filesUnder` that no longer recurses — not
 // a corpus that went imageless. Without this, deleting the walk prints "0
 // orphans" and passes.
 if (imagesInspected === 0) {
-	err(`FAIL: walked ${postFoldersWalked} post folders and found 0 images`);
+	err(
+		`FAIL: walked ${filesInBlog.length} file(s) under ${BASE} and found 0 images`,
+	);
 	err(
 		`  Extensions looked for: ${[...SHIPPED_IMAGE_EXTENSIONS].sort().join(" ")}`,
 	);
@@ -527,5 +595,5 @@ out(
 	`OK: ${checked} posts parse cleanly; ${schemaFieldsChecked} rich-text field(s) restrict headings to ${[...ALLOWED_HEADING_LEVELS].join("/")}, ${fixtureRuns} heading-level fixture run(s) agree, and ${bodiesHeadingScanned} scanned body/bodies hold ${headingsSeen} conforming heading(s)`,
 );
 out(
-	`OK: ${imagesInspected} image(s) across ${postFoldersWalked} post folder(s) are all referenced; ${referencedImages.size} distinct ref(s) resolved, ${imageRefFixtureRuns} image-ref fixture run(s) agree`,
+	`OK: ${imagesInspected} image(s) — every file the glob matches, walked recursively across ${locationsWalked} location(s) under ${BASE} including any at its root or under a _-prefixed folder — are all referenced; ${referencedImages.size} distinct ref(s) resolved, ${imageRefFixtureRuns} image-ref fixture run(s) agree`,
 );
