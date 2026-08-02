@@ -51,8 +51,16 @@ import type { CmsSocial } from "@/lib/tina/settings";
  * 320-480. `width`/`height` still differ, because they describe the two
  * elements' intrinsic boxes and keep the layout stable.
  *
- * The desktop instance is eager/high-priority because it is the LCP element
- * above 768px.
+ * BOTH are eager AND high-priority, which is not belt-and-braces. The preload
+ * scanner works in DOCUMENT ORDER, and the mobile instance comes first: it used
+ * to start the shared fetch at default priority, and a `fetchpriority="high"`
+ * on the element 3.5 KB further down does not reliably upgrade a request that
+ * is already queued. The desktop hint was therefore inert — the exact cost of
+ * the shared-URL trick above, found in review. Because the two resolve to ONE
+ * URL there is only ever one request, so marking both high prioritises that one
+ * request rather than competing for bandwidth. The avatar is the LCP candidate
+ * above 768px; below it the full-width featured cover usually is, and the hint
+ * is harmless there because it names the same single fetch.
  *
  * The avatar's alt text DEFAULTS to `""`, and for this document that is the
  * right answer: the two `<img>`s are breakpoint-gated so only one renders, and
@@ -139,6 +147,7 @@ const alt = data.alt ?? "";
               layout="none"
               class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
               loading="eager"
+              fetchpriority="high"
               decoding="async"
               data-tina-field={tinaField(data, "avatar") || undefined}
             />
@@ -151,6 +160,7 @@ const alt = data.alt ?? "";
                 height="160"
                 class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
                 loading="eager"
+                fetchpriority="high"
                 decoding="async"
                 data-tina-field={tinaField(data, "avatar") || undefined}
               />

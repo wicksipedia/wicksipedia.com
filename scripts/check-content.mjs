@@ -230,6 +230,19 @@ if (bodiesHeadingScanned !== checked) {
 	process.exit(1);
 }
 
+// INPUT-DERIVED, unlike the reconciliation above, and the reason this corpus
+// gets a floor the pages corpus cannot have: the posts hold 126 headings, so
+// zero means the walk stopped finding them rather than that there were none.
+// It catches the mutant the count-only assertion cannot — a `collectHeadings`
+// that no longer recurses still visits every body, so `bodiesHeadingScanned`
+// stays at 17 while `headingsSeen` collapses.
+if (headingsSeen === 0) {
+	err(`FAIL: walked ${bodiesHeadingScanned} post bodies and found 0 headings`);
+	err("  The corpus has 126. A scan finding none is a scan that is not");
+	err("  descending into the tree, not a corpus that grew quiet.");
+	process.exit(1);
+}
+
 out(
 	`OK: ${checked} posts parse cleanly; ${schemaFieldsChecked} rich-text field(s) restrict headings to ${[...ALLOWED_HEADING_LEVELS].join("/")}, ${fixtureRuns} heading-level fixture run(s) agree, and ${bodiesHeadingScanned} scanned body/bodies hold ${headingsSeen} conforming heading(s)`,
 );

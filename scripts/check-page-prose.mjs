@@ -183,12 +183,19 @@ try {
 
 /**
  * Which block template owns the page's `<h1>`, and the field that holds its
- * text — read off the schema rather than spelled `"hero"` and `"name"` here.
+ * text. Two different instruments, and it is worth knowing which is which:
  *
- * Hardcoding them would turn this guard into a silent no-op the day the
- * template is renamed: `_template === "hero"` would simply stop matching, every
- * page would take the `seoTitle` fallback branch, and the check would keep
- * printing that all of them render exactly one `<h1>`. Failing loudly on a
+ *   - the TEMPLATE NAME is genuinely DERIVED. Rename `heroBlockSchema.name` and
+ *     `HERO_TEMPLATE` follows it, so the comparison below keeps matching.
+ *   - the FIELD NAME is still the literal `"name"`. What the lookup adds is an
+ *     EXISTENCE ASSERTION: rename the field and `find()` returns undefined and
+ *     the guard exits 1. It does not survive the rename; it refuses to run
+ *     through it.
+ *
+ * Either spelled bare would turn this into a silent no-op the day the schema
+ * moved: `_template === "hero"` would simply stop matching, every page would
+ * take the `seoTitle` fallback branch, and the check would keep printing that
+ * all of them render exactly one `<h1>` with an accessible name. Loud on a
  * rename is the same principle the rest of this file applies to
  * `richTextFields`.
  */
