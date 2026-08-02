@@ -47,15 +47,21 @@ const blocks = pageBlocks(data);
 /**
  * Whether the page renders an `<h1>` of its own, and what it says.
  *
- * Both failure modes are closed here rather than by asking the author to obey a
- * field description — a description documents a rule, it does not enforce one:
+ * All three failure modes are closed here rather than by asking the author to
+ * obey a field description — a description documents a rule, it does not
+ * enforce one:
  *
  *  - TWO `<h1>`s: a hero block renders the person's name as the page `<h1>`, so
- *    a page containing one suppresses the page-level heading entirely, whatever
- *    `heading` holds and wherever the hero sits in the list. `Blocks.astro`
- *    closes the other half — only the FIRST hero renders an `<h1>`.
+ *    a page that STARTS with one suppresses the page-level heading entirely,
+ *    whatever `heading` holds. `Blocks.astro` closes the other half — every
+ *    hero that is not `blocks[0]` renders `<h2>`.
  *  - ZERO `<h1>`s: `heading` is optional, so it falls back to `seoTitle`, which
  *    is `required: true` on the collection (`tina/collections/page.ts`).
+ *  - h2 BEFORE h1: the `<h1>` is emitted here, above every block, so a page
+ *    whose hero sits below a prose or post-feed block keeps its own heading
+ *    rather than handing it to a hero the reader meets third. See
+ *    `primaryHeroIndex` for why an order-blind version of this rule still
+ *    counted one `<h1>` and was still wrong.
  *
  * `||` and not `??`: clearing the field in the admin writes an empty string, not
  * null, and an empty `<h1>` is the zero-heading case wearing a hat.

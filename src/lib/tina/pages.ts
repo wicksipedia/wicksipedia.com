@@ -118,23 +118,31 @@ export function pageBlocks(page?: CmsPage | null): PageBlock[] {
 
 /**
  * Index of the hero block that owns the page's `<h1>`, or -1 if there is none.
+ * It is only ever `0` or `-1`: a hero can own the page title only if nothing
+ * precedes it.
  *
  * Exported so `PageBlocks.astro` (which decides whether to render a page-level
  * `<h1>` at all) and `Blocks.astro` (which tells each hero whether it is the
  * one) cannot disagree. Two components computing "is there a hero?" separately
  * is exactly how a page ends up with two `<h1>`s or none.
  *
- * The rule this supports, in full:
+ * The rule this supports, in full. It is about heading ORDER as much as count:
  *
+ *   - hero first     → the hero renders the `<h1>`; the page renders none.
+ *   - hero later     → the page renders `<h1>{heading || seoTitle}</h1>` and the
+ *     hero renders `<h2>`. Letting a hero at index 3 own the `<h1>` would still
+ *     give a count of exactly one and still be wrong: every heading in the
+ *     blocks above it — a prose `<h2>`, PostFeed's `<h2>`s, GithubStats' `<h2>`
+ *     — would precede the document's only `<h1>`, which is an orphaned h2. That
+ *     arrangement is one drag away in the admin's visual selector, so this is
+ *     the case the earlier count-only version of this rule got wrong.
  *   - no hero        → the page renders `<h1>{heading || seoTitle}</h1>`.
  *     `seoTitle` is `required: true`, so this is never empty.
- *   - one hero       → the hero renders the `<h1>`; the page renders none,
- *     wherever in the block list the hero sits. Keying on `blocks[0]` instead
- *     would give two `<h1>`s for a page whose hero is not first.
- *   - several heroes → only the first renders `<h1>`; the rest render `<h2>`,
- *     because a second masthead is a section heading, not a second page title.
+ *   - several heroes → at most the FIRST block renders `<h1>`; every other hero
+ *     renders `<h2>`, because a second masthead is a section heading, not a
+ *     second page title.
  *
- * A hero with a BLANK `name` is not counted, and `Hero.astro` renders no
+ * A hero with a BLANK `name` never owns the heading, and `Hero.astro` renders no
  * heading element for it. `name` is not `required` — a hero used as a plain
  * image band is a legitimate thing to author — and without this the page would
  * suppress its own heading in favour of an empty `<h1></h1>`: a page with no
@@ -142,13 +150,15 @@ export function pageBlocks(page?: CmsPage | null): PageBlock[] {
  * to prevent. Deliberately fixed here rather than by making the field required,
  * so the rendering stays correct for documents that already exist.
  *
- * So the count is exactly one for every block arrangement the CMS can produce,
- * without asking the author to know any of this.
+ * So for every block arrangement the CMS can produce there is exactly one
+ * `<h1>`, and no heading precedes it — without asking the author to know any of
+ * this. `scripts/check-page-prose.mjs` closes the other half of the invariant:
+ * the block list is not the only place an `<h1>` can come from, because a prose
+ * body can author one.
  */
 export function primaryHeroIndex(blocks: PageBlock[]): number {
-	return blocks.findIndex(
-		(block) => block.__typename === "PageBlocksHero" && Boolean(block.name),
-	);
+	const first = blocks[0];
+	return first?.__typename === "PageBlocksHero" && Boolean(first.name) ? 0 : -1;
 }
 
 export type HeroBlock = Extract<PageBlock, { __typename: "PageBlocksHero" }>;
