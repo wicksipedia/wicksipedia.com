@@ -125,6 +125,111 @@ var blogCollection = {
   ]
 };
 
+// src/components/blocks/github-stats.template.ts
+var githubStatsBlockSchema = {
+  name: "githubStats",
+  label: "GitHub Stats",
+  fields: [{ type: "string", name: "heading", label: "Heading" }]
+};
+
+// src/components/blocks/hero.template.ts
+var heroBlockSchema = {
+  name: "hero",
+  label: "Hero",
+  fields: [
+    { type: "string", name: "name", label: "Name" },
+    {
+      type: "string",
+      name: "tagline",
+      label: "Tagline",
+      ui: { component: "textarea" }
+    },
+    { type: "string", name: "jobTitle", label: "Job Title" },
+    { type: "string", name: "organization", label: "Organisation" },
+    { type: "string", name: "organizationUrl", label: "Organisation URL" },
+    { type: "image", name: "avatar", label: "Avatar" }
+  ]
+};
+
+// src/components/blocks/post-feed.template.ts
+var postFeedBlockSchema = {
+  name: "postFeed",
+  label: "Post Feed",
+  fields: [
+    { type: "string", name: "label", label: "Section Label" },
+    {
+      type: "number",
+      name: "limit",
+      label: "Posts in grid",
+      description: "Excludes the lead post shown above the grid."
+    },
+    { type: "string", name: "allPostsLabel", label: "All-posts Link Label" },
+    { type: "string", name: "allPostsHref", label: "All-posts Link URL" }
+  ]
+};
+
+// src/components/blocks/prose.template.ts
+var proseBlockSchema = {
+  name: "prose",
+  label: "Prose",
+  fields: [{ type: "rich-text", name: "body", label: "Body" }]
+};
+
+// tina/collections/page.ts
+var pageCollection = {
+  name: "page",
+  label: "Pages",
+  path: "content/pages",
+  format: "mdx",
+  ui: {
+    router: ({ document }) => document._sys.filename === "home" ? "/" : `/${document._sys.filename}`,
+    filename: {
+      readonly: false,
+      // Reserved slugs collide with real file-based routes. Astro gives static
+      // routes priority, so a page named e.g. `blog` would index in Tina, pass
+      // every build check, and silently never render. Refuse the name instead.
+      slugify: (values) => {
+        const RESERVED = [
+          "blog",
+          "tags",
+          "archives",
+          "search",
+          "admin",
+          "404",
+          "rss.xml",
+          "robots.txt",
+          "og.png"
+        ];
+        const slug = (values?.seoTitle ?? "untitled").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        return RESERVED.includes(slug) ? `${slug}-page` : slug;
+      }
+    }
+  },
+  fields: [
+    {
+      type: "string",
+      name: "seoTitle",
+      label: "Meta Title (SEO)",
+      isTitle: true,
+      required: true,
+      description: "Browser tab and search results only \u2014 not shown on the page. To change the visible heading, edit the Hero block's Name below."
+    },
+    {
+      type: "object",
+      name: "blocks",
+      label: "Page Sections",
+      list: true,
+      ui: { visualSelector: true },
+      templates: [
+        heroBlockSchema,
+        postFeedBlockSchema,
+        proseBlockSchema,
+        githubStatsBlockSchema
+      ]
+    }
+  ]
+};
+
 // tina/collections/settings.ts
 var settingsCollection = {
   name: "settings",
@@ -188,7 +293,7 @@ var config_default = defineConfig({
     }
   },
   schema: {
-    collections: [blogCollection, settingsCollection]
+    collections: [blogCollection, pageCollection, settingsCollection]
   }
 });
 export {

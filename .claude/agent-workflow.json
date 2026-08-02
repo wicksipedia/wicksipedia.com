@@ -8,9 +8,9 @@
     },
     {
       "name": "tina-indexes-posts",
-      "command": "./scripts/assert-doc-count.sh blog=17 settings=1",
-      "expect": "OK: Tina indexes blog=17 settings=1",
-      "why": "`tinacms audit` prints '\u2705 Audit passed' and exits 0 on an EMPTY collection, so the counts must be asserted explicitly. A wrong collection path/format/glob would otherwise build all 59 pages with no posts, exit 0, and deploy. Asserts per-collection since Task 2.1: the script fails if a named collection is missing from the audit, if a count is wrong, AND if the audit reports a collection nobody asserted \u2014 so adding the Task 3.1 `page` collection without extending this command fails the gate instead of silently narrowing it."
+      "command": "./scripts/assert-doc-count.sh blog=17 settings=1 page=2",
+      "expect": "OK: Tina indexes blog=17 settings=1 page=2",
+      "why": "`tinacms audit` prints '\u2705 Audit passed' and exits 0 on an EMPTY collection, so the counts must be asserted explicitly. A wrong collection path/format/glob would otherwise build all 59 pages with no posts, exit 0, and deploy. Asserts per-collection since Task 2.1: the script fails if a named collection is missing from the audit, if a count is wrong, AND if the audit reports a collection nobody asserted. That third mode did its job in Task 3.1 \u2014 the `page` collection failed this gate with 'audit reported the page collection but no expected count was given' until `page=2` was added here. `page=2` is home.mdx + about.mdx; a page added in the CMS must be added to this count, and until Task 3.2 lands the catch-all route that is the ONLY gate that notices a page document at all."
     },
     {
       "name": "types",

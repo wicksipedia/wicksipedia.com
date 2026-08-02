@@ -16,6 +16,34 @@ fragment BlogParts on Blog {
   body
 }
 
+fragment PageParts on Page {
+  __typename
+  seoTitle
+  blocks {
+    __typename
+    ... on PageBlocksHero {
+      name
+      tagline
+      jobTitle
+      organization
+      organizationUrl
+      avatar
+    }
+    ... on PageBlocksPostFeed {
+      label
+      limit
+      allPostsLabel
+      allPostsHref
+    }
+    ... on PageBlocksProse {
+      body
+    }
+    ... on PageBlocksGithubStats {
+      heading
+    }
+  }
+}
+
 fragment SettingsParts on Settings {
   __typename
   nav {

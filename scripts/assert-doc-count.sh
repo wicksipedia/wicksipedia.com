@@ -1,7 +1,7 @@
 #!/bin/bash
 # Assert TinaCMS indexes exactly N documents in EVERY collection it knows about.
 #
-#   ./scripts/assert-doc-count.sh blog=17 settings=1
+#   ./scripts/assert-doc-count.sh blog=17 settings=1 page=2
 #
 # `tinacms audit` exits 0 and prints "✅ Audit passed" on an EMPTY collection,
 # so the counts must be asserted explicitly or this check measures nothing.
@@ -17,7 +17,8 @@
 #     output (catches a renamed/removed collection);
 #   - every collection in the audit output must be named on the command line
 #     (catches a new collection sneaking past the gate — the exact failure the
-#     old script had);
+#     old script had, and the one that made Task 3.1's `page` collection fail
+#     this check until the command was extended, which is the check working);
 #   - and the whole thing fails if the audit prints no counts at all, which is
 #     what a changed CLI output format looks like.
 set -uo pipefail
