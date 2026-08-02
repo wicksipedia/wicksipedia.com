@@ -2904,7 +2904,23 @@ Three whole-branch reviews (accessibility/UX, security, spec) ran at the end of 
 
 - [x] **Credentials — ALREADY CONFIGURED.** `PUBLIC_TINA_CLIENT_ID` and `TINA_TOKEN` exist in the Cloudflare Workers Builds environment. **One fix outstanding: `TINA_TOKEN` is stored as a Variable, not a Secret.** Variables are plaintext, readable by anyone with dashboard access, and can surface in build logs; Secrets are encrypted at rest and write-only. `PUBLIC_TINA_CLIENT_ID` as a Variable is correct — it is public by design. Change the token's type in the dashboard; no code impact.
 
-- [x] **Deploy path — DECIDED: Cloudflare Workers Builds, and GitHub is out of the loop entirely.** Cloudflare clones the repo on push, builds with its own environment, and deploys. `.github/workflows/daily-deploy.yml` used to do `bun install && bun run build && wrangler deploy` as well — two independent pipelines building the same commit and racing to deploy it, neither aware of the other. **Deleted.**
+- [x] **Deploy path — SETTLED, after trying it the other way first: GitHub Actions builds, wrangler deploys.**
+
+  Cloudflare Workers Builds was tried and **OOMs**:
+
+  ```
+  FATAL ERROR: Ineffective mark-compacts near heap limit
+  Allocation failed - JavaScript heap out of memory
+  Mark-Compact (reduce) 2022.5 (2064.3) -> 1988.1 (2027.8) MB
+  ```
+
+  Node was capped near 2 GB there. Not a leak, and not the `astro check` pathology from Task 1.1 — that tsconfig exclude for `public/admin` is still in place. It is genuine work that did not exist until image optimisation was repaired: Sharp now decodes 32 source images, several ~3000px wide, into 155+ derivatives across eight widths, and a decoded 2978×1675 RGBA frame is ~20 MB of heap before any resizing.
+
+  `.github/workflows/deploy.yml` builds on `ubuntu-latest` (16 GB, `NODE_OPTIONS=--max-old-space-size=6144`) and deploys with `bun run deploy`. It also caches `node_modules/.astro`, which is where the derivatives live — that cache existed before this migration but saved almost nothing back when Sharp was an inert passthrough. Now it is the difference between redoing every resize and skipping all of them.
+
+  **Disconnect the repo from Cloudflare Workers Builds**, or every push builds twice: once here and once there, where it fails.
+
+  An earlier iteration of this plan had Cloudflare owning the build with a small cron Worker (`workers/daily-rebuild/`) triggering the daily rebuild through a Deploy Hook. That is deleted — GitHub's `schedule:` covers it directly, and a Worker whose only job was to trigger a Cloudflare build has no purpose once Cloudflare is not the one building.
 
   The daily rebuild it existed for is still needed: `postFilter` hides a post until its `pubDatetime` passes, and that is decided at build time, so a post dated for next week never appears without a scheduled rebuild. Workers Builds has no cron of its own — it triggers on push and on Deploy Hooks ([docs](https://developers.cloudflare.com/workers/ci-cd/builds/)) — but Workers do have [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/), and a Deploy Hook is just a URL. So `workers/daily-rebuild/` is a ~10-line Worker whose only job is one POST at 20:00 UTC.
 

@@ -11,7 +11,6 @@
 		"preview": "bun run build:local && npx wrangler dev -c dist/server/wrangler.json",
 		"deploy": "npx wrangler deploy -c dist/server/wrangler.json",
 		"versions:upload": "npx wrangler versions upload -c dist/server/wrangler.json",
-		"deploy:rebuild-cron": "npx wrangler deploy -c workers/daily-rebuild/wrangler.jsonc",
 		"sync": "astro sync",
 		"astro": "astro",
 		"check:content": "node scripts/check-content.mjs",

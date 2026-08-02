@@ -1,0 +1,121 @@
+# Builds the site and deploys it to Cloudflare Workers.
+#
+# WHY GITHUB BUILDS AND NOT CLOUDFLARE WORKERS BUILDS.
+# Workers Builds was tried first — one platform, one credential store, no
+# GitHub secrets — and it OOMs:
+#
+#   FATAL ERROR: Ineffective mark-compacts near heap limit
+#   Allocation failed - JavaScript heap out of memory
+#   [1933:0xe97e000] 75009 ms: Mark-Compact (reduce) 2022.5 (2064.3) -> 1988.1 (2027.8) MB
+#
+# Node was capped around 2 GB there and died at 2058 MB. That is not a leak and
+# not the `astro check` pathology from Task 1.1 (whose tsconfig exclude for
+# public/admin is still in place — 10 MB that would otherwise be walked). It is
+# genuine work that did not exist until image optimisation was repaired: Sharp
+# now decodes 32 source images, several of them ~3000px wide, and emits 155+
+# derivatives across eight widths. A decoded 2978x1675 RGBA frame is ~20 MB of
+# heap before any resizing happens.
+#
+# ubuntu-latest has 16 GB, and NODE_OPTIONS below gives Node room to use it.
+#
+# WHY THE CACHE MATTERS MORE THAN IT USED TO. `node_modules/.astro` holds the
+# generated image derivatives. It was already cached before this migration, but
+# back then Sharp was a no-op passthrough, so the cache saved almost nothing.
+# Now it is the difference between redoing every resize and skipping all of
+# them, which is also what keeps this workflow well clear of the memory ceiling
+# on an incremental build.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Scheduled posts: postFilter decides at BUILD time whether a post's
+  # pubDatetime has passed, so a post dated for next week never appears without
+  # a rebuild. 20:00 UTC = 6am AEST.
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A push landing mid-deploy should not race the scheduled run. Never cancel
+# in-progress: a half-finished `wrangler deploy` is worse than a queued one.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+
+      # `bun run build` runs `bun run check` first, and check:page-prose shells
+      # out to Vale — the CMS page collection keeps its prose in YAML
+      # frontmatter, where Vale's own file globs cannot reach it. Vale is a Go
+      # binary, so `bun install` does not provide it. Without this the build
+      # fails at "could not read Vale's file count from its output", which is
+      # that suite correctly refusing to report a pass it cannot evidence.
+      - name: Install Vale
+        run: |
+          gh release download --repo errata-ai/vale --pattern 'vale_*_Linux_64-bit.tar.gz' --dir /tmp
+          tar xzf /tmp/vale_*_Linux_64-bit.tar.gz -C /usr/local/bin vale
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache generated image derivatives
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.astro
+          # Keyed on the images themselves plus the config that decides how they
+          # are processed — sharpAtBuildTime() lives in astro.config.ts, and a
+          # change there must invalidate derivatives built under the old
+          # behaviour. src/assets/uploads is Tina's media root since the CMS
+          # migration; the old key globbed only src/assets/images and would have
+          # gone stale on every avatar change.
+          key: astro-assets-${{ hashFiles('src/assets/**', 'src/data/blog/**/*.{png,jpg,jpeg,gif,webp,svg,avif}', 'astro.config.ts') }}
+          restore-keys: |
+            astro-assets-
+
+      - name: Build
+        env:
+          # Cloudflare capped Node near 2 GB and the Sharp workload exceeded it.
+          # ubuntu-latest has 16 GB; 6 GB is generous headroom for a cold build
+          # with no cache, which is the worst case.
+          NODE_OPTIONS: --max-old-space-size=6144
+          # `bun run build` is --content=local: content read off the filesystem
+          # (fast, no round trip) but a PRODUCTION client pointing at TinaCloud,
+          # which is what /tina-island/[name] needs at runtime on the Worker.
+          # The CLI refuses without both of these — ERR_MISSING_CLOUD_CREDS.
+          #
+          # `vars` for the client id, `secrets` for the token, matching how they
+          # are stored: the client id is public by design and ships to the
+          # browser; the token is not. Getting the prefix wrong is silent —
+          # GitHub resolves an unknown vars/secrets reference to an empty
+          # string rather than failing — which is what the guard below is for.
+          PUBLIC_TINA_CLIENT_ID: ${{ vars.PUBLIC_TINA_CLIENT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+        run: |
+          missing=""
+          [ -z "$PUBLIC_TINA_CLIENT_ID" ] && missing="$missing PUBLIC_TINA_CLIENT_ID(repo variable)"
+          [ -z "$TINA_TOKEN" ] && missing="$missing TINA_TOKEN(repo secret)"
+          if [ -n "$missing" ]; then
+            echo "FAIL: missing credentials:$missing"
+            echo "Not a build failure — a configuration one. The Tina CLI would"
+            echo "report ERR_MISSING_CLOUD_CREDS a minute from now; this says it"
+            echo "immediately and names which one, and which store it lives in."
+            exit 1
+          fi
+          bun run build
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        # `bun run deploy`, not a bare `wrangler deploy`. The -c flag is
+        # load-bearing: the Cloudflare adapter generates dist/server/wrangler.json
+        # with `main` and the ASSETS binding, while the root wrangler.jsonc has
+        # neither. A bare deploy reads the root file and has nothing to ship.
+        run: bun run deploy
