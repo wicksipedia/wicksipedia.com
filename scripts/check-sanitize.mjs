@@ -13,7 +13,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
-import { sanitizeAuthorHtml } from "../src/lib/tina/sanitize-html.ts";
+import { safeHref, sanitizeAuthorHtml } from "../src/lib/tina/sanitize-html.ts";
 import { captionFor, isValidVideoId } from "../src/lib/tina/youtube.ts";
 import { BODY_FIELD } from "./lib/body-field.mjs";
 
@@ -399,6 +399,54 @@ const VIDEO_ID_CASES = [
 	["a non-string is refused", undefined, false],
 ];
 
+/**
+ * `safeHref`, the check applied to CMS strings that reach an `href` OUTSIDE a
+ * rich-text body — `Header.astro`'s nav, `Socials.astro`, `Hero.astro`'s
+ * organisation link, `PostFeed.astro`'s archive link. None of those go through
+ * `sanitizeAuthorHtml`, so until Task 3.4 they rendered whatever the settings
+ * document said.
+ *
+ * The first four are round one of the three URL bypasses `sanitize-html.ts`
+ * documents, and `@tinacms/astro`'s own exported `sanitizeHref` — which this
+ * repo imports zero times — returns EVERY one of them unchanged. Measured
+ * against the shipped `node_modules/@tinacms/astro/dist/sanitize.js`; each one
+ * resolves to `https://evil.example` in a browser.
+ *
+ * [name, input, fallback, expected]
+ */
+const HREF_CASES = [
+	["a backslash path is refused", "/\\evil.example/x", "#", "#"],
+	["a double backslash path is refused", "/\\\\evil.example", "#", "#"],
+	["a mixed slash-backslash path is refused", "/\\/evil.example", "#", "#"],
+	["a leading tab does not hide a backslash", "\t/\\evil.example", "#", "#"],
+	[
+		"a leading C0 control does not hide one",
+		"\u0001//evil.example/x",
+		"#",
+		"#",
+	],
+	["a protocol-relative url is refused", "//evil.example/x", "#", "#"],
+	["a javascript: url is refused", "javascript:alert(1)", "#", "#"],
+	["a data: url is refused", "data:text/html,<script>x</script>", "#", "#"],
+	["a whitespace-only value falls back", "   ", "#", "#"],
+	["a missing value falls back", undefined, "#", "#"],
+	["the caller chooses the fallback", "//evil.example", "/blog", "/blog"],
+	["a site-relative path survives", "/about", "#", "/about"],
+	["a fragment survives", "#main-content", "#", "#main-content"],
+	[
+		"an https url survives",
+		"https://github.com/wicksipedia",
+		"#",
+		"https://github.com/wicksipedia",
+	],
+	[
+		"a mailto url survives",
+		"mailto:matt@example.com",
+		"#",
+		"mailto:matt@example.com",
+	],
+];
+
 const CAPTION_CASES = [
 	["a normal title is kept", "Posturr demo", "Posturr demo"],
 	["control characters are stripped", "a\u0000b\nc", "a b c"],
@@ -432,6 +480,20 @@ for (const [name, id, want] of VIDEO_ID_CASES) {
 	}
 }
 
+for (const [name, input, fallback, want] of HREF_CASES) {
+	checked++;
+	const got = safeHref(input, fallback);
+	if (got !== want) {
+		failed++;
+		err(`FAIL: safeHref — ${name}`);
+		err(
+			`  input:    ${JSON.stringify(input)} (fallback ${JSON.stringify(fallback)})`,
+		);
+		err(`  expected: ${JSON.stringify(want)}`);
+		err(`  actual:   ${JSON.stringify(got)}`);
+	}
+}
+
 for (const [name, title, want] of CAPTION_CASES) {
 	checked++;
 	const got = captionFor(title);
@@ -458,6 +520,7 @@ const EXPECTED =
 	CASES.length +
 	EMBED_PARSE_CASES.length +
 	VIDEO_ID_CASES.length +
+	HREF_CASES.length +
 	CAPTION_CASES.length;
 if (checked !== EXPECTED) {
 	err(`FAIL: ran ${checked} of ${EXPECTED} cases`);

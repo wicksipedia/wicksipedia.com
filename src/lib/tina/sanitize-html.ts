@@ -134,7 +134,7 @@ const URL_ATTRIBUTES = new Set(["href", "src", "cite"]);
  * the string that was validated is the string the browser gets, and any
  * character the parser ignores is irrelevant by construction.
  */
-function normalizeUrl(value: string): string {
+export function normalizeUrl(value: string): string {
 	// The control characters below are the ones a URL parser strips; matching
 	// them is the entire point, hence the suppressions.
 	return (
@@ -149,7 +149,7 @@ function normalizeUrl(value: string): string {
 }
 
 /** Expects an already-normalised value — see the emit site in `clean`. */
-function isSafeUrl(trimmed: string): boolean {
+export function isSafeUrl(trimmed: string): boolean {
 	// Not a security boundary on its own: the policy already permits an absolute
 	// `https://evil.example`, so this stops a cross-origin URL *masquerading* as
 	// a same-origin path, not cross-origin URLs as such.
@@ -168,6 +168,45 @@ function isSafeUrl(trimmed: string): boolean {
 		url.protocol === "http:" ||
 		url.protocol === "mailto:"
 	);
+}
+
+/**
+ * The same check, for a CMS string that reaches an `href` OUTSIDE a rich-text
+ * body — the nav in `Header.astro`, the social row, the hero's organisation
+ * link, the post feed's "all posts" link. Those never touch `clean`, so until
+ * this existed they rendered whatever the settings document said.
+ *
+ * `@tinacms/astro` exports its own `sanitizeHref` and it is imported ZERO times
+ * in this repo, which is just as well: it is round one of the three bypasses
+ * documented above. It does `.trim()` and then `startsWith("/") &&
+ * !startsWith("//")`, and never folds `\` to `/`. Measured against the shipped
+ * `node_modules/@tinacms/astro/dist/sanitize.js`:
+ *
+ *   "/\evil.example/x"   -> kept verbatim, browser resolves https://evil.example/x
+ *   "/\\evil.example"    -> kept verbatim, browser resolves https://evil.example/
+ *   "/\/evil.example"    -> kept verbatim, browser resolves https://evil.example/
+ *   "\t/\evil.example"   -> kept verbatim, browser resolves https://evil.example/
+ *
+ * All four are dropped here, because `normalizeUrl` emits the string the URL
+ * parser will actually see and `isSafeUrl` judges THAT string. Same reasoning
+ * as `clean`: validating one string and emitting another is how every hole in
+ * this file got in.
+ *
+ * `fallback` rather than `""`: an `<a>` with no href is not a link and stops
+ * being focusable, which turns a bad CMS value into a silently missing control
+ * instead of an inert one.
+ */
+export function safeHref(
+	value: string | null | undefined,
+	fallback = "#",
+): string {
+	if (typeof value !== "string") return fallback;
+	const normalized = normalizeUrl(value);
+	// `isSafeUrl("")` is true — no scheme to smuggle anything through — but an
+	// empty href resolves to the current page, which is not what a blank CMS
+	// field means.
+	if (normalized === "") return fallback;
+	return isSafeUrl(normalized) ? normalized : fallback;
 }
 
 const escapeAttribute = (value: string) =>

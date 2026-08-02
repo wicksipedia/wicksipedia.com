@@ -6,6 +6,7 @@ import IconHash from "@/assets/icons/IconHash.svg";
 import { SITE } from "@/config";
 import type { PostFeedBlock } from "@/lib/tina/pages";
 import { getAllPosts } from "@/lib/tina/posts";
+import { safeHref } from "@/lib/tina/sanitize-html";
 import { getPath } from "@/utils/getPath";
 import getSortedPosts from "@/utils/getSortedPosts";
 import { slugifyStr } from "@/utils/slugify";
@@ -71,7 +72,10 @@ const gridPosts = [
 	...(featuredPosts.length > 0 ? recentPosts : recentPosts.slice(1)),
 ].slice(0, gridLimit);
 
-const allPostsHref = data.allPostsHref ?? "/blog";
+// A CMS field rendered straight into an href. `/blog` is both the default for a
+// blank field and the fallback for a value that does not pass, so a bad one
+// lands on the archive rather than on `#`.
+const allPostsHref = safeHref(data.allPostsHref, "/blog");
 const allPostsLabel = data.allPostsLabel ?? "All posts";
 ---
 

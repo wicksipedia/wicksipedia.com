@@ -6,6 +6,7 @@ import Socials from "@/components/Socials.astro";
 import { headingText } from "@/lib/tina/heading-text";
 import { resolveUploadImage } from "@/lib/tina/images";
 import type { HeroBlock } from "@/lib/tina/pages";
+import { normalizeUrl, safeHref } from "@/lib/tina/sanitize-html";
 import type { CmsSocial } from "@/lib/tina/settings";
 
 /**
@@ -104,10 +105,15 @@ const avatarAsset =
 		? resolvedAvatar
 		: undefined;
 /** The fallback URL for a ref that resolved to nothing. `""` renders nothing. */
+// `normalizeUrl` FIRST, for the reason `BlogImage.astro` gives at its own call
+// site: the library's `sanitizeImageSrc` never folds `\` to `/`, so
+// `/\evil.example/x` survives it and the browser loads https://evil.example/x.
 const avatarSrc = avatarAsset
 	? ""
 	: sanitizeImageSrc(
-			typeof resolvedAvatar === "string" ? resolvedAvatar : avatarRef,
+			normalizeUrl(
+				typeof resolvedAvatar === "string" ? resolvedAvatar : avatarRef,
+			),
 		);
 /**
  * One candidate list for both instances, so whichever one the viewport shows,
@@ -124,6 +130,10 @@ const avatarSizes = "(min-width: 768px) 500px, 160px";
 // own heading — one `<h1>` by count, with no accessible name.
 const name = headingText(data.name);
 const alt = data.alt ?? "";
+// A CMS field rendered straight into an href. `@tinacms/astro` exports a
+// `sanitizeHref` for exactly this and it is imported nowhere; it also has the
+// backslash hole, so this uses ours.
+const organizationUrl = safeHref(data.organizationUrl);
 ---
 
 <section
@@ -192,7 +202,7 @@ const alt = data.alt ?? "";
         >
           {data.jobTitle} at{" "}
           <a
-            href={data.organizationUrl}
+            href={organizationUrl}
             target="_blank"
             rel="noopener noreferrer"
             class="font-semibold underline decoration-dashed underline-offset-4 hover:decoration-solid"

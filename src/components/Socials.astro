@@ -11,6 +11,7 @@
 import { tinaField } from "@tinacms/astro/tina-field";
 import { SITE } from "@/config";
 import { SOCIAL_ICONS } from "@/constants";
+import { safeHref } from "@/lib/tina/sanitize-html";
 import type { CmsSocial } from "@/lib/tina/settings";
 import LinkButton from "./LinkButton.astro";
 
@@ -28,9 +29,11 @@ const { socials } = Astro.props;
         ? SOCIAL_ICONS[social.icon]
         : undefined;
       const linkTitle = `${SITE.title} on ${social.name}`;
+      // `LinkButton` spreads `{...attrs}` onto the <a> unfiltered, so this is
+      // the last place a CMS-supplied href can be checked at all.
       return Icon ? (
         <LinkButton
-          href={social.href}
+          href={safeHref(social.href)}
           class="p-2 hover:rotate-6 sm:p-1"
           title={linkTitle}
           data-tina-field={tinaField(social, "href") || undefined}

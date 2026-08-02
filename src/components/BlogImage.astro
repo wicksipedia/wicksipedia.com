@@ -2,6 +2,7 @@
 import { Image } from "astro:assets";
 import { sanitizeImageSrc } from "@tinacms/astro/sanitize";
 import { resolveBlogImage } from "@/lib/tina/images";
+import { normalizeUrl } from "@/lib/tina/sanitize-html";
 
 /**
  * Renderer for Tina rich-text `img` nodes.
@@ -33,8 +34,14 @@ const resolved = resolveBlogImage("", url);
 // Anything that did not resolve to a colocated asset is a URL straight from the
 // content source, so it goes through the same scheme check the library's own
 // image renderer applies rather than being trusted because we skipped that path.
+//
+// `normalizeUrl` FIRST, because that check has the backslash hole this repo
+// already closed once: `sanitizeImageSrc("/\evil.example/x")` returns the value
+// untouched and the browser loads https://evil.example/x. Normalising to the
+// string a URL parser will actually see turns it into `//evil.example/x`, which
+// the library then refuses. See `src/lib/tina/sanitize-html.ts`.
 const fallbackSrc = sanitizeImageSrc(
-	typeof resolved === "string" ? resolved : url,
+	normalizeUrl(typeof resolved === "string" ? resolved : url),
 );
 ---
 
