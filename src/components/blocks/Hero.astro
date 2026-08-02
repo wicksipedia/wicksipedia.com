@@ -1,6 +1,7 @@
 ---
 import { tinaField } from "@tinacms/astro/tina-field";
 import Socials from "@/components/Socials.astro";
+import { headingText } from "@/lib/tina/heading-text";
 import type { HeroBlock } from "@/lib/tina/pages";
 import type { CmsSocial } from "@/lib/tina/settings";
 
@@ -70,7 +71,11 @@ const { data, socials, primary = true, sectionId = "hero" } = Astro.props;
 const NameTag = primary ? "h1" : "h2";
 
 const avatar = data.avatar ?? "";
-const name = data.name ?? "";
+// Trimmed, and the trimmed value is what renders. `primaryHeroIndex` decides
+// whether this hero owns the page's `<h1>` from the same helper, so an untrimmed
+// one here would put `<h1>   </h1>` on a page that had already suppressed its
+// own heading — one `<h1>` by count, with no accessible name.
+const name = headingText(data.name);
 const alt = data.alt ?? "";
 ---
 

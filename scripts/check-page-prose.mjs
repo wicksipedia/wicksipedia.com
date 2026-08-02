@@ -11,12 +11,13 @@
  * means nothing was read. Measured, not assumed.
  *
  * So the bodies are extracted, written out as real Markdown, and linted as
- * files. Four things are asserted rather than hoped for:
+ * files. Five things are asserted rather than hoped for:
  *
  *   1. at least one page, and at least one prose body, was found;
  *   2. every page file that exists was parsed;
  *   3. no body authors an `<h1>` — see the heading section below;
- *   4. Vale's own trailing "in N files" count equals the number of files
+ *   4. every page renders an `<h1>` whose accessible name is non-empty;
+ *   5. Vale's own trailing "in N files" count equals the number of files
  *      written. That is the assertion that fails if the `.vale.ini` section
  *      guarding the scratch directory is ever removed — without it, Vale
  *      silently matches nothing and exits 0, which is the exact failure this
@@ -30,11 +31,24 @@
  * editor's heading levels; that is UI-only by Tina's own documentation, and both
  * committed page documents were seeded by hand, so it is asserted here too.
  *
- * The fixtures below are not decoration. The committed corpus contains no
- * headings at all, so the corpus scan on its own is a loop over an empty set —
- * which passes identically to a scan that works. The fixtures put a known `#`
- * through the same parser and the same predicate, and the suite refuses to run
- * unless at least one of them is rejected and at least one accepted.
+ * The predicate, the allowed levels and the fixtures live in
+ * `scripts/lib/headings.mjs`, shared with `check-content.mjs`, which enforces
+ * the same rule over post bodies. The fixtures are not decoration: the committed
+ * corpus contains no headings at all, so the corpus scan on its own is a loop
+ * over an empty set — which passes identically to a scan that works. The
+ * fixtures put a known `#` through the same parser and the same predicate, and
+ * the suite refuses to run unless at least one of them is rejected and at least
+ * one accepted.
+ *
+ * NON-EMPTY, not merely present. A count of `<h1>` elements cannot see the
+ * failure this check shipped with: `name: "   "` on a leading hero made the
+ * runtime suppress the page heading and render `<h1>   </h1>`, one `<h1>` with
+ * no accessible name, while this file trimmed the same value away and reported
+ * the `seoTitle` the runtime never reached. The check and the runtime now share
+ * `hasHeadingText` (`src/lib/tina/heading-text.ts`) so they cannot spell the
+ * test differently again, and the hero template and its name field are read off
+ * `heroBlockSchema` so renaming either fails loudly instead of quietly matching
+ * nothing.
  *
  * The set of fields to lint is derived from the block schemas rather than
  * hardcoded to `prose.body`, so a rich-text field added to any block is covered
@@ -61,7 +75,16 @@ import { githubStatsBlockSchema } from "../src/components/blocks/github-stats.te
 import { heroBlockSchema } from "../src/components/blocks/hero.template.ts";
 import { postFeedBlockSchema } from "../src/components/blocks/post-feed.template.ts";
 import { proseBlockSchema } from "../src/components/blocks/prose.template.ts";
+import { hasHeadingText, headingText } from "../src/lib/tina/heading-text.ts";
 import { parserForFormat } from "./lib/body-field.mjs";
+import {
+	ALLOWED_HEADING_LEVELS,
+	assertRestrictsHeadingLevels,
+	collectHeadings,
+	disallowedHeadings,
+	reportHeadingRuleError,
+	runHeadingFixtures,
+} from "./lib/headings.mjs";
 
 const PAGES_BASE = "content/pages";
 /** Scratch directory. `.vale.ini` has a section matching this path — see above. */
@@ -131,122 +154,53 @@ if (declaredRichTextFields.length === 0) {
 }
 
 /**
- * Heading levels a block body may author. `h1` is the PAGE's heading — see the
- * heading section in this file's header, and `primaryHeroIndex` in
- * `src/lib/tina/pages.ts` for the invariant this is the other half of.
+ * The heading rule itself — the allowed levels, the AST walk, the fixtures and
+ * the schema assertion — lives in `scripts/lib/headings.mjs`, because
+ * `check-content.mjs` enforces the same rule over post bodies and two copies of
+ * "what counts as an h1" is two things that can drift.
  *
- * Kept in step with `prose.template.ts`'s `overrides.headingLevels` by the
- * assertion below rather than by hand, so restricting the editor further (or
- * loosening it) cannot leave the two disagreeing about what is legal.
- */
-const ALLOWED_HEADING_LEVELS = new Set(["h2", "h3", "h4", "h5", "h6"]);
-
-/**
- * EVERY rich-text field on every block template, not just `prose.body`.
- *
- * `richTextFields` above derives what gets linted and heading-checked from all
- * four templates on purpose — the file header brags about it. Asserting the
- * schema restriction on one field BY NAME would leave that asymmetry open: a
- * rich-text field added to `hero`, `postFeed` or `githubStats` would be
- * heading-checked here while its editor still offered "Heading 1", and the h1
- * would surface only once somebody authored one. Same derivation, same set.
+ * EVERY rich-text field on every block template is asserted, not just
+ * `prose.body`. `richTextFields` above derives what gets linted and
+ * heading-checked from all four templates on purpose — the file header brags
+ * about it. Asserting the schema restriction on one field BY NAME would leave
+ * that asymmetry open: a rich-text field added to `hero`, `postFeed` or
+ * `githubStats` would be heading-checked here while its editor still offered
+ * "Heading 1", and the h1 would surface only once somebody authored one. Same
+ * derivation, same set.
  */
 let schemaFieldsChecked = 0;
-for (const template of TEMPLATES) {
-	for (const field of template.fields ?? []) {
-		if (field.type !== "rich-text") continue;
-		schemaFieldsChecked++;
-		const levels = field.overrides?.headingLevels ?? [];
-		if (levels.length === 0) {
-			err(
-				`FAIL: ${template.name}.${field.name} declares no overrides.headingLevels —`,
-			);
-			err(
-				"  its editor's heading dropdown still offers Heading 1. See prose.template.ts",
-			);
-			err("  for the shape, and why toolbarOverride is not the instrument.");
-			process.exit(1);
-		}
-		const disagreement = [
-			...levels.filter((level) => !ALLOWED_HEADING_LEVELS.has(level)),
-			...[...ALLOWED_HEADING_LEVELS].filter((level) => !levels.includes(level)),
-		];
-		if (disagreement.length > 0) {
-			err(
-				`FAIL: ${template.name}.${field.name} allows [${levels.join(", ")}] but this check enforces [${[...ALLOWED_HEADING_LEVELS].join(", ")}]`,
-			);
-			err(`  disagreeing on: ${disagreement.join(", ")}`);
-			process.exit(1);
+try {
+	for (const template of TEMPLATES) {
+		for (const field of template.fields ?? []) {
+			if (field.type !== "rich-text") continue;
+			schemaFieldsChecked++;
+			assertRestrictsHeadingLevels(`${template.name}.${field.name}`, field);
 		}
 	}
+} catch (error) {
+	reportHeadingRuleError(error, err);
 }
 
 /**
- * The concatenated text of a node's subtree. Tina's rich-text nodes carry no
- * `position`, so the heading's own words are the only way to point an author at
- * the one that is wrong.
+ * Which block template owns the page's `<h1>`, and the field that holds its
+ * text — read off the schema rather than spelled `"hero"` and `"name"` here.
+ *
+ * Hardcoding them would turn this guard into a silent no-op the day the
+ * template is renamed: `_template === "hero"` would simply stop matching, every
+ * page would take the `seoTitle` fallback branch, and the check would keep
+ * printing that all of them render exactly one `<h1>`. Failing loudly on a
+ * rename is the same principle the rest of this file applies to
+ * `richTextFields`.
  */
-function nodeText(node) {
-	if (typeof node?.text === "string") return node.text;
-	return (node?.children ?? []).map(nodeText).join("");
-}
-
-/** Every heading node in a body, depth-first, in document order. */
-function collectHeadings(node, into = []) {
-	if (typeof node?.type === "string" && /^h[1-6]$/.test(node.type)) {
-		into.push({ level: node.type, text: nodeText(node).trim() });
-	}
-	for (const child of node?.children ?? []) collectHeadings(child, into);
-	return into;
-}
-
-/** Which of a body's headings a block must not have authored. */
-const disallowedHeadings = (headings) =>
-	headings.filter((heading) => !ALLOWED_HEADING_LEVELS.has(heading.level));
-
-/**
- * Known bodies with known headings, so the two functions above are exercised
- * whatever the corpus happens to contain. `setext` is here because `Title\n===`
- * is an h1 that contains no `#` — a check that grepped for the character would
- * pass it, and Tina's parser does emit `h1` for it (measured).
- */
-const HEADING_FIXTURES = [
-	{ name: "atx h1", body: "# Page title", levels: ["h1"], bad: ["h1"] },
-	{
-		name: "setext h1",
-		body: "Page title\n==========",
-		levels: ["h1"],
-		bad: ["h1"],
-	},
-	{
-		name: "h1 below a paragraph",
-		body: "Intro.\n\n# Page title",
-		levels: ["h1"],
-		bad: ["h1"],
-	},
-	{ name: "h2", body: "## Section", levels: ["h2"], bad: [] },
-	{
-		name: "h3 then h6",
-		body: "### Deeper\n\n###### Deepest",
-		levels: ["h3", "h6"],
-		bad: [],
-	},
-	{ name: "no headings", body: "Just a paragraph.", levels: [], bad: [] },
-];
-
-// A fixture set that rejects nothing proves the predicate cannot go red; one
-// that accepts no heading proves only that it rejects everything. Both pass a
-// corpus of two heading-free documents identically to a working check.
-if (!HEADING_FIXTURES.some((fixture) => fixture.bad.length > 0)) {
-	err("FAIL: no heading fixture expects a rejection — check cannot go red");
-	process.exit(1);
-}
-if (
-	!HEADING_FIXTURES.some(
-		(fixture) => fixture.levels.length > 0 && fixture.bad.length === 0,
-	)
-) {
-	err("FAIL: no heading fixture expects an accepted heading — check is a stub");
+const HERO_TEMPLATE = heroBlockSchema.name;
+const HERO_NAME_FIELD = (heroBlockSchema.fields ?? []).find(
+	(field) => field.name === "name",
+)?.name;
+if (!HERO_TEMPLATE || !HERO_NAME_FIELD) {
+	err(
+		`FAIL: hero block schema has no ${HERO_TEMPLATE ? "`name` field" : "template name"} —`,
+	);
+	err("  the page-heading guard below would match nothing and pass silently.");
 	process.exit(1);
 }
 
@@ -263,26 +217,22 @@ if (files.length === 0) {
 // the format off the filename, exactly as it does for a real document.
 const corpusExtensions = [...new Set(files.map((file) => extname(file)))];
 let fixtureRuns = 0;
-for (const extension of corpusExtensions) {
-	const field = richTextField(`fixture${extension}`, "prose", "body");
-	for (const fixture of HEADING_FIXTURES) {
-		const found = collectHeadings(parseMDX(fixture.body, field, (v) => v));
-		const levels = found.map((heading) => heading.level);
-		const bad = disallowedHeadings(found).map((heading) => heading.level);
-		if (levels.join(",") !== fixture.levels.join(",")) {
-			err(
-				`FAIL: heading fixture "${fixture.name}" (${extension}) parsed to [${levels.join(", ")}], expected [${fixture.levels.join(", ")}]`,
-			);
-			process.exit(1);
-		}
-		if (bad.join(",") !== fixture.bad.join(",")) {
-			err(
-				`FAIL: heading fixture "${fixture.name}" (${extension}) rejected [${bad.join(", ")}], expected [${fixture.bad.join(", ")}]`,
-			);
-			process.exit(1);
-		}
-		fixtureRuns++;
+try {
+	for (const extension of corpusExtensions) {
+		fixtureRuns += runHeadingFixtures(
+			richTextField(`fixture${extension}`, "prose", "body"),
+			extension,
+		);
 	}
+} catch (error) {
+	reportHeadingRuleError(error, err);
+}
+// `corpusExtensions` is derived from a `files` list already asserted non-empty,
+// so this cannot be zero without the loop above being edited — a structural
+// assertion, not an input-driven one, and cheap next to what it rules out.
+if (fixtureRuns === 0) {
+	err("FAIL: ran no heading fixtures — the h1 predicate is unexercised");
+	process.exit(1);
 }
 
 rmSync(SCRATCH, { recursive: true, force: true });
@@ -321,22 +271,34 @@ try {
 		// count is 0 — worse than the two-<h1> case the rest of this guards.
 		//
 		// Mirrors `primaryHeroIndex`: only `blocks[0]`, only a non-blank `name`.
+		// "Mirrors" is now literal — `hasHeadingText` is the same function the
+		// runtime calls, imported from `src/lib/tina/heading-text.ts`. It used to
+		// be a hand-written `.trim() !== ""` beside a runtime `Boolean(name)`, and
+		// the gap between them was a real hole: `name: "   "` made the runtime
+		// suppress the page heading and render `<h1>   </h1>` while this check
+		// reported the `seoTitle` it never reached. One <h1> by count, no
+		// accessible name, and this line printed OK.
 		const firstBlock = blocks[0];
 		const heroOwnsHeading =
-			firstBlock?._template === "hero" &&
-			typeof firstBlock.name === "string" &&
-			firstBlock.name.trim() !== "";
-		const pageHeading =
-			`${data.heading ?? ""}`.trim() || `${data.seoTitle ?? ""}`.trim();
-		if (heroOwnsHeading || pageHeading !== "") {
+			firstBlock?._template === HERO_TEMPLATE &&
+			hasHeadingText(firstBlock[HERO_NAME_FIELD]);
+		const pageHeading = heroOwnsHeading
+			? headingText(firstBlock[HERO_NAME_FIELD])
+			: headingText(data.heading) || headingText(data.seoTitle);
+		if (pageHeading !== "") {
 			pagesWithHeading++;
 		} else {
-			err(`FAIL: ${PAGES_BASE}/${file} would render no <h1> at all`);
 			err(
-				"  Its first block is not a Hero with a Name, and both Page Heading and",
+				`FAIL: ${PAGES_BASE}/${file} would render no <h1> with an accessible name`,
 			);
 			err(
-				"  Meta Title are blank. `required: true` is a form rule, not a content one.",
+				`  Its first block is not a ${HERO_TEMPLATE} with a ${HERO_NAME_FIELD}, and both Page Heading`,
+			);
+			err(
+				"  and Meta Title are blank or whitespace. `required: true` is a form rule,",
+			);
+			err(
+				"  not a content one, and it does not reject a field containing only spaces.",
 			);
 			process.exit(1);
 		}
@@ -435,9 +397,21 @@ try {
 
 	// The corpus legitimately contains zero headings today, so "0 disallowed" is
 	// what a WORKING scan prints and also what deleting the scan prints. Counting
-	// the bodies it walked, and reconciling against the bodies extracted, is the
-	// assertion that can tell those apart — the same trick this file already uses
-	// on Vale's "in N files" count, and for the same reason.
+	// the bodies it walked, and reconciling against the bodies extracted, is what
+	// tells those apart.
+	//
+	// SAME REASON AS THE VALE COUNT BELOW, WEAKER INSTRUMENT — and the next
+	// reader should know which one they are holding. The Vale assertion compares
+	// a number this script computed against one an EXTERNAL PROCESS produced, so
+	// the two can diverge on real input: a `.vale.ini` that stops matching the
+	// scratch directory makes it fire with nothing else changed. Both numbers
+	// here are computed by the same loop in the same file, so they can only
+	// diverge on a code change. That makes this a STRUCTURAL assertion — the same
+	// category as the `HEADING_FIXTURES` guards in `lib/headings.mjs` and the
+	// `declaredRichTextFields.length === 0` exit above: it cannot catch bad
+	// content, only a check that has quietly stopped being a check. Kept for
+	// exactly that, and worth its four lines, because "walked nothing" is the
+	// failure this branch has shipped nine times.
 	if (bodiesHeadingScanned !== bodiesLinted) {
 		err(
 			`FAIL: scanned ${bodiesHeadingScanned} of ${bodiesLinted} prose body/bodies for headings`,
@@ -447,8 +421,8 @@ try {
 		process.exit(1);
 	}
 
-	// Likewise: the zero-<h1> guard runs per page, so prove it saw every page
-	// rather than short-circuiting past some.
+	// Likewise, and likewise structural: the zero-<h1> guard runs per page, so
+	// prove it saw every page rather than short-circuiting past some.
 	if (pagesWithHeading !== pagesParsed) {
 		err(
 			`FAIL: confirmed a heading for ${pagesWithHeading} of ${pagesParsed} page(s)`,
@@ -495,7 +469,7 @@ try {
 		exitCode = 1;
 	} else {
 		out(
-			`OK: ${bodiesLinted} page prose bodies (${words} words) from ${pagesParsed} page(s) and ${blocksSeen} block(s) parse without invalid_markdown and lint clean (${emptyBodies} empty rich-text field(s) skipped); ${schemaFieldsChecked} rich-text field(s) restrict headings to ${[...ALLOWED_HEADING_LEVELS].join("/")}, ${fixtureRuns} heading-level fixture run(s) agree, and ${bodiesHeadingScanned} scanned body/bodies hold ${headingsSeen} conforming heading(s); all ${pagesWithHeading} page(s) render exactly one <h1>; Vale confirms it read ${valeRead} file(s)`,
+			`OK: ${bodiesLinted} page prose bodies (${words} words) from ${pagesParsed} page(s) and ${blocksSeen} block(s) parse without invalid_markdown and lint clean (${emptyBodies} empty rich-text field(s) skipped); ${schemaFieldsChecked} rich-text field(s) restrict headings to ${[...ALLOWED_HEADING_LEVELS].join("/")}, ${fixtureRuns} heading-level fixture run(s) agree, and ${bodiesHeadingScanned} scanned body/bodies hold ${headingsSeen} conforming heading(s); all ${pagesWithHeading} page(s) render exactly one <h1> with a non-empty accessible name; Vale confirms it read ${valeRead} file(s)`,
 		);
 	}
 } finally {

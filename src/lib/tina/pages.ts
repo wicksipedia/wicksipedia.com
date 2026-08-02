@@ -8,6 +8,7 @@
  * filters it out.
  */
 import { requestWithMetadata } from "@tinacms/astro/data";
+import { hasHeadingText } from "@/lib/tina/heading-text";
 import { isValidPageSlug } from "@/lib/tina/island-guard";
 import client from "../../../tina/__generated__/client";
 
@@ -150,6 +151,14 @@ export function pageBlocks(page?: CmsPage | null): PageBlock[] {
  * to prevent. Deliberately fixed here rather than by making the field required,
  * so the rendering stays correct for documents that already exist.
  *
+ * BLANK means `.trim() === ""`, not `=== ""`. `Boolean("   ")` is true, so a
+ * name of three spaces used to make this return 0: the page suppressed its own
+ * heading and the hero rendered `<h1>   </h1>` — one `<h1>` by count, with no
+ * accessible name, which is the zero-heading case wearing a hat. Measured in a
+ * built page, not reasoned about. `PageBlocks.astro` and `Hero.astro` trim for
+ * the same reason, and `scripts/check-page-prose.mjs` — which already trimmed —
+ * could not see the divergence, because it only ever counted `<h1>` elements.
+ *
  * So for every block arrangement the CMS can produce there is exactly one
  * `<h1>`, and no heading precedes it — without asking the author to know any of
  * this. `scripts/check-page-prose.mjs` closes the other half of the invariant:
@@ -158,7 +167,9 @@ export function pageBlocks(page?: CmsPage | null): PageBlock[] {
  */
 export function primaryHeroIndex(blocks: PageBlock[]): number {
 	const first = blocks[0];
-	return first?.__typename === "PageBlocksHero" && Boolean(first.name) ? 0 : -1;
+	return first?.__typename === "PageBlocksHero" && hasHeadingText(first.name)
+		? 0
+		: -1;
 }
 
 export type HeroBlock = Extract<PageBlock, { __typename: "PageBlocksHero" }>;

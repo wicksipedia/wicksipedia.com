@@ -1,6 +1,7 @@
 ---
 import { tinaField } from "@tinacms/astro/tina-field";
 import Blocks from "@/components/blocks/Blocks.astro";
+import { headingText } from "@/lib/tina/heading-text";
 import { type CmsPage, pageBlocks, primaryHeroIndex } from "@/lib/tina/pages";
 import type { CmsSocial } from "@/lib/tina/settings";
 
@@ -65,9 +66,20 @@ const blocks = pageBlocks(data);
  *
  * `||` and not `??`: clearing the field in the admin writes an empty string, not
  * null, and an empty `<h1>` is the zero-heading case wearing a hat.
+ *
+ * `headingText()` on both for the same reason one step further out. `"   " || x`
+ * short-circuits on the whitespace, so a hand-written `heading: "   "` rendered
+ * `<h1>   </h1>` and never reached the `seoTitle` that would have filled it —
+ * one `<h1>` by count with no accessible name. Measured in a built page. The
+ * trimmed value is what renders, so the text matches what was tested, and it
+ * comes from the shared helper that `primaryHeroIndex`, `Hero.astro` and
+ * `scripts/check-page-prose.mjs` all use — the divergence above is what happens
+ * when they each spell it themselves.
  */
 const heroOwnsHeading = primaryHeroIndex(blocks) !== -1;
-const heading = heroOwnsHeading ? "" : data?.heading || data?.seoTitle || "";
+const heading = heroOwnsHeading
+	? ""
+	: headingText(data?.heading) || headingText(data?.seoTitle);
 
 /**
  * `data-layout="index"` is read by the back-button script in
