@@ -2896,7 +2896,26 @@ git commit -m "feat: render home and about from Tina page blocks"
 
 Three whole-branch reviews (accessibility/UX, security, spec) ran at the end of Phase 3. Their verdict was **merge the branch, do not switch on Tina Cloud yet**. What follows is what "not yet" means.
 
-- [ ] **Decide how `TINA_TOKEN` reaches the Worker.** Measured with the empty placeholder: `dist/server/chunks/_name__*.mjs` already contains `token: ""` and `localhost:4001` — the generated Tina client is bundled into the `/tina-island/[name]` chunk. A real token therefore lands in the deployed Worker script. Either read it from a Cloudflare secret binding at request time, or accept a build-time secret and **add a CI guard that fails the build if the token value appears anywhere in `dist/`**. Do not leave this implicit.
+- [x] **`TINA_TOKEN` in the Worker script — DECIDED: accept it, guard the part that matters.** Measured with the empty placeholder: `dist/server/chunks/_name__*.mjs` contains `token: ""` and `localhost:4001`, because the generated Tina client is imported by `/tina-island/[name]`, which is `prerender = false`. A real token therefore lands in the deployed Worker script.
+
+  Matt's call (2026-08-02): that is acceptable — `dist/server` is the Worker script and is not served to browsers, and keeping the token out entirely would mean constructing the client per-request from a secret binding instead of importing it. The failure that would actually matter is the token reaching `dist/client`, which is published as static assets.
+
+  `scripts/check-token-leak.mjs` now runs inside all three build scripts and fails on exactly that. It reports what it found in `dist/server` rather than asserting it, so the accepted trade-off stays visible. Mutation-proved: planting the token in `dist/client` turns it red naming the file; an absent `TINA_TOKEN` reports **SKIPPED, explicitly not a pass**; a missing or empty `dist/client` is a hard failure; and a token under 12 characters is refused as too short to be a meaningful needle.
+
+- [x] **Credentials — ALREADY CONFIGURED.** `PUBLIC_TINA_CLIENT_ID` and `TINA_TOKEN` exist in the Cloudflare Workers Builds environment. **One fix outstanding: `TINA_TOKEN` is stored as a Variable, not a Secret.** Variables are plaintext, readable by anyone with dashboard access, and can surface in build logs; Secrets are encrypted at rest and write-only. `PUBLIC_TINA_CLIENT_ID` as a Variable is correct — it is public by design. Change the token's type in the dashboard; no code impact.
+
+- [x] **Deploy path — DECIDED: Cloudflare Workers Builds, and GitHub is out of the loop entirely.** Cloudflare clones the repo on push, builds with its own environment, and deploys. `.github/workflows/daily-deploy.yml` used to do `bun install && bun run build && wrangler deploy` as well — two independent pipelines building the same commit and racing to deploy it, neither aware of the other. **Deleted.**
+
+  The daily rebuild it existed for is still needed: `postFilter` hides a post until its `pubDatetime` passes, and that is decided at build time, so a post dated for next week never appears without a scheduled rebuild. Workers Builds has no cron of its own — it triggers on push and on Deploy Hooks ([docs](https://developers.cloudflare.com/workers/ci-cd/builds/)) — but Workers do have [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/), and a Deploy Hook is just a URL. So `workers/daily-rebuild/` is a ~10-line Worker whose only job is one POST at 20:00 UTC.
+
+  It **throws** on a missing secret or a non-2xx response rather than returning, so a broken hook shows up as a failed invocation in Cloudflare observability. A scheduled job that quietly stops is the worst shape this could take — the site keeps serving, nothing errors, and scheduled posts simply never appear.
+
+  **Three manual steps:**
+  1. Create the Deploy Hook: Workers & Pages → `wicksipedia-dot-com` → Settings → Deploy Hooks → add one for branch `main`, copy the URL.
+  2. `cd workers/daily-rebuild && bunx wrangler secret put DEPLOY_HOOK` (paste the URL), then `bun run deploy:rebuild-cron`.
+  3. **Set the Cloudflare build command to `bun run build`** — not `build:local`. That is the `--content=local` variant, which generates the TinaCloud-pointing client the deployed admin's live preview needs.
+
+  Deploy Hooks are rate-limited to 10 builds/min per Worker and 100/min per account — irrelevant for one daily POST, but relevant if anyone ever wires a retry loop to it.
 
 - [ ] **Rate-limit and time-bound `/tina-island/[name]`.** It is an unauthenticated public POST endpoint, and after Phase 4 each request costs a Tina Cloud GraphQL round trip — unmetered quota exhaustion and Worker CPU burn by anyone who can spell the path. There is no timeout either (`AbortSignal.timeout(5000)` on the Tina fetch). Consider requiring the Tina session cookie: the endpoint exists only to serve the authenticated admin preview.
 

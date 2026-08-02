@@ -1,0 +1,27 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "wicksipedia-daily-rebuild",
+	"main": "index.js",
+	"compatibility_date": "2026-01-26",
+
+	// 20:00 UTC = 6am AEST (UTC+10). Same time the GitHub Action this replaces
+	// used to run, so scheduled posts keep appearing at the hour they always did.
+	// Note AEST/AEDT: the cron is fixed UTC, so during daylight saving the
+	// rebuild lands at 7am local rather than 6am. That was true of the old
+	// workflow too, and an hour's drift on a blog rebuild is not worth a
+	// timezone-aware scheduler.
+	"triggers": {
+		"crons": ["0 20 * * *"]
+	},
+
+	// The only signal that this Worker has stopped working. `scheduled()` throws
+	// on a non-2xx hook response, which shows up here as a failed invocation;
+	// without observability a broken hook and a working one look identical.
+	"observability": {
+		"enabled": true
+	}
+
+	// DEPLOY_HOOK is a secret, set with `wrangler secret put DEPLOY_HOOK`.
+	// Deliberately not a `vars` entry: the hook URL is a bearer credential, and
+	// `vars` are plaintext and visible in the dashboard.
+}

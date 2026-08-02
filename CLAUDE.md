@@ -26,6 +26,7 @@ bun run build:local  # The build that works TODAY — no Tina Cloud credentials 
 bun run build        # --content=local: local content, TinaCloud-pointing client. NEEDS creds.
 bun run build:cloud  # Content fetched from Tina Cloud. NEEDS creds.
 bun run preview      # build:local + preview with wrangler dev
+bun run deploy:rebuild-cron  # Deploy the daily-rebuild cron Worker (rarely; see below)
 bun run deploy       # Deploy to Cloudflare Workers via wrangler
 bun run format:check # Biome format check
 bun run format       # Biome format write
