@@ -25,16 +25,33 @@ export const pageCollection: Collection = {
 			// routes priority, so a page named e.g. `blog` would index in Tina, pass
 			// every build check, and silently never render. Refuse the name instead.
 			//
-			// Every entry is a POST-slugify form. The plan's list carried
-			// `rss.xml`, `robots.txt` and `og.png`, none of which can ever match:
-			// slugify has already turned `.` into `-` by the time the comparison
-			// runs, so those three were three entries that could never fire. The
-			// reachable spellings are `rss-xml`, `robots-txt`, `og-png`.
+			// The list is derived from what actually lands at the top level of
+			// `dist/client`, filtered by what a slug can even be. A slug is
+			// `[a-z0-9-]+` by the time it is compared, so **no route containing a
+			// dot is reachable** and none of them belongs here: `rss.xml`,
+			// `robots.txt`, `og.png`, `sitemap-index.xml`, `favicon.ico`,
+			// `404.html` and friends can never equal a slug. The plan's list
+			// carried three of those, and respelling them `rss-xml` / `robots-txt`
+			// / `og-png` (as this file briefly did) is just as wrong in the other
+			// direction — `/rss-xml` does not collide with `/rss.xml`, so that only
+			// blocked innocent titles.
 			//
-			// `about` is deliberately NOT here — it is one of the CMS pages
-			// (`content/pages/about.mdx`), and `src/pages/about.mdx` disappears in
-			// Task 3.2. `index` and `tina-island` are here because they are real
-			// top-level routes (`src/pages/index.astro`, `src/pages/tina-island/`).
+			// What is left is the directories: a page slug equal to one of these
+			// writes `dist/client/<slug>/index.html` into a directory that already
+			// belongs to something else.
+			//
+			//   blog tags archives search   real Astro routes
+			//   admin                       the TinaCMS SPA in public/admin
+			//   pagefind uploads            the search index and Tina's media root
+			//
+			// `about` is deliberately absent: it *is* one of the CMS pages
+			// (`content/pages/about.mdx`), and `src/pages/about.mdx` goes away in
+			// Task 3.2.
+			//
+			// `index`, `404` and `tina-island` cannot collide as files — `index.html`
+			// and `404.html` are files, not directories, and `tina-island` is a
+			// server route that emits nothing static — but all three would produce a
+			// URL that reads like the real one. Kept as defence, not as a fix.
 			slugify: (values) => {
 				const RESERVED = [
 					"blog",
@@ -42,12 +59,11 @@ export const pageCollection: Collection = {
 					"archives",
 					"search",
 					"admin",
+					"pagefind",
+					"uploads",
 					"index",
 					"tina-island",
 					"404",
-					"rss-xml",
-					"robots-txt",
-					"og-png",
 				];
 				const slug = (values?.seoTitle ?? "")
 					.toLowerCase()
