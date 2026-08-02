@@ -1,0 +1,33 @@
+# `bun run check` — the six content-parse suites in scripts/check-*.mjs.
+#
+# Until this existed, nothing ran them on a push or a PR. The only workflows
+# were the 20:00 UTC cron deploy, the security.txt refresh and the (inert) prose
+# lint, so a guard regression surfaced up to ~24h later in the nightly deploy, or
+# not until somebody happened to build locally. The suites take about 2 seconds.
+#
+# Deliberately ONLY `bun run check`:
+#   - not `bun run lint`, which has 3 pre-existing errors on main and would make
+#     this workflow red from its first run, training everyone to ignore it;
+#   - not a full build, which needs a Tina datalayer and several minutes. The
+#     nightly deploy already covers that.
+#
+# No `actions/setup-node`: the scripts run under the runner's own Node (they
+# import `tina/collections/blog.ts` directly and rely on Node's type stripping,
+# which is on by default from Node 22.18). `daily-deploy.yml` already depends on
+# the runner's Node the same way, via `bun run build` -> `bun run check`, so
+# pinning it here and not there would be the drift, not the fix.
+name: Checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+
+      - run: bun run check
