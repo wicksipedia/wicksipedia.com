@@ -64,6 +64,33 @@ const socialImageURL = new URL(
 	Astro.url,
 );
 
+/**
+ * Serialise an object for a `<script type="application/ld+json">` body.
+ *
+ * `JSON.stringify` escapes nothing that matters to an HTML parser. It does not
+ * touch `<` or `/`, so a value containing `</script>` CLOSES THE SCRIPT ELEMENT
+ * and everything after it is parsed as markup. Both objects below carry
+ * author-controlled strings — `headline` is the post title verbatim, and
+ * `breadcrumbData.itemListElement[].name` is the same title again — so a post
+ * titled `</script><img src=x onerror=alert(1)>` put a live `<img>` into the
+ * `<head>` of its page, twice, firing on load for every visitor with no
+ * interaction. Measured on a built page before this existed.
+ *
+ * That title is reachable from the CMS: Tina Cloud is designed to let an editor
+ * publish without a commit or a review, which is the same reason
+ * `src/lib/tina/sanitize-html.ts` exists for post bodies.
+ *
+ * `<` is valid JSON and every parser decodes it back to `<`, so the
+ * document a crawler reads is unchanged. U+2028/U+2029 are legal inside a JSON
+ * string but not inside a JavaScript one; they are not a breakout here, and are
+ * escaped because the recipe costs nothing and this string is copied by tools
+ * that do put it in a JS context.
+ */
+const ldJson = (value: unknown): string =>
+	JSON.stringify(value)
+		.replace(/</g, "\\u003c")
+		.replace(/[\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16)}`);
+
 // Structured data: WebSite schema for homepage, BlogPosting for blog posts
 const structuredData = isHomepage
 	? {
@@ -200,7 +227,7 @@ const breadcrumbData = breadcrumbs
     <script
       type="application/ld+json"
       is:inline
-      set:html={JSON.stringify(structuredData)}
+      set:html={ldJson(structuredData)}
     />
 
     <!-- Breadcrumb Structured data -->
@@ -209,7 +236,7 @@ const breadcrumbData = breadcrumbs
         <script
           type="application/ld+json"
           is:inline
-          set:html={JSON.stringify(breadcrumbData)}
+          set:html={ldJson(breadcrumbData)}
         />
       )
     }
