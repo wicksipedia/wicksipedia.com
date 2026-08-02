@@ -74,13 +74,35 @@ const CASES = [
 	// path handling normalises `\` to `/`, so it is a separator here too.
 	["bare backslash", "slug=a\\b", false],
 	["url-encoded backslash", "slug=a%5Cb", false],
-	["null byte", "slug=git-and-diffs%00.md", false],
+	// No `.` and no `/`: those characters are rejected on their own, so a case
+	// carrying one cannot observe whether the NUL was caught. A guard widened to
+	// `[a-z0-9\0-]` passed the old `git-and-diffs%00.md` fixture.
+	["null byte", "slug=git-and-diffs%00", false],
+	["null byte before an extension", "slug=git-and-diffs%00.md", false],
 	["uppercase", "slug=Git-And-Diffs", false],
 	["underscore", "slug=git_and_diffs", false],
 	["dot in slug", "slug=index.md", false],
 	["leading space", "slug=%20git-and-diffs", false],
 	["wildcard", "slug=*", false],
+	["punctuation", "slug=a~b", false],
 	["nested folder", "slug=a/b", false],
+	// Over the 120-character bound. Unbounded, `?slug=` plus a megabyte of `a`
+	// becomes a megabyte-long relativePath on the wire.
+	["over-long slug", `slug=${"a".repeat(121)}`, false],
+
+	// --- control characters ------------------------------------------------
+	// Each isolates ONE character with no `.` and no `/` anywhere, because the
+	// mutant these exist to kill is adding the `m` flag: under `/m` the `$`
+	// anchors to a line end, so `about\n../settings/index` validates and
+	// everything after the newline reaches the resolver unchecked. A fixture
+	// containing a `.` or `/` is rejected for the wrong reason and proves nothing.
+	["trailing newline", "slug=git-and-diffs%0A", false],
+	["carriage return", "slug=git-and-diffs%0D", false],
+	["tab", "slug=git-and-diffs%09", false],
+	["vertical tab", "slug=git-and-diffs%0B", false],
+	["form feed", "slug=git-and-diffs%0C", false],
+	["next line (U+0085)", "slug=git-and-diffs%C2%85", false],
+	["line separator (U+2028)", "slug=git-and-diffs%E2%80%A8", false],
 
 	// --- reaching the OTHER collection (Task 2.1 made these reachable) -----
 	// Tagged `x` rather than detected by substring: `slug=index.json` belongs to
@@ -96,6 +118,24 @@ const CASES = [
 	],
 	["settings as a subfolder", "slug=settings/index.json", false, "x"],
 	["bare settings document", "slug=index.json", false, "x"],
+	// The case that kills the `m`-flag mutant: everything before the newline is
+	// a legal slug, so only a guard that rejects the newline itself refuses it.
+	[
+		"newline then traversal",
+		"slug=git-and-diffs%0A..%2Fsettings%2Findex",
+		false,
+		"x",
+	],
+	// No `.` anywhere: a `%`-permitting guard is the only mutant this can catch,
+	// and a dot in the value would mask it. A guard widened to allow `%` accepts
+	// this and hands the resolver a string that traverses if anything decodes it
+	// a second time.
+	[
+		"double-encoded traversal",
+		"slug=%252e%252e%252fsettings%252findex",
+		false,
+		"x",
+	],
 
 	// --- shapes that must keep working ------------------------------------
 	["plain kebab slug", "slug=git-and-diffs", true],
@@ -154,8 +194,36 @@ if (negatives < 10 || positives < 3) {
 // The cross-collection cases are the ones that stopped being theoretical when
 // `settings` landed. Losing them would leave a table that still looks thorough.
 const crossCollection = CASES.filter(([, , , group]) => group === "x").length;
-if (crossCollection < 5) {
+if (crossCollection < 7) {
 	err(`FAIL: only ${crossCollection} cross-collection cases left in the table`);
+	process.exit(1);
+}
+
+/**
+ * Control characters get their own floor, counted from the decoded values
+ * rather than from case names.
+ *
+ * They are the only thing standing between the guard and an `m` flag, and an
+ * `m` flag is invisible in review: `/^[a-z0-9-]+$/m` passes every other case in
+ * both tables while letting `about\n../settings/index` through, because under
+ * `/m` the `$` anchors to a line end. Counting the *decoded* value means a case
+ * renamed or rewritten into something that no longer carries a control
+ * character stops counting, which is the point.
+ *
+ * @param {Array<[string, string, boolean] | [string, string, boolean, "x"]>} table
+ */
+const controlCharCases = (table) =>
+	table.filter(([, query]) => {
+		const value = new URLSearchParams(query).get("slug") ?? "";
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: detecting them is the job
+		return /[\x00-\x1F\x7F\x85\u2028\u2029]/.test(value);
+	}).length;
+
+const blogControlChars = controlCharCases(CASES);
+if (blogControlChars < 8) {
+	err(
+		`FAIL: only ${blogControlChars} blog cases carry a control character — an \`m\` flag would go unnoticed`,
+	);
 	process.exit(1);
 }
 
@@ -179,7 +247,10 @@ const PAGE_CASES = [
 	["backslash separator", "slug=..\\about", false],
 	["bare backslash", "slug=a\\b", false],
 	["url-encoded backslash", "slug=a%5Cb", false],
-	["null byte", "slug=about%00.mdx", false],
+	// No `.` and no `/`: see the matching note in CASES above. The old fixture
+	// `about%00.mdx` was rejected for its dot, so it could not observe the NUL.
+	["null byte", "slug=about%00", false],
+	["null byte before an extension", "slug=about%00.mdx", false],
 	["empty slug", "slug=", false],
 	["slug absent entirely", "other=1", false],
 	["uppercase", "slug=About", false],
@@ -189,12 +260,28 @@ const PAGE_CASES = [
 	["dot in slug", "slug=about.mdx", false],
 	["leading space", "slug=%20about", false],
 	["wildcard", "slug=*", false],
+	["punctuation", "slug=a~b", false],
 	["nested folder", "slug=a/b", false],
+	["over-long slug", `slug=${"a".repeat(121)}`, false],
+
+	// --- control characters ------------------------------------------------
+	// One character each, no `.` and no `/`, for the reason spelled out in CASES.
+	["trailing newline", "slug=about%0A", false],
+	["carriage return", "slug=about%0D", false],
+	["tab", "slug=about%09", false],
+	["vertical tab", "slug=about%0B", false],
+	["form feed", "slug=about%0C", false],
+	["next line (U+0085)", "slug=about%C2%85", false],
+	["line separator (U+2028)", "slug=about%E2%80%A8", false],
 
 	// --- reaching the OTHER collections -----------------------------------
-	// `content/pages/../settings/index.json` is a real path on disk: the
-	// settings collection sits at `content/settings`, one directory up from
-	// this collection's root. This group is not theoretical.
+	// These are SHAPE coverage, not a demonstrated escape, and the difference
+	// matters. `content/pages/../settings/` is a real directory, but `getPage`
+	// appends `.mdx` unconditionally, and the only `.mdx` documents indexed
+	// anywhere are the two under `content/pages` — asserted below, because what
+	// makes these unreachable today is that the blog collection happens to use
+	// `.md`, not any check. If a collection outside `content/pages` ever becomes
+	// `.mdx`, the assertion fires rather than the escape going live silently.
 	["hop to settings", "slug=../settings/index", false, "x"],
 	["hop to settings, encoded", "slug=..%2Fsettings%2Findex", false, "x"],
 	[
@@ -206,6 +293,14 @@ const PAGE_CASES = [
 	["out to the content root", "slug=../../content/settings/index", false, "x"],
 	["settings as a subfolder", "slug=settings/index", false, "x"],
 	["bare settings document", "slug=index.json", false, "x"],
+	// Kills the `m`-flag mutant: everything before the newline is a legal slug.
+	["newline then traversal", "slug=about%0A..%2Fsettings%2Findex", false, "x"],
+	[
+		"double-encoded traversal",
+		"slug=%252e%252e%252fsettings%252findex",
+		false,
+		"x",
+	],
 
 	// --- shapes that must keep working ------------------------------------
 	["plain page slug", "slug=about", true],
@@ -233,7 +328,7 @@ for (const [name, query, want] of PAGE_CASES) {
 
 const pageNegatives = PAGE_CASES.filter(([, , want]) => !want).length;
 const pagePositives = PAGE_CASES.length - pageNegatives;
-if (pageNegatives < 20 || pagePositives < 5) {
+if (pageNegatives < 30 || pagePositives < 6) {
 	err(
 		`FAIL: page case table lost coverage (${pageNegatives} reject / ${pagePositives} accept)`,
 	);
@@ -241,11 +336,74 @@ if (pageNegatives < 20 || pagePositives < 5) {
 }
 
 const pageCrossCollection = PAGE_CASES.filter(([, , , g]) => g === "x").length;
-if (pageCrossCollection < 6) {
+if (pageCrossCollection < 8) {
 	err(
 		`FAIL: only ${pageCrossCollection} cross-collection page cases left in the table`,
 	);
 	process.exit(1);
+}
+
+const pageControlChars = controlCharCases(PAGE_CASES);
+if (pageControlChars < 8) {
+	err(
+		`FAIL: only ${pageControlChars} page cases carry a control character — an \`m\` flag would go unnoticed`,
+	);
+	process.exit(1);
+}
+
+/**
+ * What actually makes the cross-collection page cases unreachable today.
+ *
+ * `getPage` appends `.mdx` unconditionally, so a traversing slug can only name
+ * a document that exists as `.mdx`. Every `.mdx` on disk lives under
+ * `content/pages`, and the blog collection uses `.md` — so there is nothing to
+ * reach. That is a property of the current content layout, NOT of any check,
+ * and it would stop holding the day a collection outside `content/pages`
+ * switched to `.mdx` (CLAUDE.md still describes posts as MDX, so the idea is
+ * live). Asserting it here means that change fails this check instead of
+ * silently arming the traversal the fixtures above describe.
+ */
+const IGNORED_DIRS = new Set([
+	"node_modules",
+	"dist",
+	".git",
+	".astro",
+	".wrangler",
+	".vale-tmp",
+	"__generated__",
+]);
+
+/** @param {string} dir @returns {string[]} */
+function findMdx(dir) {
+	/** @type {string[]} */
+	const found = [];
+	for (const entry of readdirSync(dir, { withFileTypes: true })) {
+		if (IGNORED_DIRS.has(entry.name)) continue;
+		const full = join(dir, entry.name);
+		if (entry.isDirectory()) found.push(...findMdx(full));
+		else if (entry.name.endsWith(".mdx")) found.push(full);
+	}
+	return found;
+}
+
+const mdxDocuments = findMdx(".");
+// An empty result would make the check below vacuous; there are always at
+// least the two page documents.
+if (mdxDocuments.length === 0) {
+	err("FAIL: found no .mdx documents at all — the inventory check is vacuous");
+	process.exit(1);
+}
+const strayMdx = mdxDocuments.filter(
+	(file) =>
+		!file.startsWith(`${PAGES_BASE}/`) && !file.startsWith(`./${PAGES_BASE}/`),
+);
+if (strayMdx.length > 0) {
+	failed++;
+	err("FAIL: .mdx documents exist outside content/pages:");
+	for (const file of strayMdx) err(`  ${file}`);
+	err("  `getPage` appends `.mdx`, so these are now reachable by a traversing");
+	err("  slug if the allowlist is ever widened. Re-read the cross-collection");
+	err("  cases above before deciding this is fine.");
 }
 
 // Same reason as the blog corpus: a guard tight enough to reject everything
@@ -420,5 +578,5 @@ if (failed > 0) {
 }
 
 out(
-	`OK: ${checked} blog slug cases (${negatives} rejected, ${positives} accepted, ${crossCollection} cross-collection), ${corpusChecked} corpus slugs accepted, ${pageChecked} page slug cases (${pageNegatives} rejected, ${pagePositives} accepted, ${pageCrossCollection} cross-collection), ${pageCorpusChecked} corpus page slugs accepted, ${settingsChecked} settings-path cases, ${protoChecked} island-name cases, ${iconChecked} icon-name cases`,
+	`OK: ${checked} blog slug cases (${negatives} rejected, ${positives} accepted, ${crossCollection} cross-collection), ${corpusChecked} corpus slugs accepted, ${pageChecked} page slug cases (${pageNegatives} rejected, ${pagePositives} accepted, ${pageCrossCollection} cross-collection), ${pageCorpusChecked} corpus page slugs accepted, ${blogControlChars}+${pageControlChars} control-character cases, ${mdxDocuments.length} .mdx documents inventoried, ${settingsChecked} settings-path cases, ${protoChecked} island-name cases, ${iconChecked} icon-name cases`,
 );

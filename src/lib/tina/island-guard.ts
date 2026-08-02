@@ -21,8 +21,18 @@
  * Anything else is refused without being interpreted.
  */
 
-/** One path segment: lowercase letters, digits and hyphens. No separators. */
-export const BLOG_SLUG_PATTERN = /^[a-z0-9-]+$/;
+/**
+ * One path segment: lowercase letters, digits and hyphens. No separators.
+ *
+ * Bounded at 120 characters. Unbounded, `?slug=` plus a megabyte of `a` passes
+ * validation and becomes a megabyte-long relativePath handed to the datalayer;
+ * the longest real slug is 40. No `m` flag, deliberately — under `/m` the `$`
+ * anchors to a *line* end, so everything after the first newline goes
+ * unvalidated and `about\n../settings/index` would be accepted. The control
+ * character fixtures in `scripts/check-island-guard.mjs` are what make that a
+ * checked property rather than a comment.
+ */
+export const BLOG_SLUG_PATTERN = /^[a-z0-9-]{1,120}$/;
 
 /**
  * True only for a slug safe to interpolate into a Tina relativePath.
@@ -48,8 +58,11 @@ export function isValidBlogSlug(
  * (`tina/collections/page.ts`: `[^a-z0-9]+` collapsed to `-`, ends trimmed,
  * `untitled` for an empty result). Sharing one regex would silently widen
  * whichever guard the *other* collection later needed to loosen.
+ *
+ * Same 120-character bound and same absence of an `m` flag as
+ * BLOG_SLUG_PATTERN, for the same two reasons.
  */
-export const PAGE_SLUG_PATTERN = /^[a-z0-9-]+$/;
+export const PAGE_SLUG_PATTERN = /^[a-z0-9-]{1,120}$/;
 
 /**
  * True only for a page slug safe to interpolate into a Tina relativePath.

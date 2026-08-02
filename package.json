@@ -4,7 +4,7 @@
 	"version": "5.5.1",
 	"scripts": {
 		"dev": "tinacms dev --datalayer-port 9007 -c \"trap 'astro dev stop' EXIT INT TERM; astro dev && astro dev logs --follow\"",
-		"check": "bun run check:content && bun run check:blockquotes && bun run check:sanitize && bun run check:smartypants && bun run check:island-guard",
+		"check": "bun run check:content && bun run check:blockquotes && bun run check:sanitize && bun run check:smartypants && bun run check:island-guard && bun run check:page-prose",
 		"build": "tinacms build --content=local --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
 		"build:local": "tinacms build --local --skip-cloud-checks --datalayer-port 9007 -c \"export NODE_ENV=production && bun run check && astro check && astro build && pagefind --site dist/client && cp -r dist/client/pagefind public/\"",
 		"preview": "bun run build:local && npx wrangler dev -c dist/server/wrangler.json",
@@ -16,6 +16,7 @@
 		"check:sanitize": "node scripts/check-sanitize.mjs",
 		"check:smartypants": "node scripts/check-smartypants.mjs",
 		"check:island-guard": "node scripts/check-island-guard.mjs",
+		"check:page-prose": "node scripts/check-page-prose.mjs",
 		"format:check": "biome format .",
 		"format": "biome format --write .",
 		"lint": "biome check ."
@@ -52,6 +53,7 @@
 		"@tinacms/cli": "^2.5",
 		"@types/lodash.kebabcase": "^4.1.9",
 		"@vitejs/plugin-basic-ssl": "^2.1.4",
+		"gray-matter": "^4.0.3",
 		"pagefind": "^1.4.0",
 		"react": "^19.2",
 		"react-dom": "^19.2",

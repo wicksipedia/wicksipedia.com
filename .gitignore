@@ -34,6 +34,9 @@ public/pagefind
 # vale binary
 vale
 vale_*.tar.gz
+# scratch dir scripts/check-page-prose.mjs extracts page prose into; it is
+# created and removed within a single run and should never be committed.
+.vale-tmp/
 # Superpowers SDD scratch
 .superpowers/
 
