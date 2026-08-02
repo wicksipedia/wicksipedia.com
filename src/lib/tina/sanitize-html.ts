@@ -299,11 +299,34 @@ function clean(node: Parse5Node, depth = 0): string {
  * as separate nodes — so they cannot be parsed as a document without the parser
  * inventing or rejecting a partner. They are matched exactly instead, and are
  * allowed no attributes at all, which makes the check total.
+ *
+ * The RETURN is re-serialised from the match rather than being the input string.
+ * That is the fourth instance of the pattern this file keeps closing: the old
+ * version matched `value.trim()` and returned `value`, so the string that was
+ * validated was not the string that got emitted. Whitespace was provably the
+ * only thing living in that gap today — brute-forced over every non-surrogate
+ * code point, `trim()` and `/^\s$/` disagree on nothing — but that is a property
+ * of `trim()`, not something this file's own gate ever checked.
+ *
+ * MEASURED: adding `/m` to the pattern below made
+ * `"<cite>\n<img src=x onerror=alert(1)>"` return VERBATIM, because under `/m`
+ * the `$` anchors to a line end and the first line matches on its own. That
+ * mutant SURVIVED `scripts/check-sanitize.mjs` — every anchor fixture there was
+ * single-line — so it was a real hole, not an equivalent mutant. Re-serialising
+ * makes the second line unreachable by construction whatever the pattern does,
+ * and a multi-line fixture now kills the mutant outright.
+ *
+ * Two visible consequences, both wanted: `<CITE>` normalises to `<cite>`, and
+ * `<br/>` to `<br>`. The corpus check compares before and after exactly, so if
+ * a post ever contains either form the build says so rather than silently
+ * rewriting published markup.
  */
 export function sanitizeInlineHtml(value: string): string {
-	const match = value.trim().match(/^<\/?([a-zA-Z][a-zA-Z0-9-]*)\s*\/?>$/);
+	const match = value.trim().match(/^(<\/?)([a-zA-Z][a-zA-Z0-9-]*)\s*\/?>$/);
 	if (!match) return "";
-	return INLINE_TAGS.has(match[1].toLowerCase()) ? value : "";
+	const tag = match[2].toLowerCase();
+	if (!INLINE_TAGS.has(tag)) return "";
+	return match[1] === "</" ? `</${tag}>` : `<${tag}>`;
 }
 
 /**

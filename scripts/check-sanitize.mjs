@@ -122,6 +122,45 @@ const CASES = [
 		"",
 	],
 	[
+		// MULTI-LINE, and that is the whole point. Every other anchor fixture here
+		// is one line, so `/m` on sanitizeInlineHtml's pattern changed nothing
+		// about any of them and the mutant SURVIVED this suite — under `/m` the
+		// `$` anchors to a line end, the first line matches alone, and the old
+		// `return value` handed back both lines including the img. An outside
+		// sweep killed it; this fixture is what makes the gate kill it.
+		"a multi-line inline value is refused, not returned verbatim",
+		"<cite>\n<img src=x onerror=alert(1)>",
+		"html_inline",
+		"",
+	],
+	[
+		"a multi-line inline value with a leading newline is refused",
+		"<b>\n<script>alert(1)</script>",
+		"html_inline",
+		"",
+	],
+	[
+		// The emitted string is re-serialised from the match, so it is normalised
+		// rather than copied. Pinned so the re-serialisation is not quietly
+		// reverted to `return value`.
+		"an uppercase inline tag is normalised, not echoed",
+		"<CITE>",
+		"html_inline",
+		"<cite>",
+	],
+	[
+		"a self-closing inline tag is normalised, not echoed",
+		"<br/>",
+		"html_inline",
+		"<br>",
+	],
+	[
+		"surrounding whitespace is not echoed back",
+		"  <kbd>  ",
+		"html_inline",
+		"<kbd>",
+	],
+	[
 		// Not a valid tag-name start, so parse5 keeps it as text and the escaper
 		// neutralises it. Safe by a different route than the allowlist.
 		"prototype-polluting tag name is escaped as text",
