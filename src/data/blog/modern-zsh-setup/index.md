@@ -2,7 +2,7 @@
 pubDatetime: 2026-03-05
 title: "My Fast Zsh Setup Without Oh My Zsh (But With Its Best Plugins)"
 description: "A modern Zsh config that cherry-picks the best Oh My Zsh plugins via Zinit, adds Starship, fnm, zoxide, and Atuin, and starts in 120ms. Full .zshrc included."
-ogImage: ./cover.png
+ogImage: /uploads/blog/modern-zsh-setup/cover.png
 tags: ['MacOS', 'Zsh', 'terminal', 'shell', 'developer-setup', 'productivity']
 ---
 

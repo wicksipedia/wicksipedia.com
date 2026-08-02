@@ -2,7 +2,7 @@
 pubDatetime: 2022-03-13
 title: "GitHub Repository Settings as Code: Automate Branch Protection"
 description: Codify your GitHub repository settings to streamline configuration, track changes, and enforce branch protection policies without manual admin access.
-ogImage: ./config-as-code.png
+ogImage: /uploads/blog/github-settings-as-code/config-as-code.png
 tags:
   - GitHub
   - git

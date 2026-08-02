@@ -2,7 +2,7 @@
 pubDatetime: 2026-03-02
 title: 'It Does What It Says on the Tin: Why Naming Matters More with AI'
 description: "When your function name lies, developers get confused. When AI reads that lie, it builds on it confidently. A lesson that applies way beyond code."
-ogImage: ./cover.png
+ogImage: /uploads/blog/it-does-what-it-says-on-the-tin/cover.png
 tags: ['ai', 'software-engineering', 'clean-code']
 ---
 

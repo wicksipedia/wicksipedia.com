@@ -3,7 +3,7 @@ pubDatetime: 2026-02-16
 draft: false
 title: 'Speeding Up My Zsh Startup by 81%: From 640ms to 120ms'
 description: 'My Zsh shell took 640ms to start. After profiling with zprof and migrating from Antigen to Zinit, I cut it down to 120ms. Here is exactly how.'
-ogImage: ./cover.png
+ogImage: /uploads/blog/speeding-up-zsh-startup/cover.png
 tags: ['MacOS', 'Zsh', 'productivity', 'shell', 'developer-setup', 'terminal']
 ---
 

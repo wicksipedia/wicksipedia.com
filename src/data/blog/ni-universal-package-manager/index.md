@@ -2,7 +2,7 @@
 pubDatetime: 2026-03-05
 title: 'One CLI to Rule npm, yarn, pnpm, and bun'
 description: "Juggling npm, yarn, pnpm, and bun across projects? ni detects your package manager and runs the right command. Here's my setup."
-ogImage: ./cover.png
+ogImage: /uploads/blog/ni-universal-package-manager/cover.png
 tags: ['productivity', 'developer-setup', 'terminal', 'javascript']
 ---
 

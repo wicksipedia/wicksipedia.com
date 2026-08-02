@@ -2,7 +2,7 @@
 pubDatetime: 2020-08-09
 title: How to Sign and Verify Your GitHub Commits with GPG Keys
 description: Learn to sign your GitHub commits with GPG for verified authenticity. Step-by-step security guide to secure commits and prove they're actually from you.
-ogImage: ./cover.png
+ogImage: /uploads/blog/verifying-your-github-commits/cover.png
 tags: [GitHub, git]
 ---
 

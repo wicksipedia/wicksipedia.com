@@ -2,7 +2,7 @@
 pubDatetime: 2020-08-16
 title: How to Compare Git Diffs Across Multiple Commits in Git
 description: Learn how to diff changes across multiple commits in Git and Azure DevOps. Compare file changes over time with these practical diffing techniques and examples.
-ogImage: ./cover.jpg
+ogImage: /uploads/blog/git-and-diffs/cover.jpg
 tags: [git]
 ---
 

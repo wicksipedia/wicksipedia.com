@@ -2,7 +2,7 @@
 pubDatetime: 2022-09-25T00:00:00Z
 title: The downfalls of environment branching patterns
 description: Explore CI/CD pitfalls of environment-specific branches and discover how trunk-based development and binary promotion streamline your DevOps workflow.
-ogImage: ./cover.png
+ogImage: /uploads/blog/downfalls-of-environment-branching-patterns/cover.png
 featured: false
 draft: false
 tags:

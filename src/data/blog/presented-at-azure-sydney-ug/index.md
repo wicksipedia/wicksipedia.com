@@ -2,7 +2,7 @@
 pubDatetime: 2019-04-27
 title: Presented at Azure Sydney UG
 description: I was privileged to present about Logic Apps at the Azure Sydney User Group
-ogImage: ./cover.jpg
+ogImage: /uploads/blog/presented-at-azure-sydney-ug/cover.jpg
 tags: [presentations]
 noindex: true
 ---

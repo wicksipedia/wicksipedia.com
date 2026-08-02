@@ -3,7 +3,7 @@ pubDatetime: 2023-11-25
 draft: false
 title: 'Optimizing Your New Mac Setup: Essential Tools and Apps'
 description: 'Set up your new Mac with essential tools and apps. Start with Homebrew, discover productivity boosters, and enhance your MacOS workflow with efficiency.'
-ogImage: ./cover.png
+ogImage: /uploads/blog/setting-up-a-new-mac/cover.png
 tags: ['MacOS', 'Setup', 'Applications', 'developer-setup', 'productivity']
 ---
 

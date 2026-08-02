@@ -2,7 +2,7 @@
 pubDatetime: 2019-02-26
 title: Going on the road!
 description: I'm going on tour, presenting on Logic Apps - Gateway to a serverless future! Excitement!
-ogImage: ./cover.jpg
+ogImage: /uploads/blog/going-on-the-road/cover.jpg
 tags: [presentations]
 noindex: true
 ---

@@ -2,7 +2,7 @@
 pubDatetime: 2026-01-22
 title: The Future of Software Engineering Is Not What You Think
 description: Explore how AI is reshaping software engineering in 2026 and why developer roles are changing, not disappearing. The "RIP SWEs" narrative misses the mark.
-ogImage: ./cover.png
+ogImage: /uploads/blog/the-future-of-software-engineering-is-not-what-you-think/cover.png
 tags: [ai, software-engineering, career]
 ---
 
