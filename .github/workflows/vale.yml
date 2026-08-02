@@ -1,9 +1,20 @@
+# Prose-lints the blog posts a PR touches.
+#
+# `.md`, NOT `.mdx`. Posts became `.md` in Task 1.2, and both the path filter and
+# the grep below were left matching `*.mdx` — so this workflow never triggered,
+# and had it triggered it would have found zero files and passed. That is the
+# THIRD tool on this branch to break the same way after that rename: `.vale.ini`'s
+# glob pointed at zero files, `tinacms audit` passed on an empty collection, and
+# then this. Every one of them reported success.
+#
+# Which is why the lint step below reconciles Vale's own "in N files" count
+# against the number of files handed to it, rather than trusting a green exit.
 name: Prose lint
 
 on:
   pull_request:
     paths:
-      - 'src/data/blog/**/*.mdx'
+      - 'src/data/blog/**/*.md'
 
 jobs:
   vale:
@@ -14,14 +25,29 @@ jobs:
       - name: Get changed blog posts
         id: changed
         run: |
-          files=$(gh pr diff ${{ github.event.pull_request.number }} --name-only | grep '^src/data/blog/.*\.mdx$' || true)
-          if [ -z "$files" ]; then
-            echo "No blog posts changed"
+          set -euo pipefail
+          # `--name-only` also lists files the PR DELETED. Vale exits non-zero on
+          # a path that is not there, so a PR that removes a post would fail this
+          # job for no reason. Keep only what still exists on disk.
+          : > /tmp/changed-posts.txt
+          while IFS= read -r file; do
+            [ -n "$file" ] && [ -f "$file" ] && printf '%s\n' "$file" >> /tmp/changed-posts.txt
+          done < <(gh pr diff "${{ github.event.pull_request.number }}" --name-only \
+                     | grep '^src/data/blog/.*\.md$' || true)
+
+          count=$(wc -l < /tmp/changed-posts.txt | tr -d ' ')
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -eq 0 ]; then
             echo "found=false" >> "$GITHUB_OUTPUT"
+            # Say which. A skipped job and a clean job are both a green tick, and
+            # a reviewer reading "no blog posts changed" should not come away
+            # believing the prose was linted.
+            echo "SKIPPED: this PR changes no src/data/blog/**/*.md files."
+            echo "Vale did NOT run. A green check here means 'nothing to lint',"
+            echo "NOT 'prose linted and clean'."
           else
             echo "found=true" >> "$GITHUB_OUTPUT"
-            echo "$files" > /tmp/changed-posts.txt
-            echo "Changed posts:"
+            echo "Will lint $count changed post(s):"
             cat /tmp/changed-posts.txt
           fi
         env:
@@ -37,4 +63,31 @@ jobs:
 
       - name: Lint changed posts
         if: steps.changed.outputs.found == 'true'
-        run: xargs vale < /tmp/changed-posts.txt
+        run: |
+          set -uo pipefail
+          expected='${{ steps.changed.outputs.count }}'
+          # `-0` rather than `-d '\n'`: both BSD and GNU xargs support it, so this
+          # line is testable on the machine posts are written on and not only in CI.
+          output=$(tr '\n' '\0' < /tmp/changed-posts.txt | xargs -0 vale 2>&1)
+          vale_status=$?
+          printf '%s\n' "$output"
+
+          # Vale reports success over an empty file set, and `.vale.ini`'s section
+          # is extension-scoped — the exact pair of facts that made this workflow
+          # inert. Its own trailing "in N files." is the only number that proves
+          # it opened the files we gave it.
+          #
+          # The ANSI strip is load-bearing, not defensive tidiness: Vale colours
+          # that summary line even when its output is piped (measured), and the
+          # escape codes sit between the numbers this has to read.
+          counted=$(printf '%s' "$output" \
+            | sed -e $'s/\033\\[[0-9;]*m//g' \
+            | sed -n 's/.* in \([0-9][0-9]*\) files\{0,1\}\..*/\1/p' | tail -1)
+          if [ "${counted:-}" != "$expected" ]; then
+            echo "::error::Handed Vale $expected file(s) but it reported linting '${counted:-none}'."
+            echo "A count mismatch means the .vale.ini glob no longer matches these paths,"
+            echo "so a pass would be a pass over nothing. See the comment at the top of this file."
+            exit 1
+          fi
+          echo "OK: Vale linted all $expected changed post(s)."
+          exit $status
