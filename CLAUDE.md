@@ -28,8 +28,15 @@ bun run deploy       # Deploy to Cloudflare Workers via wrangler
 bun run format:check # Biome format check
 bun run format       # Biome format write
 bun run lint         # Biome check: lint + assist (organize imports) + format (note: console.log is an error)
+bun run check        # The six content-parse suites (also runs inside build)
+bun run check:dev-smoke  # Starts a dev server, loads real pages, shuts it down
 vale src/data/blog/  # Prose linting (banned words/phrases)
 ```
+
+`check:dev-smoke` is deliberately NOT part of `bun run check`: `check` runs inside
+`bun run build`, and starting a dev server from within a build would be circular.
+It is the only gate that exercises `command === "dev"` — see the note below on why
+that matters.
 
 Search requires a build before it works locally (pagefind indexes `dist/`).
 
@@ -94,6 +101,11 @@ so any page with an `<Image>` died outright. The build is unaffected.
 That endpoint re-fetches each image from the dev server over HTTP, which is sound
 only while dev is plain http — under the old https server it silently 404'd every
 image. One more reason not to re-add `basicSsl()`.
+
+`bun run check:dev-smoke` is the gate that keeps all of this honest; it is the
+only one that runs the site instead of building it. It is not a browser, though:
+it would not have caught the mixed-content block on `/admin`, so it now also
+asserts the admin's script URLs are same-scheme as the page.
 
 If a dev server is ever stranded — a hard kill, a crashed terminal — clear it
 with `bunx astro dev stop`; `bunx astro dev status` reports what is running.

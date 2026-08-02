@@ -17,6 +17,7 @@
 		"check:smartypants": "node scripts/check-smartypants.mjs",
 		"check:island-guard": "node scripts/check-island-guard.mjs",
 		"check:page-prose": "node scripts/check-page-prose.mjs",
+		"check:dev-smoke": "node scripts/check-dev-smoke.mjs",
 		"format:check": "biome format .",
 		"format": "biome format --write .",
 		"lint": "biome check ."
