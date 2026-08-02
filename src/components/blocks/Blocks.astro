@@ -1,0 +1,49 @@
+---
+import { tinaField } from "@tinacms/astro/tina-field";
+import type { CmsPage } from "@/lib/tina/pages";
+import type { CmsSocial } from "@/lib/tina/settings";
+import GithubStats from "./GithubStats.astro";
+import Hero from "./Hero.astro";
+import PostFeed from "./PostFeed.astro";
+import Prose from "./Prose.astro";
+
+/**
+ * Dispatches the page's block list to the component that renders each one.
+ *
+ * The `&&` chain is deliberate and must stay one. `block.__typename` is a
+ * CMS-supplied string, and an object literal keyed by it (`MAP[block.__typename]`)
+ * resolves `constructor`, `toString`, `valueOf` and friends to truthy inherited
+ * values — the "did we find a renderer?" test passes and Astro is handed a
+ * `Function` where it expected a component. Three of those holes have been found
+ * and closed on this branch already (`BLOCK_POLICY`, `islandGates`,
+ * `SOCIAL_ICONS`). Comparing against literals indexes nothing, so there is no
+ * fourth. If this ever becomes a lookup map it must be null-prototype or go
+ * through `Object.hasOwn`.
+ *
+ * An unrecognised `__typename` renders as an empty wrapper `<div>` rather than
+ * throwing: a block template added to the schema before its component exists
+ * should not take the whole page down.
+ */
+interface Props {
+	data?: CmsPage | null;
+	socials: CmsSocial[];
+}
+
+const { data, socials } = Astro.props;
+const blocks = (data?.blocks ?? []).filter((block) => block !== null);
+---
+
+{
+  blocks.map(block => (
+    <div data-tina-field={tinaField(block) || undefined}>
+      {block.__typename === "PageBlocksHero" && (
+        <Hero data={block} socials={socials} />
+      )}
+      {block.__typename === "PageBlocksPostFeed" && <PostFeed data={block} />}
+      {block.__typename === "PageBlocksProse" && <Prose data={block} />}
+      {block.__typename === "PageBlocksGithubStats" && (
+        <GithubStats data={block} />
+      )}
+    </div>
+  ))
+}

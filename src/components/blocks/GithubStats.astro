@@ -1,0 +1,51 @@
+---
+import { tinaField } from "@tinacms/astro/tina-field";
+import GithubSlugger from "github-slugger";
+import GitHubStats from "@/components/GitHubStats.astro";
+import type { GithubStatsBlock } from "@/lib/tina/pages";
+
+/**
+ * The GitHub activity cards plus the editable `<h2>` above them. On the About
+ * page these lived inside the prose body, so they inherited `.app-prose`
+ * typography and a rehype-slug `id` on the heading — both are reproduced here
+ * so the rendered page is unchanged by the split into its own block.
+ *
+ * `mt-12` replaces the `2em` top margin Tailwind Typography gave the `<h2>` when
+ * it was mid-document. As the *first* child of a new `.prose` container it would
+ * otherwise get `margin-top: 0` and sit flush against the paragraph above.
+ *
+ * `pb-12` is the bottom padding `AboutLayout.astro`'s `<main>` carried. It lives
+ * on the block rather than on `PageBlocks.astro`'s `<main>` so the homepage,
+ * whose last block supplies its own trailing margin, keeps the spacing it has.
+ *
+ * `GithubSlugger` rather than `slugifyStr`: this reproduces an id that Astro's
+ * Markdown pipeline generated with rehype-slug, and `RichText.astro` uses the
+ * same slugger for every other heading on the site.
+ */
+interface Props {
+	data: GithubStatsBlock;
+}
+
+const { data } = Astro.props;
+
+const heading = data.heading ?? "";
+const headingId = heading ? new GithubSlugger().slug(heading) : undefined;
+---
+
+<div class="app-layout pb-12">
+  <section
+    class="animate-reveal-delay-1 app-prose mt-12 max-w-app font-prose"
+  >
+    {
+      heading && (
+        <h2
+          id={headingId}
+          data-tina-field={tinaField(data, "heading") || undefined}
+        >
+          {heading}
+        </h2>
+      )
+    }
+    <GitHubStats />
+  </section>
+</div>

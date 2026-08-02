@@ -1,0 +1,83 @@
+---
+import { tinaField } from "@tinacms/astro/tina-field";
+import Blocks from "@/components/blocks/Blocks.astro";
+import type { CmsPage } from "@/lib/tina/pages";
+import type { CmsSocial } from "@/lib/tina/settings";
+
+/**
+ * Editable page body. Rendered statically inside `<TinaIsland name="page">` on
+ * both routes, and on demand by `/tina-island/page` when the bridge refreshes
+ * the region.
+ *
+ * This component owns `<main id="main-content">`, not `PostFeed.astro`.
+ * `Header.astro:50` renders `href="#main-content"` on EVERY page, so the
+ * skip-link target has to exist on every page — and the About page has no post
+ * feed. It cannot live on the island wrapper either: `IslandWrapper` in
+ * `@tinacms/astro` is `{ tag, className }` with no `id` (see
+ * `node_modules/@tinacms/astro/dist/island-route.d.ts`), so the wrapper is a
+ * `display: contents` div — same trick, and for the same reason, as the settings
+ * islands documented in `src/lib/islands.ts`: `<body>` is a full-height flex
+ * column and a generated box between it and `<main>` would change the layout.
+ *
+ * `socials` defaults to `[]` because the island re-render only carries the page
+ * document. The hero's social row therefore disappears from the *admin preview*
+ * until a reload; the statically built page always has it.
+ */
+interface Props {
+	data?: CmsPage | null;
+	socials?: CmsSocial[];
+}
+
+const { data, socials = [] } = Astro.props;
+
+const blocks = (data?.blocks ?? []).filter((block) => block !== null);
+
+/**
+ * Whether the page renders an `<h1>` of its own, and what it says.
+ *
+ * Both failure modes are closed here rather than by asking the author to obey a
+ * field description — a description documents a rule, it does not enforce one:
+ *
+ *  - TWO `<h1>`s: a hero block renders the person's name as the page `<h1>`, so
+ *    a page opening with one suppresses the page-level heading entirely,
+ *    whatever `heading` holds.
+ *  - ZERO `<h1>`s: `heading` is optional, so it falls back to `seoTitle`, which
+ *    is `required: true` on the collection (`tina/collections/page.ts`).
+ *
+ * `||` and not `??`: clearing the field in the admin writes an empty string, not
+ * null, and an empty `<h1>` is the zero-heading case wearing a hat.
+ */
+const heroOwnsHeading = blocks[0]?.__typename === "PageBlocksHero";
+const heading = heroOwnsHeading ? "" : data?.heading || data?.seoTitle || "";
+
+/**
+ * `data-layout="index"` is read by the back-button script in
+ * `src/pages/index.astro`, which looks it up via `#main-content`. Derived from
+ * the document rather than passed as a prop so it survives an island re-render,
+ * where `propsFromData` supplies only `data`.
+ */
+const isHome = data?._sys?.filename === "home";
+---
+
+<main id="main-content" data-layout={isHome ? "index" : undefined}>
+  {
+    heading && (
+      <div class="app-layout">
+        <div class="animate-reveal pt-8 pb-6 mb-2 border-b border-border/50">
+          {/*
+            The field is `heading` even when the text came from `seoTitle`.
+            Clicking the heading in the admin should open the override an author
+            means to change, not the SEO title that happens to be supplying it.
+          */}
+          <h1
+            class="font-prose text-3xl font-bold italic tracking-tight text-foreground sm:text-4xl lg:text-5xl"
+            data-tina-field={tinaField(data, "heading") || undefined}
+          >
+            {heading}
+          </h1>
+        </div>
+      </div>
+    )
+  }
+  <Blocks data={data} socials={socials} />
+</main>

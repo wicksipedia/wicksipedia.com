@@ -1,0 +1,254 @@
+---
+import { Image } from "astro:assets";
+import { tinaField } from "@tinacms/astro/tina-field";
+import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
+import IconHash from "@/assets/icons/IconHash.svg";
+import { SITE } from "@/config";
+import type { PostFeedBlock } from "@/lib/tina/pages";
+import { getAllPosts } from "@/lib/tina/posts";
+import { getPath } from "@/utils/getPath";
+import getSortedPosts from "@/utils/getSortedPosts";
+import { slugifyStr } from "@/utils/slugify";
+
+/**
+ * A feed of blog posts: one lead post given hero treatment, then a grid of the
+ * rest, then a link out to the full archive. Markup moved verbatim from
+ * `src/pages/index.astro` (lines 123-317 before this task).
+ *
+ * The block deliberately does NOT carry `id="main-content"`. That is the
+ * skip-link target `Header.astro` points every page at, and this block is
+ * absent from pages that have no post feed — putting it here would leave those
+ * pages' skip link aimed at nothing. `PageBlocks.astro` owns the `<main>` that
+ * carries it.
+ *
+ * Posts are fetched here rather than passed in, so the block works identically
+ * on a statically built page and on an island re-render, where the only prop
+ * available is the page document.
+ */
+interface Props {
+	data: PostFeedBlock;
+}
+
+const { data } = Astro.props;
+
+const sortedPosts = getSortedPosts(await getAllPosts());
+const featuredPosts = sortedPosts.filter((post) => post.data.featured);
+const recentPosts = sortedPosts.filter((post) => !post.data.featured);
+
+function formatEditorialDate(date: string | Date) {
+	const d = new Date(date);
+	return d.toLocaleDateString("en-US", {
+		month: "long",
+		day: "numeric",
+		year: "numeric",
+	});
+}
+
+// Lead post gets hero treatment; remaining fill the grid.
+const heroPost = featuredPosts.length > 0 ? featuredPosts[0] : recentPosts[0];
+const secondaryFeatured =
+	featuredPosts.length > 1 ? featuredPosts.slice(1) : [];
+const gridPosts = [
+	...secondaryFeatured,
+	...(featuredPosts.length > 0 ? recentPosts : recentPosts.slice(1)),
+].slice(0, data.limit ?? SITE.postPerIndex);
+
+const allPostsHref = data.allPostsHref ?? "/blog";
+const allPostsLabel = data.allPostsLabel ?? "All posts";
+---
+
+<div class="app-layout">
+  {
+    heroPost && (
+      <section id="featured" class="animate-reveal-delay-1 pt-14 pb-10">
+        <div class="flex items-center gap-4 mb-8">
+          <span
+            class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap"
+            style="font-variant: small-caps;"
+            data-tina-field={tinaField(data, "label") || undefined}
+          >
+            {data.label}
+          </span>
+          <span class="flex-1 h-px bg-border/60" />
+        </div>
+        <article class="group relative overflow-hidden rounded-xl border border-border/40 transition-all duration-300 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-accent/5">
+          {/* Cover image */}
+          {heroPost.data.ogImage && (
+            <a
+              href={getPath(heroPost.id, heroPost.filePath)}
+              class="block overflow-hidden"
+              tabindex="-1"
+              aria-hidden="true"
+            >
+              <div class="relative aspect-21/9 overflow-hidden bg-muted">
+                {typeof heroPost.data.ogImage === "string" ? (
+                  <img
+                    src={heroPost.data.ogImage}
+                    alt=""
+                    loading="eager"
+                    fetchpriority="high"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                ) : (
+                  <Image
+                    src={heroPost.data.ogImage}
+                    alt=""
+                    widths={[180, 360, 480, 640]}
+                    sizes="(max-width: 895px) calc(100vw - 2rem), (max-width: 1279px) 864px, 992px"
+                    loading="eager"
+                    fetchpriority="high"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                )}
+                {/* Bottom fade into card body */}
+                <div class="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-background to-transparent pointer-events-none" />
+              </div>
+            </a>
+          )}
+          {/* Text content */}
+          <div class="p-6 pt-4">
+            <a
+              href={getPath(heroPost.id, heroPost.filePath)}
+              class="block no-underline"
+            >
+              <h2
+                class="font-prose text-3xl font-bold text-foreground leading-tight transition-colors duration-200 group-hover:text-accent sm:text-4xl"
+                style={{
+                  viewTransitionName: slugifyStr(
+                    heroPost.data.title.replaceAll(".", "-"),
+                  ),
+                }}
+              >
+                {heroPost.data.title}
+              </h2>
+            </a>
+            <p class="mt-3 font-prose text-base leading-relaxed text-foreground/70 sm:text-lg">
+              {heroPost.data.description}
+            </p>
+            <div class="flex flex-wrap items-center gap-4 mt-4">
+              <time
+                datetime={new Date(heroPost.data.pubDatetime).toISOString()}
+                class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/65"
+              >
+                {formatEditorialDate(heroPost.data.pubDatetime)}
+              </time>
+              {heroPost.data.tags.length > 0 && (
+                <ul class="flex flex-wrap gap-1.5">
+                  {heroPost.data.tags.map((tag: string) => (
+                    <li>
+                      <a
+                        href={`/tags/${slugifyStr(tag)}`}
+                        class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
+                      >
+                        <IconHash class="size-3 opacity-70" />
+                        {tag}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </article>
+      </section>
+    )
+  }
+
+  <hr class="border-0 border-t border-border/40 my-2 animate-reveal-delay-1" />
+
+  {
+    gridPosts.length > 0 && (
+      <section id="recent-posts" class="animate-reveal-delay-2 pt-10 pb-8">
+        <h2 class="sr-only">Recent posts</h2>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {gridPosts.map((post) => (
+            <article class="group relative overflow-hidden rounded-xl bg-muted/20 border border-border/40 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5">
+              {/* Faded background image */}
+              {post.data.ogImage && (
+                <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                  {typeof post.data.ogImage === "string" ? (
+                    <img
+                      src={post.data.ogImage}
+                      alt=""
+                      loading="lazy"
+                      class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
+                    />
+                  ) : (
+                    <Image
+                      src={post.data.ogImage}
+                      alt=""
+                      widths={[320, 480]}
+                      sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1279px) 432px, 496px"
+                      quality={60}
+                      loading="lazy"
+                      class="absolute inset-0 min-h-full min-w-full object-cover opacity-[0.22] transition-opacity duration-500 group-hover:opacity-30 dark:opacity-25 dark:group-hover:opacity-35"
+                    />
+                  )}
+                  <div class="absolute inset-0 bg-linear-to-r from-muted via-(--muted)/80 to-transparent" />
+                </div>
+              )}
+              {/* Card content */}
+              <div class="relative z-10 p-5">
+                <a
+                  href={getPath(post.id, post.filePath)}
+                  class="block no-underline"
+                >
+                  <h3
+                    class="font-prose text-xl font-bold text-foreground leading-snug transition-colors duration-200 group-hover:text-accent"
+                    style={{
+                      viewTransitionName: slugifyStr(
+                        post.data.title.replaceAll(".", "-"),
+                      ),
+                    }}
+                  >
+                    {post.data.title}
+                  </h3>
+                </a>
+                <p class="mt-2 font-prose text-sm leading-relaxed text-foreground/70 line-clamp-3">
+                  {post.data.description}
+                </p>
+                <div class="mt-3">
+                  <time
+                    datetime={new Date(post.data.pubDatetime).toISOString()}
+                    class="text-xs font-medium uppercase tracking-[0.15em] text-foreground/65"
+                  >
+                    {formatEditorialDate(post.data.pubDatetime)}
+                  </time>
+                </div>
+                {post.data.tags.length > 0 && (
+                  <ul class="mt-3 flex flex-wrap gap-1.5">
+                    {post.data.tags.slice(0, 3).map((tag: string) => (
+                      <li>
+                        <a
+                          href={`/tags/${slugifyStr(tag)}`}
+                          class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent transition-all duration-150 no-underline hover:border-accent/60 hover:bg-accent/15"
+                        >
+                          <IconHash class="size-3 opacity-70" />
+                          {tag}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <div class="animate-reveal-delay-3 my-10">
+    <hr class="border-0 border-t border-border/40 my-2" />
+    <a
+      href={allPostsHref}
+      class="group flex items-center justify-center gap-2 py-6 text-sm font-semibold text-accent no-underline transition-colors duration-200 hover:text-accent/80"
+      data-tina-field={tinaField(data, "allPostsLabel") || undefined}
+    >
+      <span>{allPostsLabel}</span>
+      <IconArrowRight
+        class="inline-block size-4 transition-transform duration-300 group-hover:translate-x-1 rtl:-rotate-180"
+      />
+    </a>
+  </div>
+</div>

@@ -25,8 +25,14 @@ import type { IslandRegistry } from "@tinacms/astro/experimental";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import BlogBody from "@/components/islands/BlogBody.astro";
+import PageBlocks from "@/components/islands/PageBlocks.astro";
 import PostHero from "@/components/islands/PostHero.astro";
-import { isValidBlogSlug } from "@/lib/tina/island-guard";
+import { isValidBlogSlug, isValidPageSlug } from "@/lib/tina/island-guard";
+import {
+	type PageDocumentSource,
+	queryPageDocument,
+	tagPageDocument,
+} from "@/lib/tina/pages";
 import {
 	type BlogDocumentSource,
 	type BlogNode,
@@ -102,6 +108,37 @@ function settingsSource(request: Request): SettingsDocumentSource {
 	if (cached) return cached;
 	const source = querySettingsDocument();
 	settingsCache.set(request, source);
+	return source;
+}
+
+/**
+ * Same one-query-per-request trick again, for the `page` collection.
+ *
+ * Unlike settings, this one DOES take a slug off the URL, so it is the blog
+ * shape rather than the settings shape: keyed by slug, and asserted through
+ * `isValidPageSlug` before the string can become a relativePath.
+ */
+const pageCache = new WeakMap<Request, Map<string, PageDocumentSource>>();
+
+function pageSource(request: Request, slug: string): PageDocumentSource {
+	// Defence in depth, exactly as `blogSource`: the gate has already validated
+	// this slug and the registry's `fetch` re-reads the same param from the same
+	// URL, so the two cannot disagree today. Asserting here means a future island
+	// whose gate reads a different parameter cannot quietly query on an
+	// unvalidated string. `queryPageDocument` re-checks it a third time, which is
+	// what makes the guarantee hold for the static build too.
+	if (!isValidPageSlug(slug)) {
+		throw new Error("pageSource: refused an unvalidated slug");
+	}
+	let bySlug = pageCache.get(request);
+	if (!bySlug) {
+		bySlug = new Map();
+		pageCache.set(request, bySlug);
+	}
+	const cached = bySlug.get(slug);
+	if (cached) return cached;
+	const source = queryPageDocument(slug);
+	bySlug.set(slug, source);
 	return source;
 }
 
@@ -182,9 +219,45 @@ const settingsGate: IslandGate = async (request) => {
 	return null;
 };
 
+/**
+ * CMS pages. Modelled on `settingsGate`, not `blogGate`: the `page` collection
+ * has no draft flag and no publish date, and every page document that exists
+ * has a public route built from it (`src/pages/[...slug].astro` infers routes
+ * from `listPages()`), so there is no per-document visibility question to
+ * answer. The gate still earns its place — it refuses when the document cannot
+ * be loaded, so a broken content backend renders nothing rather than an empty
+ * page, and leaves a server-side line saying why.
+ *
+ * What it adds over the settings gate is the slug. Settings addresses one
+ * constant relativePath; this reads `?slug=` off an unauthenticated URL, so the
+ * allowlist runs FIRST — before the value is interpolated into `${slug}.mdx`
+ * and handed to a resolver that treats `..` as a path segment to follow rather
+ * than an attack to refuse.
+ */
+const pageGate: IslandGate = async (request, params) => {
+	const slug = params.get("slug");
+	if (!isValidPageSlug(slug)) return "invalid slug";
+
+	try {
+		const result = await pageSource(request, slug);
+		// Missing document, or the content backend is unreachable. Either way we
+		// cannot establish that this page exists, so we do not render it.
+		if (!result?.data?.page) return "document unavailable";
+	} catch (error) {
+		// Same reasoning as blogGate and settingsGate: a refused request and a
+		// broken deployment both answer 404, and without this line they are
+		// indistinguishable to whoever is on call. Nothing here reaches the caller.
+		// biome-ignore lint/suspicious/noConsole: server-side diagnostic only
+		console.error("[tina-island] page gate could not load document:", error);
+		return "document unavailable";
+	}
+	return null;
+};
+
 const gates: Record<string, IslandGate> = {
 	blog: blogGate,
 	blogHero: blogGate,
+	page: pageGate,
 	settings: settingsGate,
 	"settings-footer": settingsGate,
 };
@@ -225,6 +298,23 @@ const registry: IslandRegistry = {
 		component: PostHero,
 		wrapper: { tag: "div" },
 		propsFromData: blogPost,
+	},
+	// Whole page body (hero / post feed / prose / stats blocks) keyed by the page
+	// slug, so editing any field on a CMS page live-updates.
+	//
+	// `display: contents` on the wrapper for two reasons. `IslandWrapper` is
+	// `{ tag, className }` with no `id`, and this region has to carry
+	// `id="main-content"` — the skip-link target `Header.astro` points at on
+	// every page — so `PageBlocks.astro` renders the `<main>` itself. And, as
+	// with the settings islands below, `<body>` is a full-height flex column:
+	// a generated box between it and `<main>` would change the layout.
+	page: {
+		fetch: (request, params) =>
+			tagPageDocument(pageSource(request, params.get("slug") ?? "")),
+		component: PageBlocks,
+		wrapper: { tag: "div", className: "contents" },
+		// biome-ignore lint/suspicious/noExplicitAny: registry data is loosely typed
+		propsFromData: (data: any) => ({ data: data.data?.page }),
 	},
 	// Header nav and footer socials — one document, two regions, so both refresh
 	// together when a nav label or a social URL changes.

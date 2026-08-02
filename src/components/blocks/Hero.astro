@@ -1,0 +1,118 @@
+---
+import { Image } from "astro:assets";
+import { tinaField } from "@tinacms/astro/tina-field";
+import Socials from "@/components/Socials.astro";
+import type { HeroBlock } from "@/lib/tina/pages";
+import type { CmsSocial } from "@/lib/tina/settings";
+
+/**
+ * The homepage masthead. Markup moved verbatim from `src/pages/index.astro`
+ * (lines 55-121 before this task) — same `bg-hero-bg` band, same responsive
+ * avatar swap, same `text-hero-*` tokens — with the hardcoded strings replaced
+ * by block fields and each marked editable.
+ *
+ * This block owns the page's `<h1>`. `PageBlocks.astro` suppresses the
+ * page-level heading whenever a page opens with a hero, so the two can never
+ * both render one.
+ *
+ * The avatar comes from Tina's media root (`public/uploads`) so an editor can
+ * swap it, which means Astro cannot optimise it — `<Image>` only processes
+ * imports from `src/`. Explicit `width`/`height` keep the layout stable and the
+ * desktop instance is marked eager/high-priority because it is the LCP element
+ * above 768px. Both `<img>` elements point at the same URL, so this is one
+ * download whatever the viewport.
+ */
+interface Props {
+	data: HeroBlock;
+	socials: CmsSocial[];
+}
+
+const { data, socials } = Astro.props;
+
+const avatar = data.avatar ?? "";
+const name = data.name ?? "";
+---
+
+<section
+  id="hero"
+  class="animate-reveal overflow-hidden bg-hero-bg transition-[background] duration-300"
+>
+  <div class="app-layout">
+    <div
+      class="flex flex-col items-center gap-6 py-8 sm:py-10 md:flex-row md:items-end md:justify-between md:gap-8 md:py-0"
+    >
+      <div class="text-center md:flex-1 md:py-6 md:text-left lg:py-10 xl:py-16">
+        {
+          avatar && (
+            <Image
+              src={avatar}
+              alt={name}
+              width={160}
+              height={160}
+              class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
+              loading="eager"
+              decoding="async"
+              data-tina-field={tinaField(data, "avatar") || undefined}
+            />
+          )
+        }
+        <h1
+          class="mt-4 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl md:mt-0"
+          data-tina-field={tinaField(data, "name") || undefined}
+        >
+          {name}
+        </h1>
+        <p
+          class="mx-auto mt-4 max-w-lg font-prose text-lg leading-relaxed italic text-hero-text-muted sm:text-xl md:mx-0"
+          data-tina-field={tinaField(data, "tagline") || undefined}
+        >
+          <span class="text-2xl leading-none text-accent/50">&ldquo;</span
+          >{data.tagline}<span class="text-2xl leading-none text-accent/50"
+            >&rdquo;</span
+          >
+        </p>
+        <p
+          class="mt-3 text-sm text-hero-accent"
+          data-tina-field={tinaField(data, "jobTitle") || undefined}
+        >
+          {data.jobTitle} at{" "}
+          <a
+            href={data.organizationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-semibold underline decoration-dashed underline-offset-4 hover:decoration-solid"
+            data-tina-field={tinaField(data, "organization") || undefined}
+          >
+            {data.organization}
+          </a>
+        </p>
+        {
+          socials.length > 0 && (
+            <div class="mt-5 flex justify-center md:justify-start [&_svg]:stroke-hero-social [&_svg]:hover:stroke-hero-accent">
+              <Socials socials={socials} />
+            </div>
+          )
+        }
+      </div>
+      <div
+        class="relative hidden md:block md:shrink-0 after:content-[''] after:absolute after:bottom-0 after:inset-x-0 after:h-[40%] after:pointer-events-none after:bg-gradient-to-t after:from-hero-bg after:to-transparent after:transition-[background] after:duration-300"
+      >
+        {
+          avatar && (
+            <Image
+              src={avatar}
+              alt={name}
+              width={500}
+              height={500}
+              class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              data-tina-field={tinaField(data, "avatar") || undefined}
+            />
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>

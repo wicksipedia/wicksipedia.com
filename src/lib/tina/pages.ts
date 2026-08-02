@@ -8,24 +8,58 @@
  * filters it out.
  */
 import { requestWithMetadata } from "@tinacms/astro/data";
+import { isValidPageSlug } from "@/lib/tina/island-guard";
 import client from "../../../tina/__generated__/client";
 
 /**
- * One page document, metadata-tagged for visual editing.
+ * Untagged Tina query for one page document.
  *
- * CALLERS MUST VALIDATE `slug`. It is interpolated straight into a
- * relativePath, and Tina *resolves* `..` rather than rejecting it — the same
- * property that made `/tina-island/blog?slug=../settings/index.json` reach
- * another collection before `isValidBlogSlug` existed. The static build is safe
- * by construction, because its only caller passes slugs that just came back
- * from `listPages()`. The moment a page slug comes off a URL — an island, an
- * endpoint — it needs an `isValidPageSlug` guard and fixtures in
- * `scripts/check-island-guard.mjs`, exactly as the blog and settings paths do.
+ * Split from `getPage` the same way `queryBlogDocument` is split from the blog
+ * getters: the island's gate has to read the document to decide whether to
+ * serve it, and the island then has to hand the *same* promise to
+ * `requestWithMetadata`, which must run inside the forms-store scope. One
+ * network round trip, two consumers.
+ *
+ * The guard is not advisory. `slug` is interpolated straight into a
+ * relativePath and Tina *resolves* `..` rather than rejecting it — the property
+ * that made `/tina-island/blog?slug=../settings/index.json` reach another
+ * collection before `isValidBlogSlug` existed. `content/pages/../settings/` is a
+ * real directory, so this is not hypothetical.
+ *
+ * It also fires on the static build, where slugs come from `listPages()` and
+ * always pass — unless someone names a page document something Tina's own
+ * `slugify` cannot produce (`filename.readonly` is false, so `My_Page` is
+ * typeable). Failing the build there is deliberate: such a page would render
+ * fine statically and 404 on every island refresh, which is exactly the kind of
+ * half-working state that ships unnoticed.
  */
+export function queryPageDocument(slug: string) {
+	if (!isValidPageSlug(slug)) {
+		throw new Error(
+			`queryPageDocument: refused page slug ${JSON.stringify(slug)}`,
+		);
+	}
+	return client.queries.page({ relativePath: `${slug}.mdx` });
+}
+
+/** The in-flight (or settled) result of `queryPageDocument`. */
+export type PageDocumentSource = ReturnType<typeof queryPageDocument>;
+
+/**
+ * Attach the hidden Tina metadata `tinaField()` reads. Must be called inside the
+ * island route's forms-store scope — that is what registers the form the admin
+ * builds its page editor from.
+ *
+ * `priority: "primary"` because on these two routes the page document IS what
+ * the page is about, so it is the form the admin should open on.
+ */
+export function tagPageDocument(source: PageDocumentSource) {
+	return requestWithMetadata(source, { priority: "primary" });
+}
+
+/** One page document, metadata-tagged for visual editing. */
 export const getPage = (slug: string) =>
-	requestWithMetadata(client.queries.page({ relativePath: `${slug}.mdx` }), {
-		priority: "primary",
-	});
+	tagPageDocument(queryPageDocument(slug));
 
 /**
  * Every page document. `src/pages/[...slug].astro` builds its routes from this,

@@ -9,5 +9,16 @@ import type { Template } from "tinacms";
 export const githubStatsBlockSchema: Template = {
 	name: "githubStats",
 	label: "GitHub Stats",
-	fields: [{ type: "string", name: "heading", label: "Heading" }],
+	fields: [
+		{
+			type: "string",
+			name: "heading",
+			label: "Heading",
+			// Sits in the same form as the page-level field labelled "Page
+			// Heading", which is the page's <h1>. Without this line an author has
+			// no in-UI signal that the two are different things.
+			description:
+				"The <h2> above the stats cards — a section heading inside this block, not the page's main heading. Leave blank to show the cards with no heading.",
+		},
+	],
 };

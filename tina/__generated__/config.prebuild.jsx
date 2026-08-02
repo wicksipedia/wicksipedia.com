@@ -129,7 +129,17 @@ var blogCollection = {
 var githubStatsBlockSchema = {
   name: "githubStats",
   label: "GitHub Stats",
-  fields: [{ type: "string", name: "heading", label: "Heading" }]
+  fields: [
+    {
+      type: "string",
+      name: "heading",
+      label: "Heading",
+      // Sits in the same form as the page-level field labelled "Page
+      // Heading", which is the page's <h1>. Without this line an author has
+      // no in-UI signal that the two are different things.
+      description: "The <h2> above the stats cards \u2014 a section heading inside this block, not the page's main heading. Leave blank to show the cards with no heading."
+    }
+  ]
 };
 
 // src/components/blocks/hero.template.ts
@@ -248,7 +258,13 @@ var pageCollection = {
       type: "string",
       name: "heading",
       label: "Page Heading",
-      description: "The <h1> at the top of the page. Leave blank when the first section already shows a title \u2014 the Hero block carries its own, and two <h1>s on one page break the heading outline for screen readers."
+      // The rendering decides this, not the author — see the heading block in
+      // `src/components/islands/PageBlocks.astro`. A page opening with a Hero
+      // never renders a page-level <h1> (the Hero supplies one), and a page
+      // without one falls back to Meta Title, which is required. Neither the
+      // two-<h1> nor the zero-<h1> outcome is reachable from this field, so
+      // the description describes behaviour rather than asking for care.
+      description: "Overrides Meta Title as the visible <h1> at the top of the page. Leave blank to use Meta Title. Ignored entirely when the page starts with a Hero block, which supplies its own heading."
     },
     {
       type: "object",
