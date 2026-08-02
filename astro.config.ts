@@ -1,6 +1,4 @@
 import cloudflare from "@astrojs/cloudflare";
-import { unified } from "@astrojs/markdown-remark";
-import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import tina from "@tinacms/astro/integration";
@@ -13,7 +11,6 @@ import {
 	sessionDrivers,
 } from "astro/config";
 import { SITE } from "./src/config";
-import { SHIKI_THEMES, SHIKI_TRANSFORMERS } from "./src/shiki";
 
 export default defineConfig({
 	site: SITE.website,
@@ -45,23 +42,15 @@ export default defineConfig({
 				return true;
 			},
 		}),
-		mdx(),
 		tina(),
 	],
 
-	markdown: {
-		// Astro 7 defaults to the Sätteri processor. This site's code blocks rely
-		// on the remark/rehype pipeline's shikiConfig (dual themes + notation
-		// transformers), so pin the old processor explicitly. Phase 1 removes this
-		// entirely — post bodies stop going through Astro's Markdown pipeline.
-		processor: unified({ gfm: true, smartypants: true }),
-		shikiConfig: {
-			themes: SHIKI_THEMES,
-			defaultColor: false,
-			wrap: false,
-			transformers: SHIKI_TRANSFORMERS,
-		},
-	},
+	// No `markdown:` block, and no mdx() integration: since Task 3.2 nothing on
+	// this site flows through Astro's Markdown pipeline. Post bodies are Tina
+	// rich text rendered by `src/components/RichText.astro`, and both CMS pages
+	// are `.astro`. A `shikiConfig` here would govern nothing — `src/shiki.ts`
+	// stays, because RichText is now the site's only highlighting path, but it is
+	// imported by RichText rather than by this file.
 
 	vite: {
 		plugins: [
