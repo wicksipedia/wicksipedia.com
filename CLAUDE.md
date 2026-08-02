@@ -62,6 +62,12 @@ URL (which is what TinaCMS's own startup banner prints).
 If a dev server is ever stranded — a hard kill, a crashed terminal — clear it
 with `bunx astro dev stop`; `bunx astro dev status` reports what is running.
 
+The one caveat the trap introduces: `astro dev stop` is scoped to this project
+(it reads `.astro/dev.json` under the project root, so it cannot touch another
+repo's or another worktree's server), but two `bun run dev` sessions on *this*
+repo share the one daemon — so quitting the second one stops the server the
+first is still using. Run one at a time.
+
 ## Blog Post Writing
 
 When writing or editing blog posts, always run Vale before considering the post done:
