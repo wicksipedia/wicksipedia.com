@@ -1,0 +1,96 @@
+---
+import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
+import type { TinaRichTextNode } from "@tinacms/astro/types";
+import BlogImage from "./BlogImage.astro";
+import RawHtml from "./RawHtml.astro";
+
+/**
+ * Renders a markdown table.
+ *
+ * `@tinacms/astro`'s built-in TableNode emits every row into a single `<tbody>`
+ * as `<td style="…">`, which broke two things at once:
+ *
+ *  - Accessibility. With no `<thead>` and no `<th>`, a screen reader announces
+ *    every cell with no idea which column it belongs to. The Markdown pipeline
+ *    this replaced emitted proper header rows.
+ *  - The design system. Its inline `border:1px solid #EDECF3` beats
+ *    typography.css, so table borders rendered that one hardcoded light-grey in
+ *    *both* themes — against a `--border` that is `#2a2d3a` in dark. CLAUDE.md
+ *    is explicit: never introduce hardcoded colours, and test both themes.
+ *
+ * So the whole table is rendered here instead, with no inline styles at all,
+ * leaving typography.css to govern it.
+ *
+ * WHICH ROW IS THE HEADER: the AST does not say. A table node carries only
+ * `type`, `children` and `props: { align }`; every row is `tr` and every cell is
+ * `td`, with no header flag anywhere — checked rather than assumed. Treating the
+ * first row as the header is not a guess: GFM tables are *defined* by a
+ * delimiter row under the first row, so a parsed table always has exactly one
+ * header row and it is always the first.
+ */
+type Cell = { children?: Array<{ children?: TinaRichTextNode[] }> };
+type Row = { children?: Cell[] };
+
+interface Props {
+	node: {
+		children?: Row[];
+		props?: { align?: Array<string | null> };
+	};
+}
+
+const { node } = Astro.props;
+
+const align = node.props?.align ?? [];
+const [headerRow, ...bodyRows] = node.children ?? [];
+
+/** A cell wraps its content in a paragraph; unwrap so `<td>text</td>`. */
+const cellContent = (cell: Cell): TinaRichTextNode[] =>
+	(cell?.children ?? []).flatMap((paragraph) => paragraph?.children ?? []);
+
+/** Author alignment, as a utility class rather than an inline style. */
+const alignClass = (index: number) => {
+	switch (align[index]) {
+		case "left":
+			return "text-left";
+		case "center":
+			return "text-center";
+		case "right":
+			return "text-right";
+		default:
+			return undefined;
+	}
+};
+
+// Cells hold inline content only; `html_inline` still needs the raw renderer or
+// an author's inline tag shows up as escaped source inside the cell.
+const components = { html: RawHtml, html_inline: RawHtml, img: BlogImage };
+---
+
+<table>
+  {
+    headerRow && (
+      <thead>
+        <tr>
+          {(headerRow.children ?? []).map((cell, i) => (
+            <th scope="col" class={alignClass(i)}>
+              <TinaMarkdown content={cellContent(cell)} components={components} />
+            </th>
+          ))}
+        </tr>
+      </thead>
+    )
+  }
+  <tbody>
+    {
+      bodyRows.map((row) => (
+        <tr>
+          {(row.children ?? []).map((cell, i) => (
+            <td class={alignClass(i)}>
+              <TinaMarkdown content={cellContent(cell)} components={components} />
+            </td>
+          ))}
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

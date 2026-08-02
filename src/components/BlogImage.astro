@@ -1,0 +1,54 @@
+---
+import { Image } from "astro:assets";
+import { sanitizeImageSrc } from "@tinacms/astro/sanitize";
+import { resolveBlogImage } from "@/lib/tina/images";
+import { normalizeUrl } from "@/lib/tina/sanitize-html";
+
+/**
+ * Renderer for Tina rich-text `img` nodes.
+ *
+ * TinaMarkdown's built-in `img` handling emits a bare `<img src alt>`, which
+ * drops everything Astro's Markdown pipeline used to attach: the responsive
+ * `srcset`/`sizes` pair, intrinsic `width`/`height` (so the page reflows as
+ * images load), and the `constrained` layout styles from `image.layout` in
+ * astro.config.ts. Handing the resolved asset to <Image> puts all of it back,
+ * built from the same config the rest of the site uses.
+ *
+ * RichText.astro normalises colocated refs to `/blog/<slug>/<file>` before this
+ * runs, which is the form resolveBlogImage maps back to ImageMetadata. Remote
+ * URLs and media-manager paths stay strings and fall through to a plain <img>,
+ * exactly as before.
+ */
+interface Props {
+	url: string;
+	alt?: string;
+	caption?: string;
+}
+
+const { url, alt } = Astro.props;
+
+// The slug is already baked into the `/blog/<slug>/<file>` url, which
+// resolveBlogImage matches on directly — its slug argument is unused there.
+const resolved = resolveBlogImage("", url);
+
+// Anything that did not resolve to a colocated asset is a URL straight from the
+// content source, so it goes through the same scheme check the library's own
+// image renderer applies rather than being trusted because we skipped that path.
+//
+// `normalizeUrl` FIRST, because that check has the backslash hole this repo
+// already closed once: `sanitizeImageSrc("/\evil.example/x")` returns the value
+// untouched and the browser loads https://evil.example/x. Normalising to the
+// string a URL parser will actually see turns it into `//evil.example/x`, which
+// the library then refuses. See `src/lib/tina/sanitize-html.ts`.
+const fallbackSrc = sanitizeImageSrc(
+	normalizeUrl(typeof resolved === "string" ? resolved : url),
+);
+---
+
+{
+	resolved && typeof resolved !== "string" ? (
+		<Image src={resolved} alt={alt ?? ""} />
+	) : (
+		<img src={fallbackSrc} alt={alt ?? ""} />
+	)
+}

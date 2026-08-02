@@ -79,10 +79,10 @@ const navLinks = [
               aria-selected="false"
             >
               <span class="flex items-center gap-2.5">
-                <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none">→</span>
+                <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none" aria-hidden="true">→</span>
                 <span class="group-[.is-active]:text-accent">{link.label}</span>
               </span>
-              <span class="font-mono text-[0.65rem] text-foreground/30 group-[.is-active]:text-accent/50">
+              <span class="font-mono text-[0.65rem] text-foreground/30 group-[.is-active]:text-accent/50" aria-hidden="true">
                 {link.hint}
               </span>
             </a>
@@ -261,6 +261,31 @@ const navLinks = [
     }
   }
 
+  /**
+   * HTML-escape a Pagefind field before it is interpolated into `innerHTML`.
+   *
+   * `meta` is never escaped anywhere in the Pagefind runtime — traced through
+   * the shipped `pagefind.js`, and 5 of the 17 index fragments on this site
+   * already contain a raw `<`. So `meta.title` reached `innerHTML` verbatim and
+   * a post title of `</span><img src=x onerror=alert(1)>` rendered a LIVE
+   * `<img>`; the urls sit inside double-quoted `href`/`data-url` attributes and
+   * a `"` in either broke out into new attributes. Measured on the built chunk.
+   *
+   * `excerpt` and `sub.excerpt` are DELIBERATELY NOT escaped. Pagefind escapes
+   * those itself (`raw_content.replace(/</g,"&lt;")…`) and then wraps the
+   * matched terms in `<mark>`, which is what the `[&_mark]:` classes below
+   * style. Escaping them here would print the `<mark>` tags on screen.
+   *
+   * `/search` is unaffected: `@pagefind/default-ui` binds the title as a text
+   * node. This hand-rolled palette is the only place that builds markup.
+   */
+  const esc = (value: string) =>
+    String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
   async function runSearch(term: string) {
     showResultsGroup();
     document.getElementById("cmd-k-loading")?.classList.remove("hidden");
@@ -298,18 +323,19 @@ const navLinks = [
 
           // Main result item
           const mainIdx = itemIndex++;
+          const mainUrl = esc(data.url);
           const mainItem = `
             <a
-              href="${data.url}"
+              href="${mainUrl}"
               class="cmd-item group flex flex-col gap-0.5 px-4 py-2.5 text-sm outline-none transition-none"
               role="option"
               data-index="${mainIdx}"
-              data-url="${data.url}"
+              data-url="${mainUrl}"
               aria-selected="false"
             >
               <span class="flex items-center gap-2.5">
                 <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none shrink-0">→</span>
-                <span class="font-semibold text-foreground/90 group-[.is-active]:text-accent truncate">${data.meta.title}</span>
+                <span class="font-semibold text-foreground/90 group-[.is-active]:text-accent truncate">${esc(data.meta.title)}</span>
               </span>
               <span class="pl-[1.375rem] text-xs text-foreground/40 line-clamp-1 leading-relaxed [&_mark]:bg-accent/20 [&_mark]:text-accent [&_mark]:rounded-sm [&_mark]:px-px">${data.excerpt}</span>
             </a>`;
@@ -317,18 +343,19 @@ const navLinks = [
           // Sub-result items
           const subItems = subs.map(sub => {
             const idx = itemIndex++;
+            const subUrl = esc(sub.url);
             return `
               <a
-                href="${sub.url}"
+                href="${subUrl}"
                 class="cmd-item group flex flex-col gap-0.5 px-4 py-2 text-sm outline-none transition-none border-l-2 border-border/30 ml-7"
                 role="option"
                 data-index="${idx}"
-                data-url="${sub.url}"
+                data-url="${subUrl}"
                 aria-selected="false"
               >
                 <span class="flex items-center gap-2">
                   <span class="font-mono text-accent/40 group-[.is-active]:text-accent text-[0.6rem] select-none shrink-0">↳</span>
-                  <span class="text-xs font-medium text-foreground/70 group-[.is-active]:text-accent truncate">${sub.title}</span>
+                  <span class="text-xs font-medium text-foreground/70 group-[.is-active]:text-accent truncate">${esc(sub.title)}</span>
                 </span>
                 <span class="pl-[1.125rem] text-[0.7rem] text-foreground/35 line-clamp-1 leading-relaxed [&_mark]:bg-accent/20 [&_mark]:text-accent [&_mark]:rounded-sm [&_mark]:px-px">${sub.excerpt}</span>
               </a>`;

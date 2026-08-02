@@ -1,0 +1,57 @@
+# `bun run check` — the six content-parse suites in scripts/check-*.mjs.
+#
+# Until this existed, nothing ran them on a push or a PR. The only workflows
+# were the 20:00 UTC cron deploy, the security.txt refresh and the (inert) prose
+# lint, so a guard regression surfaced up to ~24h later in the nightly deploy, or
+# not until somebody happened to build locally. The suites take about 2 seconds.
+#
+# Deliberately ONLY `bun run check`:
+#   - not `bun run lint`, which has 3 pre-existing errors on main and would make
+#     this workflow red from its first run, training everyone to ignore it;
+#   - not a full build, which needs a Tina datalayer and several minutes. The
+#     nightly deploy already covers that.
+#
+# No `actions/setup-node`: the scripts run under the runner's own Node (they
+# import `tina/collections/blog.ts` directly and rely on Node's type stripping,
+# which is on by default from Node 22.18). `daily-deploy.yml` already depends on
+# the runner's Node the same way, via `bun run build` -> `bun run check`, so
+# pinning it here and not there would be the drift, not the fix.
+name: Checks
+
+on:
+  push:
+  pull_request:
+
+# The repo default is already read-only, but that is a mutable setting and
+# refresh-security-txt.yml already declares its own. Stating it keeps the three
+# workflows consistent rather than one of them relying on a default.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+
+      # check:page-prose shells out to Vale, because the CMS page collection
+      # keeps its prose in YAML frontmatter where Vale's own file globs cannot
+      # reach it. Vale is a Go binary, not an npm package, so `bun install` does
+      # not provide it — installed the same way vale.yml does.
+      #
+      # Its absence is not silently survivable and should not be: the first run
+      # of this workflow failed with "could not read Vale's file count from its
+      # output", because that suite refuses to report a pass it cannot evidence.
+      # A version that shrugged off a missing binary would have gone green while
+      # linting nothing, which is the failure .vale.ini already produced twice on
+      # this repo.
+      - name: Install Vale
+        run: |
+          gh release download --repo errata-ai/vale --pattern 'vale_*_Linux_64-bit.tar.gz' --dir /tmp
+          tar xzf /tmp/vale_*_Linux_64-bit.tar.gz -C /usr/local/bin vale
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: bun run check

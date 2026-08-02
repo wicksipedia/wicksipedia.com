@@ -15,7 +15,15 @@ const backUrl = SITE.showBackButton ? Astro.url.pathname : "/";
 ---
 
 <Breadcrumb />
-<main data-backUrl={backUrl} id="main-content" class="app-layout pb-8">
+{/* `tabindex="-1"`: see the note in `PostDetails.astro` — Safari does not set
+    the sequential-focus starting point on a fragment navigation, so the skip
+    link scrolls and then hands the next Tab back to the top of the page. */}
+<main
+  data-backUrl={backUrl}
+  id="main-content"
+  tabindex="-1"
+  class="app-layout pb-8"
+>
   <div class="animate-reveal pt-4 pb-6 mb-2 border-b border-border/50">
     {
       "titleTransition" in props ? (

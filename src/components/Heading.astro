@@ -1,0 +1,43 @@
+---
+import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
+import type { TinaRichTextContent } from "@tinacms/astro/types";
+import BlogImage from "./BlogImage.astro";
+import RawHtml from "./RawHtml.astro";
+
+/**
+ * A heading carrying the slug `id` Astro's Markdown pipeline used to generate.
+ *
+ * Those ids are load-bearing: PostDetails.astro's client script builds each
+ * section permalink as `"#" + heading.id`, in-article anchors point at them, and
+ * every external deep link to `/blog/<slug>#<heading-id>` — search results,
+ * shared links, bookmarks — depends on them not changing.
+ *
+ * RichText rewrites `h1`-`h6` nodes into `mdxJsxFlowElement`s naming this
+ * component, because that is the only dispatch path in @tinacms/astro that
+ * passes node data through: Container.astro hands an override nothing but a
+ * children slot, so an `id` computed during the walk could not reach it.
+ */
+interface Props {
+	level: number;
+	id: string;
+	children: TinaRichTextContent;
+}
+
+const { level, id, children } = Astro.props;
+
+const Tag = `h${Math.min(Math.max(level, 1), 6)}` as
+	| "h1"
+	| "h2"
+	| "h3"
+	| "h4"
+	| "h5"
+	| "h6";
+
+// Inline content only, but it still needs the same renderers RichText uses:
+// `html_inline` or an author's inline tag shows up as escaped source, and `img`
+// or a colocated image renders as a bare <img> pointing at /blog/<slug>/file,
+// a path that does not exist in the build.
+const components = { html: RawHtml, html_inline: RawHtml, img: BlogImage };
+---
+
+<Tag {id}><TinaMarkdown content={children} components={components} /></Tag>

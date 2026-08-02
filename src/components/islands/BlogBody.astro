@@ -1,0 +1,30 @@
+---
+import { tinaField } from "@tinacms/astro/tina-field";
+import RichText from "@/components/RichText.astro";
+
+/**
+ * Editable post body. Rendered statically inside <TinaIsland name="blog"> on the
+ * post page, and on demand by /tina-island/blog when the bridge refreshes the
+ * region. The data-tina-field marker makes the body click-to-edit in the admin.
+ */
+interface Props {
+	// biome-ignore lint/suspicious/noExplicitAny: raw Tina blog node (metadata-tagged)
+	post: any;
+}
+
+const { post } = Astro.props;
+
+// Folder slug (e.g. `git-and-diffs`) for resolving colocated image refs.
+const slug: string =
+	post?._sys?.breadcrumbs?.slice(0, -1).join("/") ??
+	post?._sys?.relativePath?.replace(/\/index\.mdx?$/i, "") ??
+	"";
+---
+
+{
+	post && (
+		<div data-tina-field={tinaField(post, "body")}>
+			<RichText content={post.body} slug={slug} />
+		</div>
+	)
+}

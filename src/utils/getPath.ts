@@ -1,4 +1,4 @@
-import { BLOG_PATH } from "@/content.config";
+import { BLOG_PATH } from "@/lib/tina/posts";
 import { slugifyStr } from "./slugify";
 
 /**

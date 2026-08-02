@@ -2,6 +2,14 @@ extends: existence
 message: "Banned word '%s' — consider using an alternative."
 level: error
 ignorecase: true
+# `solution` is banned as corporate filler ("our solution enables…"), but it is
+# also half of a job title that is a proper noun on this site — it appears in
+# SITE.jobTitle, SITE.desc, the home page's hero block and the about page's bio.
+# Exempting the exact phrase keeps the ban live for the filler sense.
+# Surfaced when scripts/check-page-prose.mjs first put the about-page bio under
+# Vale at all; before that the bio had never been linted by anything.
+exceptions:
+  - Solution Architect
 tokens:
   - opt
   - dive

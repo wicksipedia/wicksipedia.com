@@ -1,0 +1,79 @@
+---
+/**
+ * Responsive YouTube embed, rendered from a rich-text template.
+ *
+ * This component exists so that no post has to hand-write an `<iframe>`. Every
+ * part of the markup is static: the only values crossing from the post are the
+ * video id and title, and the id is checked against YouTube's 11-character
+ * format before it reaches a URL. That is what let the sanitiser drop `iframe`,
+ * the `style` attribute and the embed-host allowlist entirely — a post can no
+ * longer express an arbitrary frame or arbitrary CSS.
+ *
+ * The aspect ratio lives here rather than in author-supplied inline styles, so
+ * it stays consistent and cannot be used to lay an element over the page.
+ *
+ * youtube-nocookie.com is YouTube's own privacy-preserving host: it serves the
+ * same player without setting tracking cookies until the visitor hits play.
+ */
+import { captionFor, isValidVideoId } from "@/lib/tina/youtube";
+
+interface Props {
+	videoId: string;
+	title?: string;
+}
+
+const { videoId, title } = Astro.props;
+
+const caption = captionFor(title);
+// An id that is not an id would otherwise be interpolated straight into a URL.
+// Rendering nothing is the safe end of that; the CMS marks the field required
+// so a well-formed post cannot reach it.
+const isValid = isValidVideoId(videoId);
+const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+---
+
+{
+  isValid && (
+    <figure class="my-8 not-prose">
+      <div class="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+          title={caption}
+          class="absolute inset-0 h-full w-full"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        />
+      </div>
+      {/* Captions the figure, and is the only route to the video when the frame
+          is blocked by an extension, a region restriction or a strict CSP — an
+          iframe has no fallback content of its own. */}
+      {/* Contrast, computed from the tokens in src/styles/global.css — NOT from
+          the table in CLAUDE.md, which has been wrong about --accent before.
+
+                                          light      dark
+            was: text-foreground/60 x .75  2.86:1    3.86:1   FAIL
+            was: link (accent) x .75       3.46:1    4.49:1   FAIL
+            now: text-foreground/75        7.45:1    8.79:1   AA
+            now: link (accent)             5.46:1    7.23:1   AA
+
+          The `x .75` was `.app-prose figcaption { opacity: .75 }` in
+          typography.css leaking through `not-prose`; that selector is now
+          guarded, so the alpha here is the whole story. `text-foreground/60`
+          alone would still be 4.49:1 — AA for large text only, and this is
+          `text-sm`. */}
+      <figcaption class="mt-2 text-sm text-foreground/75">
+        {caption} —{" "}
+        <a
+          href={watchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-accent underline decoration-dashed underline-offset-4 hover:decoration-solid"
+        >
+          watch on YouTube
+        </a>
+      </figcaption>
+    </figure>
+  )
+}

@@ -1,0 +1,119 @@
+---
+import { tinaField } from "@tinacms/astro/tina-field";
+import GithubSlugger from "github-slugger";
+import { type CmsPage, pageBlocks, primaryHeroIndex } from "@/lib/tina/pages";
+import type { CmsSocial } from "@/lib/tina/settings";
+import GithubStats from "./GithubStats.astro";
+import Hero from "./Hero.astro";
+import PostFeed from "./PostFeed.astro";
+import Prose from "./Prose.astro";
+
+/**
+ * Dispatches the page's block list to the component that renders each one.
+ *
+ * The `&&` chain is deliberate and must stay one. `block.__typename` is a
+ * CMS-supplied string, and an object literal keyed by it (`MAP[block.__typename]`)
+ * resolves `constructor`, `toString`, `valueOf` and friends to truthy inherited
+ * values — the "did we find a renderer?" test passes and Astro is handed a
+ * `Function` where it expected a component. Three of those holes have been found
+ * and closed on this branch already (`BLOCK_POLICY`, `islandGates`,
+ * `SOCIAL_ICONS`). Comparing against literals indexes nothing, so there is no
+ * fourth. If this ever becomes a lookup map it must be null-prototype or go
+ * through `Object.hasOwn`.
+ *
+ * An unrecognised `__typename` renders as an empty wrapper `<div>` rather than
+ * throwing: a block template added to the schema before its component exists
+ * should not take the whole page down.
+ */
+interface Props {
+	data?: CmsPage | null;
+	socials: CmsSocial[];
+}
+
+const { data, socials } = Astro.props;
+const blocks = pageBlocks(data);
+
+// Only a hero sitting at `blocks[0]` renders the page's `<h1>`; any other hero
+// is a section, so it renders `<h2>` and the page keeps its own heading above
+// it. Derived from the shared helper so this cannot disagree with
+// PageBlocks.astro's decision to suppress the page-level heading.
+const heroIndex = primaryHeroIndex(blocks);
+
+/**
+ * One slugger for the whole page, so a repeated block cannot emit a repeated
+ * `id`. Every block type below carried a STATIC id — `hero`, `featured`,
+ * `recent-posts` — and `GithubStats.astro` used to build its own slugger per
+ * block, which by construction could not dedupe across blocks: two GitHub Stats
+ * blocks with the same heading both emitted `id="github-stats"`. The block list
+ * has always been repeatable (that is why `primaryHeroIndex` exists), so those
+ * ids had to become page-scoped rather than block-scoped.
+ *
+ * The slug is taken HERE, at the call site, and the resulting string is passed
+ * down — rather than handing each block the slugger and letting it slug in its
+ * own frontmatter. These expressions are interpolations inside the synchronous
+ * `blocks.map()` below, so they run in document order on every build; child
+ * frontmatter does not carry that guarantee, and an id whose value depends on
+ * component scheduling is an id that can move between builds. The first
+ * BLOCK-ALLOCATED occurrence therefore always keeps the bare name, and only
+ * repeats are suffixed (`hero`, then `hero-1`), which is what keeps existing
+ * deep links working. "First block-allocated" and not simply "first": prose
+ * heading ids are handed out later (see below), so a prose body whose heading
+ * happens to slug to `hero` takes `hero-1` even though it precedes the hero
+ * block in the document. Unique either way, which is the property that matters.
+ *
+ * Site chrome ids are NOT in this slugger's namespace — `main-content` on the
+ * island `<main>`, and `skip-to-content` / `nav-menu` / `theme-btn` and friends
+ * in `Header.astro`. A heading that slugs onto one of those still duplicates it.
+ * Left alone deliberately: seeding the slugger with them would make this file
+ * depend on the header's internals, and the practical effect is nil because
+ * `href="#main-content"` resolves to the first match in document order, which is
+ * the `<main>`.
+ *
+ * `Prose` is the exception: its headings come out of a rich-text AST walk inside
+ * `RichText.astro`, so it takes the slugger itself. Those ids are derived from
+ * heading TEXT and the walk is synchronous, so uniqueness holds whatever order
+ * the prose blocks render in — and because every static id above is allocated
+ * during this `.map()`, prose headings always dedupe against them rather than
+ * the other way round.
+ */
+const slugger = new GithubSlugger();
+
+/**
+ * `github-slugger` returns "" for a heading carrying no alphanumerics — `!!!`,
+ * `…`, a bare emoji (measured). `id=""` is not a valid HTML id, so such a
+ * heading gets no id rather than a broken one, and the `<h2>` still renders.
+ */
+const headingIdFor = (heading?: string | null) =>
+	heading ? slugger.slug(heading) || undefined : undefined;
+---
+
+{
+  blocks.map((block, index) => (
+    <div data-tina-field={tinaField(block) || undefined}>
+      {block.__typename === "PageBlocksHero" && (
+        <Hero
+          data={block}
+          socials={socials}
+          primary={index === heroIndex}
+          sectionId={slugger.slug("hero")}
+        />
+      )}
+      {block.__typename === "PageBlocksPostFeed" && (
+        <PostFeed
+          data={block}
+          featuredId={slugger.slug("featured")}
+          recentId={slugger.slug("recent-posts")}
+        />
+      )}
+      {block.__typename === "PageBlocksProse" && (
+        <Prose data={block} slugger={slugger} />
+      )}
+      {block.__typename === "PageBlocksGithubStats" && (
+        <GithubStats
+          data={block}
+          headingId={headingIdFor(block.heading)}
+        />
+      )}
+    </div>
+  ))
+}

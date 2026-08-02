@@ -1,0 +1,52 @@
+---
+import { tinaField } from "@tinacms/astro/tina-field";
+import type GithubSlugger from "github-slugger";
+import RichText from "@/components/RichText.astro";
+import type { ProseBlock } from "@/lib/tina/pages";
+
+/**
+ * Long-form body copy — the `.app-prose` region an ordinary Markdown page used
+ * to fill. Classes moved verbatim from `src/layouts/AboutLayout.astro:31-36`.
+ *
+ * SECURITY. `<RichText>` is not an implementation detail here, it is the
+ * sanitiser. Its AST walk is what runs `sanitizeAuthorHtml` over author-written
+ * `html` / `html_inline` nodes before `RawHtml.astro` renders them **unescaped**
+ * — a body containing `<script>alert(1)</script>` parses to a raw `html` node.
+ * Do not hand `data.body` to `<TinaMarkdown>` with a hand-rolled components map:
+ * a partial map both loses the sanitiser and drops overrides (`Table.astro` and
+ * `Heading.astro` each rebuilt `{html, html_inline}` on this branch and lost
+ * `img`, so images inside them rendered at paths that did not exist).
+ *
+ * `slug=""` because a page is not a post: there is no colocated image folder to
+ * resolve `./file.png` against, so relative refs resolve to `/blog/<file>` and
+ * will 404 rather than silently pointing at another post's asset. Page images
+ * belong in Tina's media root and arrive as absolute `/uploads/...` paths, which
+ * `resolveBlogImage` hands to `resolveUploadImage` — since Task 3.3 that root is
+ * `src/assets/uploads`, so they are optimised rather than served raw.
+ *
+ * `<h1>` cannot be authored in this body: `prose.template.ts` restricts the
+ * editor's heading levels to h2-h6, and `scripts/check-page-prose.mjs` asserts
+ * it over the committed documents as well, because the schema governs the admin
+ * UI and both of these files were seeded by hand.
+ */
+interface Props {
+	data: ProseBlock;
+	/**
+	 * The page's shared slugger, so heading ids dedupe against the other blocks'
+	 * ids rather than only within this body. `Blocks.astro` owns it; a prose
+	 * block rendered outside the pipeline falls back to RichText's own.
+	 */
+	slugger?: GithubSlugger;
+}
+
+const { data, slugger } = Astro.props;
+---
+
+<div class="app-layout">
+  <section
+    class="animate-reveal-delay-1 app-prose mt-8 max-w-app font-prose prose-img:border-0 prose-img:rounded-lg prose-img:shadow-sm"
+    data-tina-field={tinaField(data, "body") || undefined}
+  >
+    <RichText content={data.body} slug="" slugger={slugger} />
+  </section>
+</div>

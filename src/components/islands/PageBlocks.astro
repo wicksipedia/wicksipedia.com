@@ -1,0 +1,119 @@
+---
+import { tinaField } from "@tinacms/astro/tina-field";
+import Blocks from "@/components/blocks/Blocks.astro";
+import { headingText } from "@/lib/tina/heading-text";
+import { type CmsPage, pageBlocks, primaryHeroIndex } from "@/lib/tina/pages";
+import type { CmsSocial } from "@/lib/tina/settings";
+
+/**
+ * Editable page body. Rendered statically inside `<TinaIsland name="page">` on
+ * both routes, and on demand by `/tina-island/page` when the bridge refreshes
+ * the region.
+ *
+ * This component owns `<main id="main-content">`, not `PostFeed.astro`.
+ * `Header.astro:50` renders `href="#main-content"` on EVERY page, so the
+ * skip-link target has to exist on every page — and the About page has no post
+ * feed. It cannot live on the island wrapper either: `IslandWrapper` in
+ * `@tinacms/astro` is `{ tag, className }` with no `id` (see
+ * `node_modules/@tinacms/astro/dist/island-route.d.ts`), so the wrapper is a
+ * `display: contents` div — same trick, and for the same reason, as the settings
+ * islands documented in `src/lib/islands.ts`: `<body>` is a full-height flex
+ * column and a generated box between it and `<main>` would change the layout.
+ *
+ * `pb-12` is the bottom padding `AboutLayout.astro`'s `<main>` carried. It lives
+ * here rather than on a block because every page needs it and no single block
+ * is always last: a prose-only page would otherwise end flush against the
+ * footer's top border, since Tailwind Typography zeroes the last child's bottom
+ * margin. The homepage gains 3rem it did not have, which is the cost of the
+ * rule being about pages rather than about the two that exist today.
+ *
+ * `tabindex="-1"` so the skip link actually moves focus. Without it several
+ * browsers scroll to the target and leave focus on the link, which is the bug
+ * the skip link exists to avoid. Not a regression — neither old layout had it —
+ * but this is the commit that starts owning the element.
+ *
+ * `socials` defaults to `[]` because the island re-render only carries the page
+ * document. The hero's social row therefore disappears from the *admin preview*
+ * until a reload; the statically built page always has it.
+ */
+interface Props {
+	data?: CmsPage | null;
+	socials?: CmsSocial[];
+}
+
+const { data, socials = [] } = Astro.props;
+
+const blocks = pageBlocks(data);
+
+/**
+ * Whether the page renders an `<h1>` of its own, and what it says.
+ *
+ * All three failure modes are closed here rather than by asking the author to
+ * obey a field description — a description documents a rule, it does not
+ * enforce one:
+ *
+ *  - TWO `<h1>`s: a hero block renders the person's name as the page `<h1>`, so
+ *    a page that STARTS with one suppresses the page-level heading entirely,
+ *    whatever `heading` holds. `Blocks.astro` closes the other half — every
+ *    hero that is not `blocks[0]` renders `<h2>`.
+ *  - ZERO `<h1>`s: `heading` is optional, so it falls back to `seoTitle`, which
+ *    is `required: true` on the collection (`tina/collections/page.ts`).
+ *  - h2 BEFORE h1: the `<h1>` is emitted here, above every block, so a page
+ *    whose hero sits below a prose or post-feed block keeps its own heading
+ *    rather than handing it to a hero the reader meets third. See
+ *    `primaryHeroIndex` for why an order-blind version of this rule still
+ *    counted one `<h1>` and was still wrong.
+ *
+ * `||` and not `??`: clearing the field in the admin writes an empty string, not
+ * null, and an empty `<h1>` is the zero-heading case wearing a hat.
+ *
+ * `headingText()` on both for the same reason one step further out. `"   " || x`
+ * short-circuits on the whitespace, so a hand-written `heading: "   "` rendered
+ * `<h1>   </h1>` and never reached the `seoTitle` that would have filled it —
+ * one `<h1>` by count with no accessible name. Measured in a built page. The
+ * trimmed value is what renders, so the text matches what was tested, and it
+ * comes from the shared helper that `primaryHeroIndex`, `Hero.astro` and
+ * `scripts/check-page-prose.mjs` all use — the divergence above is what happens
+ * when they each spell it themselves.
+ */
+const heroOwnsHeading = primaryHeroIndex(blocks) !== -1;
+const heading = heroOwnsHeading
+	? ""
+	: headingText(data?.heading) || headingText(data?.seoTitle);
+
+/**
+ * `data-layout="index"` is read by the back-button script in
+ * `src/pages/index.astro`, which looks it up via `#main-content`. Derived from
+ * the document rather than passed as a prop so it survives an island re-render,
+ * where `propsFromData` supplies only `data`.
+ */
+const isHome = data?._sys?.filename === "home";
+---
+
+<main
+  id="main-content"
+  tabindex="-1"
+  class="pb-12"
+  data-layout={isHome ? "index" : undefined}
+>
+  {
+    heading && (
+      <div class="app-layout">
+        <div class="animate-reveal pt-8 pb-6 mb-2 border-b border-border/50">
+          {/*
+            The field is `heading` even when the text came from `seoTitle`.
+            Clicking the heading in the admin should open the override an author
+            means to change, not the SEO title that happens to be supplying it.
+          */}
+          <h1
+            class="font-prose text-3xl font-bold italic tracking-tight text-foreground sm:text-4xl lg:text-5xl"
+            data-tina-field={tinaField(data, "heading") || undefined}
+          >
+            {heading}
+          </h1>
+        </div>
+      </div>
+    )
+  }
+  <Blocks data={data} socials={socials} />
+</main>

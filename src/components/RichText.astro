@@ -1,0 +1,221 @@
+---
+import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
+import type { TinaRichTextContent } from "@tinacms/astro/types";
+import GithubSlugger from "github-slugger";
+import { groupBlockquoteParagraphs } from "@/lib/tina/blockquote";
+import { sanitizeAuthorHtml } from "@/lib/tina/sanitize-html";
+import { smartypants } from "@/lib/tina/smartypants";
+import { getHighlighter, SHIKI_THEMES, SHIKI_TRANSFORMERS } from "@/shiki";
+import BlogImage from "./BlogImage.astro";
+import Heading from "./Heading.astro";
+import RawHtml from "./RawHtml.astro";
+import Table from "./Table.astro";
+import YouTubeEmbed from "./YouTubeEmbed.astro";
+
+/**
+ * Renders a Tina rich-text body. Two things the default renderer would drop are
+ * rebuilt in a single AST walk before handing the tree to <TinaMarkdown>:
+ *
+ *  - `code_block` nodes become `html` nodes holding dual-theme Shiki output.
+ *    (Not a `components.code_block` override: that API only receives `value`
+ *    and `lang`, so fence meta like `title="~/.zshrc"` would be lost.)
+ *    TinaMarkdown escapes raw markup, so these need the RawHtml override to
+ *    render at all. Author-written `html` nodes go through an allowlist
+ *    sanitiser first — see src/lib/tina/sanitize-html.ts. Highlighter output and author-written HTML necessarily
+ *    share the `html` type: @tinacms/astro's Node.astro dispatches a fixed set
+ *    of node types and renders anything else as nothing, so a distinct
+ *    `shiki_html` type would silently disappear. See RawHtml.astro for what
+ *    that means for trust.
+ *  - `img` nodes carrying a relative `./file.png` ref are rewritten to the
+ *    absolute `/blog/<slug>/<file>` form, which BlogImage resolves back to the
+ *    colocated asset and hands to Astro's <Image> for optimisation.
+ *  - `table` nodes are rendered by our own component: the built-in one emits
+ *    no `<thead>`/`<th>` and hardcodes a border colour inline. See Table.astro.
+ *  - `blockquote` children are regrouped into paragraphs; see
+ *    src/lib/tina/blockquote.ts for why that is necessary and how it can fail.
+ *  - `text` nodes outside inline code get typographic punctuation back; see
+ *    src/lib/tina/smartypants.ts.
+ *  - `h1`-`h6` nodes gain the slug `id` Astro's Markdown pipeline generated, so
+ *    section permalinks and external deep links keep resolving. See
+ *    Heading.astro for why they have to become mdx nodes to carry it.
+ */
+interface Props {
+	content: TinaRichTextContent | null;
+	/** Post folder slug, so colocated image refs resolve to the right folder. */
+	slug: string;
+	/**
+	 * A slugger to share with the rest of the page. A blog post is one body per
+	 * document, so it wants the default — one fresh slugger, exactly as Astro
+	 * used one per file. A CMS page can hold several prose blocks alongside
+	 * blocks carrying ids of their own, and those all have to be unique within
+	 * the one document, so `Blocks.astro` passes its own down. See the slugger
+	 * comment there.
+	 */
+	slugger?: GithubSlugger;
+}
+
+const { content, slug, slugger: sharedSlugger } = Astro.props;
+
+type AstNode = {
+	type?: string;
+	url?: string;
+	lang?: string;
+	meta?: string;
+	value?: string;
+	children?: AstNode[];
+	[key: string]: unknown;
+};
+
+const highlighter = await getHighlighter();
+
+function highlight(node: AstNode): AstNode {
+	const lang =
+		node.lang && highlighter.getLoadedLanguages().includes(node.lang)
+			? node.lang
+			: "text";
+	const html = highlighter.codeToHtml(node.value ?? "", {
+		lang,
+		themes: SHIKI_THEMES,
+		defaultColor: false,
+		// Shiki reads the raw fence meta from `__raw`; transformerFileName turns
+		// `title="~/.zshrc"` into the filename label above the block.
+		meta: { __raw: node.meta ?? "" },
+		transformers: [
+			{
+				name: "astro-code-overflow",
+				pre(el) {
+					// Astro's Markdown Shiki wrapper appends this whenever `wrap` is
+					// false, and typography.css relies on the <pre> scrolling rather
+					// than widening the article. Its trailing `;` also terminates the
+					// last CSS variable, which matters because transformerFileName
+					// concatenates onto this string without a separator.
+					el.properties.style = `${el.properties.style ?? ""}; overflow-x: auto;`;
+				},
+			},
+			...SHIKI_TRANSFORMERS,
+			{
+				name: "astro-code-class",
+				pre(el) {
+					// Reproduce the class list and data attribute Astro's Markdown
+					// Shiki wrapper emitted, so the <pre> that typography.css and any
+					// downstream tooling sees is unchanged by the renderer swap.
+					const cls = ((el.properties.class as string | undefined) ?? "")
+						.replace(/\bshiki-themes\b/g, "astro-code-themes")
+						.replace(/\bshiki\b/g, "astro-code")
+						.trim();
+					// typography.css styles `.astro-code`; never let it go missing,
+					// whatever class list Shiki or a transformer produced.
+					el.properties.class = /\bastro-code\b/.test(cls)
+						? cls
+						: `astro-code ${cls}`.trim();
+					el.properties["data-language"] = lang;
+				},
+			},
+		],
+	});
+	return { type: "html", value: html };
+}
+
+/**
+ * `./file.png` → `/blog/<slug>/file.png`; anything already absolute or remote is
+ * left alone. `../` segments are resolved rather than passed through, so a
+ * sibling-post ref like `../other/img.png` still finds its asset instead of
+ * shipping a 404.
+ */
+function absoluteImageUrl(url: string): string {
+	if (/^https?:\/\//i.test(url) || url.startsWith("/")) return url;
+	const segments: string[] = [slug];
+	for (const part of url.split("/")) {
+		if (part === "" || part === ".") continue;
+		if (part === "..") segments.pop();
+		else segments.push(part);
+	}
+	return `/blog/${segments.join("/")}`;
+}
+
+const HEADING_TYPES = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
+
+/** Concatenated text of a node's whole subtree — what rehype-slug hashes. */
+function textContent(node: AstNode): string {
+	if (typeof node.text === "string") return node.text;
+	return (node.children ?? []).map(textContent).join("");
+}
+
+/**
+ * One slugger per rendered post, exactly as Astro used one per file — or the
+ * page's shared one, when a caller passed it. It carries the de-duplication
+ * state that turns a repeated heading into `-1`, `-2`, so it must see the
+ * headings in document order, which the pre-order walk guarantees. The walk is
+ * synchronous, so two bodies sharing a slugger cannot interleave inside it
+ * however Astro schedules them: uniqueness holds either way.
+ */
+const slugger = sharedSlugger ?? new GithubSlugger();
+
+function walk(node: AstNode): AstNode {
+	if (node.type === "code_block") return highlight(node);
+
+	// Anything reaching here is author-written: highlight() returns above without
+	// recursing, so the html nodes Shiki mints never pass through this branch.
+	// RawHtml renders these unescaped, so this is what stands between a post body
+	// and script execution once Tina Cloud allows publishing without a commit.
+	if (node.type === "html" || node.type === "html_inline") {
+		return {
+			...node,
+			value: sanitizeAuthorHtml(String(node.value ?? ""), node.type),
+		};
+	}
+
+	// Astro's Markdown pipeline applied smartypants; post bodies no longer pass
+	// through it. Inline code is `{type:"text", code:true}`, so `!code` is the
+	// exact guard keeping `--flag` and `"quoted"` literal inside code spans.
+	if (node.type === "text" && node.code !== true) {
+		return { ...node, text: smartypants(String(node.text ?? "")) };
+	}
+
+	let next = node;
+	if (next.type && HEADING_TYPES.has(next.type)) {
+		// Children first, so the id is slugged from the smart-punctuated text.
+		// Astro ran remark-smartypants before rehype-slug, and the order is
+		// load-bearing: `a -- b` slugs to `a----b`, `a — b` to `a--b`.
+		const children = (next.children ?? []).map(walk);
+		return {
+			type: "mdxJsxFlowElement",
+			name: "Heading",
+			props: {
+				level: Number(next.type.slice(1)),
+				id: slugger.slug(children.map(textContent).join("")),
+				children,
+			},
+			children: [],
+		};
+	}
+	if (node.type === "img" && typeof node.url === "string") {
+		next = { ...node, url: absoluteImageUrl(node.url) };
+	}
+	if (next.type === "blockquote" && next.children?.length) {
+		next = {
+			...next,
+			children: groupBlockquoteParagraphs(next.children) as AstNode[],
+		};
+	}
+	if (next.children?.length) {
+		next = { ...next, children: next.children.map(walk) };
+	}
+	return next;
+}
+
+const resolved = content
+	? (walk(content as AstNode) as TinaRichTextContent)
+	: null;
+
+const components = {
+	Heading,
+	table: Table,
+	youTubeEmbed: YouTubeEmbed,
+	html: RawHtml,
+	html_inline: RawHtml,
+	img: BlogImage,
+};
+---
+
+{resolved && <TinaMarkdown content={resolved} components={components} />}

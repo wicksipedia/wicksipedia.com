@@ -1,4 +1,4 @@
-import type { CollectionEntry } from "astro:content";
+import type { PostEntry } from "@/lib/tina/posts";
 import postFilter from "./postFilter";
 import { slugifyStr } from "./slugify";
 
@@ -7,7 +7,7 @@ interface Tag {
 	tagName: string;
 }
 
-const getUniqueTags = (posts: CollectionEntry<"blog">[]) => {
+const getUniqueTags = (posts: PostEntry[]) => {
 	const tags: Tag[] = posts
 		.filter(postFilter)
 		.flatMap((post) => post.data.tags)

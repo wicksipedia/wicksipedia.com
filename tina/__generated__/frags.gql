@@ -1,0 +1,62 @@
+fragment BlogParts on Blog {
+  __typename
+  title
+  description
+  pubDatetime
+  modDatetime
+  author
+  ogImage
+  tags
+  featured
+  draft
+  canonicalURL
+  hideEditPost
+  timezone
+  noindex
+  body
+}
+
+fragment PageParts on Page {
+  __typename
+  seoTitle
+  heading
+  blocks {
+    __typename
+    ... on PageBlocksHero {
+      name
+      tagline
+      jobTitle
+      organization
+      organizationUrl
+      avatar
+      alt
+    }
+    ... on PageBlocksPostFeed {
+      label
+      limit
+      allPostsLabel
+      allPostsHref
+    }
+    ... on PageBlocksProse {
+      body
+    }
+    ... on PageBlocksGithubStats {
+      heading
+    }
+  }
+}
+
+fragment SettingsParts on Settings {
+  __typename
+  nav {
+    __typename
+    title
+    href
+  }
+  socials {
+    __typename
+    name
+    href
+    icon
+  }
+}

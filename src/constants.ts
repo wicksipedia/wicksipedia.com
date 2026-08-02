@@ -2,12 +2,12 @@ import type { Props } from "astro";
 import IconBrandX from "@/assets/icons/IconBrandX.svg";
 // import IconWhatsapp from "@/assets/icons/IconWhatsapp.svg";
 import IconFacebook from "@/assets/icons/IconFacebook.svg";
-// import IconMail from "@/assets/icons/IconMail.svg";
 import IconGitHub from "@/assets/icons/IconGitHub.svg";
 import IconLinkedin from "@/assets/icons/IconLinkedin.svg";
+import IconMail from "@/assets/icons/IconMail.svg";
+
 // import IconTelegram from "@/assets/icons/IconTelegram.svg";
 // import IconPinterest from "@/assets/icons/IconPinterest.svg";
-import { SITE } from "@/config";
 
 type GiscusProps = {
 	repo: `${string}/${string}`;
@@ -29,32 +29,36 @@ interface Social {
 	icon: (_props: Props) => Element;
 }
 
-export const SOCIALS: Social[] = [
-	{
-		name: "GitHub",
-		href: "https://github.com/wicksipedia",
-		linkTitle: `${SITE.title} on GitHub`,
-		icon: IconGitHub,
-	},
-	// {
-	//   name: "X",
-	//   href: "https://x.com/username",
-	//   linkTitle: `${SITE.title} on X`,
-	//   icon: IconBrandX,
-	// },
-	{
-		name: "LinkedIn",
-		href: "https://www.linkedin.com/in/matt-wicks/",
-		linkTitle: `${SITE.title} on LinkedIn`,
-		icon: IconLinkedin,
-	},
-	// {
-	//   name: "Mail",
-	//   href: "mailto:yourmail@gmail.com",
-	//   linkTitle: `Send an email to ${SITE.title}`,
-	//   icon: IconMail,
-	// },
-] as const;
+/**
+ * Social icons by name. Which socials appear, in what order and where they
+ * point is editorial and lives in the CMS (`content/settings/index.json`);
+ * Tina can only store strings, so the string it stores selects a component
+ * here. Keys must match the `icon` option list in tina/collections/settings.ts
+ * — an icon named there but missing here renders nothing.
+ *
+ * The link title is derived, not stored: `${SITE.title} on ${name}`, which is
+ * exactly what the hand-written SOCIALS array produced.
+ *
+ * Null prototype, for the same reason the island registries have one: the key
+ * is an untrusted string. A bare `SOCIAL_ICONS[icon]` on an object literal
+ * resolves `constructor`, `valueOf`, `__proto__` and friends to inherited
+ * functions — every one of them truthy, so the "did we find an icon?" test
+ * passes and Astro is handed `Object` where it expected a component. Rendered
+ * from the island endpoint that is an unauthenticated 500. `Socials.astro` also
+ * looks the key up with `Object.hasOwn`, so the guarantee does not rest on
+ * remembering this line.
+ */
+export const SOCIAL_ICONS: Record<string, (_props: Props) => Element> =
+	Object.setPrototypeOf(
+		{
+			github: IconGitHub,
+			linkedin: IconLinkedin,
+			x: IconBrandX,
+			facebook: IconFacebook,
+			mail: IconMail,
+		},
+		null,
+	);
 
 export const SHARE_LINKS: Social[] = [
 	// {

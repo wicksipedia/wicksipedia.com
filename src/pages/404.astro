@@ -1,16 +1,26 @@
 ---
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import LinkButton from "@/components/LinkButton.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
+import { islands } from "@/lib/islands";
+import { getSettings } from "@/lib/tina/settings";
+
+// Editable site chrome (header nav, footer socials).
+const settings = (await getSettings()).data.settings;
 ---
 
 <Layout title={`404 Not Found | ${SITE.title}`}>
-  <Header />
+  <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
+    <Header settings={settings} />
+  </TinaIsland>
 
+  {/* `tabindex="-1"`: see the note in `PostDetails.astro`. */}
   <main
     id="main-content"
+    tabindex="-1"
     class="app-layout flex flex-1 items-center justify-center"
   >
     <div class="mb-14 flex flex-col items-center justify-center text-center">
@@ -31,5 +41,10 @@ import Layout from "@/layouts/Layout.astro";
     </div>
   </main>
 
-  <Footer />
+  <TinaIsland
+    name="settings-footer"
+    wrapper={islands["settings-footer"].wrapper}
+  >
+    <Footer settings={settings} />
+  </TinaIsland>
 </Layout>

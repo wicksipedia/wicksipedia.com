@@ -1,0 +1,74 @@
+---
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Footer from "@/components/Footer.astro";
+import Header from "@/components/Header.astro";
+import PageBlocks from "@/components/islands/PageBlocks.astro";
+import { SITE } from "@/config";
+import Layout from "@/layouts/Layout.astro";
+import { islands } from "@/lib/islands";
+import { getPage, listPages } from "@/lib/tina/pages";
+import { type CmsSocial, getSettings } from "@/lib/tina/settings";
+
+/**
+ * Every CMS page except the homepage.
+ *
+ * Routes are INFERRED from the collection rather than declared, so creating a
+ * page in the admin publishes it with no code change. That is why this is one
+ * catch-all and not an `about.astro`: adding a per-page route file would make
+ * the next page silently invisible until someone remembered to add another.
+ *
+ * `listPages()` throws on an empty result and on a truncated one, so a build
+ * cannot quietly emit zero page routes.
+ */
+export async function getStaticPaths() {
+	const pages = await listPages();
+	return (
+		pages
+			.map((node) => node._sys.filename)
+			// `home` renders at `/` via src/pages/index.astro.
+			.filter((slug) => slug !== "home")
+			.map((slug) => ({ params: { slug } }))
+	);
+}
+
+const slug = (Astro.params.slug ?? "").toString();
+
+const page = (await getPage(slug)).data?.page ?? null;
+// getStaticPaths only emits slugs `listPages()` just returned, so this is
+// unreachable in a healthy build — which is the point. `requestWithMetadata`
+// answers `{ data: {} }` on a query failure, and the alternative to throwing is
+// a page that builds, deploys and renders as an empty `<main>`.
+if (!page) {
+	throw new Error(
+		`[...slug].astro: Tina returned no page document for "${slug}"`,
+	);
+}
+
+// Editable site chrome (header nav, footer socials).
+const settings = (await getSettings()).data.settings;
+const socials: CmsSocial[] = (settings?.socials ?? []).filter(
+	(social): social is CmsSocial => Boolean(social),
+);
+---
+
+<Layout title={`${page.seoTitle} | ${SITE.title}`}>
+  <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
+    <Header settings={settings} />
+  </TinaIsland>
+  <Breadcrumb />
+  <TinaIsland
+    name="page"
+    wrapper={islands.page.wrapper}
+    params={{ slug }}
+    primary
+  >
+    <PageBlocks data={page} socials={socials} />
+  </TinaIsland>
+  <TinaIsland
+    name="settings-footer"
+    wrapper={islands["settings-footer"].wrapper}
+  >
+    <Footer settings={settings} />
+  </TinaIsland>
+</Layout>

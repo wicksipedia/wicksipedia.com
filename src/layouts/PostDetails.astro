@@ -1,31 +1,29 @@
 ---
 import { Image } from "astro:assets";
-import { type CollectionEntry, render } from "astro:content";
-import dayjs from "dayjs";
-import tz from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
-import IconHash from "@/assets/icons/IconHash.svg";
 import BackButton from "@/components/BackButton.astro";
 import BackToTopButton from "@/components/BackToTopButton.astro";
 import Comments from "@/components/Comments.astro";
 import EditPost from "@/components/EditPost.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
+import BlogBody from "@/components/islands/BlogBody.astro";
+import PostHero from "@/components/islands/PostHero.astro";
 import RelatedPosts from "@/components/RelatedPosts.astro";
 import ShareLinks from "@/components/ShareLinks.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
+import { islands } from "@/lib/islands";
+import { ogImageDerivative } from "@/lib/og-image";
+import { getBlogRaw, type PostEntry } from "@/lib/tina/posts";
+import { getSettings } from "@/lib/tina/settings";
 import { getPath } from "@/utils/getPath";
-import { slugifyStr } from "@/utils/slugify";
-
-dayjs.extend(utc);
-dayjs.extend(tz);
 
 type Props = {
-	post: CollectionEntry<"blog">;
-	posts: CollectionEntry<"blog">[];
+	post: PostEntry;
+	posts: PostEntry[];
 };
 
 const { post, posts } = Astro.props;
@@ -38,21 +36,28 @@ const {
 	canonicalURL,
 	pubDatetime,
 	modDatetime,
-	timezone,
-	tags,
 	hideEditPost,
 	noindex,
 } = post.data;
 
-const { Content } = await render(post);
+// Raw, metadata-tagged copy of the post for visual editing. The normalised
+// PostEntry strips the hidden Tina metadata that tinaField() needs.
+const tinaResult = await getBlogRaw(post.slug);
+const tinaPost = tinaResult.data?.blog;
+
+// Editable site chrome (header nav, footer socials).
+const settings = (await getSettings()).data.settings;
 
 let ogImageUrl: string | undefined;
 
-// Determine OG image source
+// The `og:image` / `twitter:image` derivative — see `ogImageDerivative` for why
+// it is JPEG at 1200 with the aspect ratio preserved, and what it replaced.
+// Layout.astro's site-wide default now goes through the same helper.
 if (typeof initOgImage === "string") {
-	ogImageUrl = initOgImage; // Remote OG image (absolute URL)
+	// Remote OG image (absolute URL) — not ours to process, so untouched.
+	ogImageUrl = initOgImage;
 } else if (initOgImage?.src) {
-	ogImageUrl = initOgImage.src; // Local asset
+	ogImageUrl = await ogImageDerivative(initOgImage);
 }
 
 // Use dynamic OG image if enabled and no remote|local ogImage
@@ -60,7 +65,9 @@ if (!ogImageUrl && SITE.dynamicOgImage) {
 	ogImageUrl = `${getPath(post.id, post.filePath)}/index.png`;
 }
 
-// Resolve OG image URL (or fallback to SITE.ogImage / default `og.png`)
+// Absolute, because crawlers do not resolve relative og:image. Left undefined
+// when the post has none, in which case Layout.astro supplies the site-wide
+// default and its derivative.
 const ogImage = ogImageUrl
 	? new URL(ogImageUrl, Astro.url.origin).href
 	: undefined;
@@ -82,14 +89,6 @@ const layoutProps = {
 	noindex,
 };
 
-/* ========== Formatted date for hero ========== */
-
-const isModified = modDatetime && modDatetime > pubDatetime;
-const heroDatetime = dayjs(isModified ? modDatetime : pubDatetime).tz(
-	timezone || SITE.timezone,
-);
-const heroDate = heroDatetime.format("MMMM D, YYYY");
-
 /* ========== Prev/Next Posts ========== */
 
 const allPosts = posts.map(({ data: { title }, id, filePath }) => ({
@@ -106,7 +105,9 @@ const nextPost =
 ---
 
 <Layout {...layoutProps}>
-  <Header />
+  <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
+    <Header settings={settings} />
+  </TinaIsland>
   {/* Full-bleed hero with metadata overlay */}
   {
     initOgImage ? (
@@ -137,45 +138,13 @@ const nextPost =
         {/* Metadata overlaid on image */}
         <div class="relative z-10 flex h-full min-h-[50vh] max-h-[75vh] flex-col justify-end">
           <div class="app-layout pb-8 sm:pb-10 lg:pb-12">
-            {/* Title */}
-            <h1
-              transition:name={slugifyStr(title.replaceAll(".", "-"))}
-              class="animate-reveal font-prose text-3xl font-bold italic leading-tight tracking-tight text-overlay-ink sm:text-4xl md:text-5xl lg:text-6xl max-w-4xl"
+            <TinaIsland
+              name="blogHero"
+              wrapper={islands.blogHero.wrapper}
+              params={{ slug: post.slug }}
             >
-              {title}
-            </h1>
-
-            {/* Description */}
-            <p class="animate-reveal-delay-1 mt-4 max-w-2xl font-prose text-base leading-relaxed italic text-overlay-ink/85 sm:text-lg">
-              {description}
-            </p>
-
-            {/* Date + Tags row */}
-            <div class="animate-reveal-delay-2 mt-5 flex flex-wrap items-center gap-3">
-              <time
-                datetime={heroDatetime.toISOString()}
-                class="text-xs font-bold uppercase tracking-[0.15em] text-overlay-ink/75"
-              >
-                {isModified ? `Updated: ${heroDate}` : heroDate}
-              </time>
-              {tags.length > 0 && (
-                <>
-                  <span class="inline-block w-4 h-px bg-overlay-ink/25"></span>
-                  <ul class="flex flex-wrap gap-1.5">
-                    {tags.map((tag: string) => (
-                      <li>
-                        <a
-                          href={`/tags/${slugifyStr(tag)}`}
-                          class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-overlay-ink/20 bg-overlay-ink/10 px-2.5 py-0.5 text-xs text-overlay-ink/80 no-underline backdrop-blur-sm transition-all duration-150 hover:border-accent/60 hover:bg-accent/20 hover:text-accent"
-                        >
-                          <IconHash class="size-3 opacity-70" />{tag}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
+              <PostHero post={tinaPost} />
+            </TinaIsland>
           </div>
         </div>
       </div>
@@ -184,52 +153,27 @@ const nextPost =
       <div class="relative w-full overflow-hidden bg-muted">
         <div class="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-accent/5"></div>
         <div class="relative z-10 app-layout py-12 sm:py-16 lg:py-20">
-          {/* Title */}
-          <h1
-            transition:name={slugifyStr(title.replaceAll(".", "-"))}
-            class="animate-reveal font-prose text-3xl font-bold italic leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl max-w-4xl"
+          <TinaIsland
+            name="blogHero"
+            wrapper={islands.blogHero.wrapper}
+            params={{ slug: post.slug }}
           >
-            {title}
-          </h1>
-
-          {/* Description */}
-          <p class="animate-reveal-delay-1 mt-4 max-w-2xl font-prose text-base leading-relaxed italic text-foreground/70 sm:text-lg">
-            {description}
-          </p>
-
-          {/* Date + Tags row */}
-          <div class="animate-reveal-delay-2 mt-5 flex flex-wrap items-center gap-3">
-            <time
-              datetime={heroDatetime.toISOString()}
-              class="text-xs font-bold uppercase tracking-[0.15em] text-foreground/60"
-            >
-              {isModified ? `Updated: ${heroDate}` : heroDate}
-            </time>
-            {tags.length > 0 && (
-              <>
-                <span class="inline-block w-4 h-px bg-border/60"></span>
-                <ul class="flex flex-wrap gap-1.5">
-                  {tags.map((tag: string) => (
-                    <li>
-                      <a
-                        href={`/tags/${slugifyStr(tag)}`}
-                        class="relative z-10 inline-flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/5 px-2.5 py-0.5 text-xs text-accent no-underline transition-all duration-150 hover:border-accent/60 hover:bg-accent/15"
-                      >
-                        <IconHash class="size-3 opacity-70" />{tag}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
+            <PostHero post={tinaPost} />
+          </TinaIsland>
         </div>
       </div>
     )
   }
   <BackButton />
+  {/* `tabindex="-1"` makes this focusable by the skip link. Safari does not
+      set the sequential-focus starting point on a fragment navigation, so
+      without it "Skip to content" scrolls and the NEXT Tab goes back to the
+      top of the document — the link appears to work and does nothing.
+      `PageBlocks.astro` has had this; PostDetails, Main and 404 had not,
+      which left it working on 2 of 60 built pages. */}
   <main
     id="main-content"
+    tabindex="-1"
     class="app-layout pb-12"
     data-pagefind-body
   >
@@ -237,7 +181,14 @@ const nextPost =
       id="article"
       class="animate-reveal-delay-1 app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
     >
-      <Content />
+      <TinaIsland
+        name="blog"
+        wrapper={islands.blog.wrapper}
+        params={{ slug: post.slug }}
+        primary
+      >
+        <BlogBody post={tinaPost} />
+      </TinaIsland>
     </article>
 
     <div class="border-0 border-t border-border/40 my-8"></div>
@@ -292,7 +243,12 @@ const nextPost =
       }
     </div>
   </main>
-  <Footer />
+  <TinaIsland
+    name="settings-footer"
+    wrapper={islands["settings-footer"].wrapper}
+  >
+    <Footer settings={settings} />
+  </TinaIsland>
 </Layout>
 
 

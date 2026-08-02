@@ -1,27 +1,35 @@
 ---
-import { getCollection } from "astro:content";
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import type { GetStaticPaths } from "astro";
 import Card from "@/components/Card.astro";
 import Footer from "@/components/Footer.astro";
-import postFilter from "@/utils/postFilter";
 import Header from "@/components/Header.astro";
 import Pagination from "@/components/Pagination.astro";
 import { SITE } from "@/config";
 import Layout from "@/layouts/Layout.astro";
 import Main from "@/layouts/Main.astro";
+import { islands } from "@/lib/islands";
+import { getAllPosts } from "@/lib/tina/posts";
+import { getSettings } from "@/lib/tina/settings";
 import getSortedPosts from "@/utils/getSortedPosts";
+import postFilter from "@/utils/postFilter";
 
 export const getStaticPaths = (async ({ paginate }) => {
-	const posts = await getCollection("blog", postFilter);
+	const posts = (await getAllPosts()).filter(postFilter);
 	return paginate(getSortedPosts(posts), { pageSize: SITE.postPerPage });
 }) satisfies GetStaticPaths;
 
 const { page } = Astro.props;
 const isFirstPage = !page.currentPage || page.currentPage === 1;
+
+// Editable site chrome (header nav, footer socials).
+const settings = (await getSettings()).data.settings;
 ---
 
 <Layout title={`Posts | ${SITE.title}`} noindex={!isFirstPage}>
-  <Header />
+  <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
+    <Header settings={settings} />
+  </TinaIsland>
   <Main pageTitle="Posts" pageDesc="All the articles I've posted.">
     <ul>
       {page.data.map(data => <Card {...data} />)}
@@ -30,5 +38,10 @@ const isFirstPage = !page.currentPage || page.currentPage === 1;
 
   <Pagination {page} />
 
-  <Footer noMarginTop={page.lastPage > 1} />
+  <TinaIsland
+    name="settings-footer"
+    wrapper={islands["settings-footer"].wrapper}
+  >
+    <Footer settings={settings} noMarginTop={page.lastPage > 1} />
+  </TinaIsland>
 </Layout>

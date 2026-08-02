@@ -51,7 +51,15 @@
       @apply mx-auto rounded-lg border border-border;
     }
 
-    figcaption {
+    /* `:not(.not-prose *)` because this is a plain descendant selector and
+       `not-prose` is the documented way to opt an element out of prose
+       styling. Without the guard it reached inside `<figure class="not-prose">`
+       — src/components/YouTubeEmbed.astro — and COMPOUNDED with the caption's
+       own `text-foreground/60`. Net alpha 0.45: the caption measured 2.86:1 in
+       the light theme and its "watch on YouTube" link 3.46:1, both below AA,
+       and the link is the actionable element. See the note in that component
+       for the ratios after the fix. */
+    figcaption:not(.not-prose *) {
       @apply opacity-75;
     }
 
