@@ -109,6 +109,38 @@ export async function listPages() {
 export type CmsPage = Awaited<ReturnType<typeof getPage>>["data"]["page"];
 export type PageBlock = NonNullable<NonNullable<CmsPage["blocks"]>[number]>;
 
+/** The page's blocks with the nulls Tina can emit for a partial list removed. */
+export function pageBlocks(page?: CmsPage | null): PageBlock[] {
+	return (page?.blocks ?? []).filter((block): block is PageBlock =>
+		Boolean(block),
+	);
+}
+
+/**
+ * Index of the hero block that owns the page's `<h1>`, or -1 if there is none.
+ *
+ * Exported so `PageBlocks.astro` (which decides whether to render a page-level
+ * `<h1>` at all) and `Blocks.astro` (which tells each hero whether it is the
+ * one) cannot disagree. Two components computing "is there a hero?" separately
+ * is exactly how a page ends up with two `<h1>`s or none.
+ *
+ * The rule this supports, in full:
+ *
+ *   - no hero        → the page renders `<h1>{heading || seoTitle}</h1>`.
+ *     `seoTitle` is `required: true`, so this is never empty.
+ *   - one hero       → the hero renders the `<h1>`; the page renders none,
+ *     wherever in the block list the hero sits. Keying on `blocks[0]` instead
+ *     would give two `<h1>`s for a page whose hero is not first.
+ *   - several heroes → only the first renders `<h1>`; the rest render `<h2>`,
+ *     because a second masthead is a section heading, not a second page title.
+ *
+ * So the count is exactly one for every block arrangement the CMS can produce,
+ * without asking the author to know any of this.
+ */
+export function primaryHeroIndex(blocks: PageBlock[]): number {
+	return blocks.findIndex((block) => block.__typename === "PageBlocksHero");
+}
+
 export type HeroBlock = Extract<PageBlock, { __typename: "PageBlocksHero" }>;
 export type PostFeedBlock = Extract<
 	PageBlock,

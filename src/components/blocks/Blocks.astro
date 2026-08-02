@@ -1,6 +1,6 @@
 ---
 import { tinaField } from "@tinacms/astro/tina-field";
-import type { CmsPage } from "@/lib/tina/pages";
+import { type CmsPage, pageBlocks, primaryHeroIndex } from "@/lib/tina/pages";
 import type { CmsSocial } from "@/lib/tina/settings";
 import GithubStats from "./GithubStats.astro";
 import Hero from "./Hero.astro";
@@ -30,14 +30,19 @@ interface Props {
 }
 
 const { data, socials } = Astro.props;
-const blocks = (data?.blocks ?? []).filter((block) => block !== null);
+const blocks = pageBlocks(data);
+
+// Only the first hero renders the page's `<h1>`; a second one is a section, so
+// it renders `<h2>`. Derived from the shared helper so this cannot disagree
+// with PageBlocks.astro's decision to suppress the page-level heading.
+const heroIndex = primaryHeroIndex(blocks);
 ---
 
 {
-  blocks.map(block => (
+  blocks.map((block, index) => (
     <div data-tina-field={tinaField(block) || undefined}>
       {block.__typename === "PageBlocksHero" && (
-        <Hero data={block} socials={socials} />
+        <Hero data={block} socials={socials} primary={index === heroIndex} />
       )}
       {block.__typename === "PageBlocksPostFeed" && <PostFeed data={block} />}
       {block.__typename === "PageBlocksProse" && <Prose data={block} />}

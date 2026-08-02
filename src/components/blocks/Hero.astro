@@ -11,9 +11,11 @@ import type { CmsSocial } from "@/lib/tina/settings";
  * avatar swap, same `text-hero-*` tokens — with the hardcoded strings replaced
  * by block fields and each marked editable.
  *
- * This block owns the page's `<h1>`. `PageBlocks.astro` suppresses the
- * page-level heading whenever a page opens with a hero, so the two can never
- * both render one.
+ * This block owns the page's `<h1>` when it is the FIRST hero on the page;
+ * `PageBlocks.astro` suppresses the page-level heading whenever a page contains
+ * a hero at all, so the two can never both render one, and a second hero
+ * renders `<h2>` rather than a second page title. See `primaryHeroIndex` in
+ * `src/lib/tina/pages.ts` for the whole rule.
  *
  * The avatar comes from Tina's media root (`public/uploads`) so an editor can
  * swap it, which means Astro cannot optimise it — `<Image>` only processes
@@ -25,9 +27,18 @@ import type { CmsSocial } from "@/lib/tina/settings";
 interface Props {
 	data: HeroBlock;
 	socials: CmsSocial[];
+	/**
+	 * True for the first hero on the page — the one that owns the `<h1>`.
+	 * `Blocks.astro` decides; a page can hold several hero blocks and only one
+	 * of them may be the page title. Defaults true so a hero rendered outside
+	 * the block pipeline still produces a heading rather than silently none.
+	 */
+	primary?: boolean;
 }
 
-const { data, socials } = Astro.props;
+const { data, socials, primary = true } = Astro.props;
+
+const NameTag = primary ? "h1" : "h2";
 
 const avatar = data.avatar ?? "";
 const name = data.name ?? "";
@@ -56,12 +67,12 @@ const name = data.name ?? "";
             />
           )
         }
-        <h1
+        <NameTag
           class="mt-4 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl md:mt-0"
           data-tina-field={tinaField(data, "name") || undefined}
         >
           {name}
-        </h1>
+        </NameTag>
         <p
           class="mx-auto mt-4 max-w-lg font-prose text-lg leading-relaxed italic text-hero-text-muted sm:text-xl md:mx-0"
           data-tina-field={tinaField(data, "tagline") || undefined}
