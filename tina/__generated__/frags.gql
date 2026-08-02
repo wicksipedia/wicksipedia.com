@@ -19,6 +19,7 @@ fragment BlogParts on Blog {
 fragment PageParts on Page {
   __typename
   seoTitle
+  heading
   blocks {
     __typename
     ... on PageBlocksHero {

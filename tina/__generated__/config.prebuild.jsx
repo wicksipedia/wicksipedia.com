@@ -242,7 +242,13 @@ var pageCollection = {
       label: "Meta Title (SEO)",
       isTitle: true,
       required: true,
-      description: "Browser tab and search results only \u2014 not shown on the page. To change the visible heading, edit the Hero block's Name below."
+      description: "Browser tab and search results only \u2014 not shown on the page. To change the visible heading, use Page Heading below, or the Hero block's Name."
+    },
+    {
+      type: "string",
+      name: "heading",
+      label: "Page Heading",
+      description: "The <h1> at the top of the page. Leave blank when the first section already shows a title \u2014 the Hero block carries its own, and two <h1>s on one page break the heading outline for screen readers."
     },
     {
       type: "object",

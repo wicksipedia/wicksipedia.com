@@ -205,6 +205,7 @@ union PageBlocks = PageBlocksHero | PageBlocksPostFeed | PageBlocksProse | PageB
 
 type Page implements Node & Document {
   seoTitle: String!
+  heading: String
   blocks: [PageBlocks]
   id: ID!
   _sys: SystemInfo!
@@ -260,6 +261,7 @@ input PageBlocksFilter {
 
 input PageFilter {
   seoTitle: StringFilter
+  heading: StringFilter
   blocks: PageBlocksFilter
 }
 
@@ -397,6 +399,7 @@ input PageBlocksMutation {
 
 input PageMutation {
   seoTitle: String
+  heading: String
   blocks: [PageBlocksMutation]
 }
 

@@ -88,7 +88,14 @@ export const pageCollection: Collection = {
 			isTitle: true,
 			required: true,
 			description:
-				"Browser tab and search results only — not shown on the page. To change the visible heading, edit the Hero block's Name below.",
+				"Browser tab and search results only — not shown on the page. To change the visible heading, use Page Heading below, or the Hero block's Name.",
+		},
+		{
+			type: "string",
+			name: "heading",
+			label: "Page Heading",
+			description:
+				"The <h1> at the top of the page. Leave blank when the first section already shows a title — the Hero block carries its own, and two <h1>s on one page break the heading outline for screen readers.",
 		},
 		{
 			type: "object",
