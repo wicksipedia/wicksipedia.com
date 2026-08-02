@@ -154,7 +154,12 @@ const allPostsLabel = data.allPostsLabel ?? "All posts";
     )
   }
 
-  <hr class="border-0 border-t border-border/40 my-2 animate-reveal-delay-1" />
+  {/* Separates the lead post from the grid — only meaningful with both. */}
+  {
+    heroPost && gridPosts.length > 0 && (
+      <hr class="border-0 border-t border-border/40 my-2 animate-reveal-delay-1" />
+    )
+  }
 
   {
     gridPosts.length > 0 && (

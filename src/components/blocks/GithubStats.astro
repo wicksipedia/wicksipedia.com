@@ -14,10 +14,6 @@ import type { GithubStatsBlock } from "@/lib/tina/pages";
  * it was mid-document. As the *first* child of a new `.prose` container it would
  * otherwise get `margin-top: 0` and sit flush against the paragraph above.
  *
- * `pb-12` is the bottom padding `AboutLayout.astro`'s `<main>` carried. It lives
- * on the block rather than on `PageBlocks.astro`'s `<main>` so the homepage,
- * whose last block supplies its own trailing margin, keeps the spacing it has.
- *
  * `GithubSlugger` rather than `slugifyStr`: this reproduces an id that Astro's
  * Markdown pipeline generated with rehype-slug, and `RichText.astro` uses the
  * same slugger for every other heading on the site.
@@ -32,7 +28,7 @@ const heading = data.heading ?? "";
 const headingId = heading ? new GithubSlugger().slug(heading) : undefined;
 ---
 
-<div class="app-layout pb-12">
+<div class="app-layout">
   <section
     class="animate-reveal-delay-1 app-prose mt-12 max-w-app font-prose"
   >

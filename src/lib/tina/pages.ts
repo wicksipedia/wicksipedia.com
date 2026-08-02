@@ -134,11 +134,21 @@ export function pageBlocks(page?: CmsPage | null): PageBlock[] {
  *   - several heroes → only the first renders `<h1>`; the rest render `<h2>`,
  *     because a second masthead is a section heading, not a second page title.
  *
+ * A hero with a BLANK `name` is not counted, and `Hero.astro` renders no
+ * heading element for it. `name` is not `required` — a hero used as a plain
+ * image band is a legitimate thing to author — and without this the page would
+ * suppress its own heading in favour of an empty `<h1></h1>`: a page with no
+ * accessible heading at all, which is worse than either case this rule exists
+ * to prevent. Deliberately fixed here rather than by making the field required,
+ * so the rendering stays correct for documents that already exist.
+ *
  * So the count is exactly one for every block arrangement the CMS can produce,
  * without asking the author to know any of this.
  */
 export function primaryHeroIndex(blocks: PageBlock[]): number {
-	return blocks.findIndex((block) => block.__typename === "PageBlocksHero");
+	return blocks.findIndex(
+		(block) => block.__typename === "PageBlocksHero" && Boolean(block.name),
+	);
 }
 
 export type HeroBlock = Extract<PageBlock, { __typename: "PageBlocksHero" }>;

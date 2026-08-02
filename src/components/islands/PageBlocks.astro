@@ -19,6 +19,18 @@ import type { CmsSocial } from "@/lib/tina/settings";
  * islands documented in `src/lib/islands.ts`: `<body>` is a full-height flex
  * column and a generated box between it and `<main>` would change the layout.
  *
+ * `pb-12` is the bottom padding `AboutLayout.astro`'s `<main>` carried. It lives
+ * here rather than on a block because every page needs it and no single block
+ * is always last: a prose-only page would otherwise end flush against the
+ * footer's top border, since Tailwind Typography zeroes the last child's bottom
+ * margin. The homepage gains 3rem it did not have, which is the cost of the
+ * rule being about pages rather than about the two that exist today.
+ *
+ * `tabindex="-1"` so the skip link actually moves focus. Without it several
+ * browsers scroll to the target and leave focus on the link, which is the bug
+ * the skip link exists to avoid. Not a regression — neither old layout had it —
+ * but this is the commit that starts owning the element.
+ *
  * `socials` defaults to `[]` because the island re-render only carries the page
  * document. The hero's social row therefore disappears from the *admin preview*
  * until a reload; the statically built page always has it.
@@ -60,7 +72,12 @@ const heading = heroOwnsHeading ? "" : data?.heading || data?.seoTitle || "";
 const isHome = data?._sys?.filename === "home";
 ---
 
-<main id="main-content" data-layout={isHome ? "index" : undefined}>
+<main
+  id="main-content"
+  tabindex="-1"
+  class="pb-12"
+  data-layout={isHome ? "index" : undefined}
+>
   {
     heading && (
       <div class="app-layout">

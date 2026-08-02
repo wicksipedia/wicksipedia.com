@@ -1,5 +1,4 @@
 ---
-import { Image } from "astro:assets";
 import { tinaField } from "@tinacms/astro/tina-field";
 import Socials from "@/components/Socials.astro";
 import type { HeroBlock } from "@/lib/tina/pages";
@@ -19,10 +18,25 @@ import type { CmsSocial } from "@/lib/tina/settings";
  *
  * The avatar comes from Tina's media root (`public/uploads`) so an editor can
  * swap it, which means Astro cannot optimise it — `<Image>` only processes
- * imports from `src/`. Explicit `width`/`height` keep the layout stable and the
- * desktop instance is marked eager/high-priority because it is the LCP element
- * above 768px. Both `<img>` elements point at the same URL, so this is one
- * download whatever the viewport.
+ * imports from `src/`.
+ *
+ * A plain `<img>`, deliberately, and NOT `<Image>` with a string src. `<Image>`
+ * happily accepts a public path and then emits a srcset describing widths that
+ * do not exist — `/uploads/avatar.png 160w, /uploads/avatar.png 320w` on
+ * mobile and five identical candidates from 500w to 1000w on desktop. Every
+ * descriptor points at the same file, so the browser is being told to choose
+ * between resolutions that are all the same bytes. One `src`, no srcset, is the
+ * honest description of one unprocessed file. The `data-astro-image` attributes
+ * go with it: their rules are `:where()`-wrapped (zero specificity) and every
+ * dimension they would supply is already set by a Tailwind class.
+ *
+ * Explicit `width`/`height` keep the layout stable, and the desktop instance is
+ * eager/high-priority because it is the LCP element above 768px. Both elements
+ * point at the same URL, so this is one download whatever the viewport.
+ *
+ * `alt=""`: the image is a portrait sitting directly beside the `<h1>` that
+ * names the person, so it is decorative — repeating the name would announce it
+ * twice. There is no CMS alt field to say anything more useful.
  */
 interface Props {
 	data: HeroBlock;
@@ -55,11 +69,11 @@ const name = data.name ?? "";
       <div class="text-center md:flex-1 md:py-6 md:text-left lg:py-10 xl:py-16">
         {
           avatar && (
-            <Image
+            <img
               src={avatar}
-              alt={name}
-              width={160}
-              height={160}
+              alt=""
+              width="160"
+              height="160"
               class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
               loading="eager"
               decoding="async"
@@ -67,12 +81,16 @@ const name = data.name ?? "";
             />
           )
         }
-        <NameTag
-          class="mt-4 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl md:mt-0"
-          data-tina-field={tinaField(data, "name") || undefined}
-        >
-          {name}
-        </NameTag>
+        {
+          name && (
+            <NameTag
+              class="mt-4 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl md:mt-0"
+              data-tina-field={tinaField(data, "name") || undefined}
+            >
+              {name}
+            </NameTag>
+          )
+        }
         <p
           class="mx-auto mt-4 max-w-lg font-prose text-lg leading-relaxed italic text-hero-text-muted sm:text-xl md:mx-0"
           data-tina-field={tinaField(data, "tagline") || undefined}
@@ -110,11 +128,11 @@ const name = data.name ?? "";
       >
         {
           avatar && (
-            <Image
+            <img
               src={avatar}
-              alt={name}
-              width={500}
-              height={500}
+              alt=""
+              width="500"
+              height="500"
               class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
               loading="eager"
               fetchpriority="high"
