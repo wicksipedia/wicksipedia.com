@@ -21,6 +21,7 @@
         "retext-stringify": "^4.0.0",
         "satori": "^0.18.3",
         "sharp": "^0.34.5",
+        "shiki": "^4.4.1",
         "slugify": "^1.6.6",
         "tailwindcss": "^4.1.18",
         "tinacms": "^3.11",
