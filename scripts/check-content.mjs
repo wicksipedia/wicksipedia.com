@@ -21,6 +21,14 @@
  * the predicate can go red, and the scanned-body count is reconciled against the
  * posts checked so the walk cannot quietly cover nothing.
  *
+ * Finally, every image in a post folder must be REFERENCED by that post. This
+ * one is about bytes, not correctness: `src/lib/tina/images.ts` maps stored refs
+ * back to `ImageMetadata` through an EAGER `import.meta.glob`, and an eager
+ * import is an emit — so every matching file ships whether or not a post links
+ * to it. Astro's old MDX pipeline imported only what a post referenced, which is
+ * why an orphan cost nothing before the migration and costs its full size now.
+ * A leftover 5.23 MB GIF was being served to nobody when this check was written.
+ *
  * Run: bun run check:content
  *
  * Progress is reported through process.stdout/stderr rather than `console`,
@@ -31,6 +39,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseMDX } from "@tinacms/mdx";
+import matter from "gray-matter";
+import { BLOG_IMAGE_ROOT, blogImageKey } from "../src/lib/tina/image-ref.ts";
 import { blogCollection } from "../tina/collections/blog.ts";
 import { BODY_FIELD } from "./lib/body-field.mjs";
 import {
@@ -43,6 +53,9 @@ import {
 } from "./lib/headings.mjs";
 
 const BASE = "src/data/blog";
+
+/** The module whose glob decides which files actually ship. */
+const IMAGES_MODULE = "src/lib/tina/images.ts";
 
 /**
  * Ceiling on a raw post body.
@@ -74,6 +87,165 @@ if (dirs.length === 0) {
 	err(`FAIL: no post directories found under ${BASE}`);
 	process.exit(1);
 }
+
+/**
+ * The extensions the eager glob in `images.ts` actually emits, read from the
+ * glob itself.
+ *
+ * Not written out here as a list: an orphan check that guessed the extensions
+ * would stop covering a format the moment somebody added one to the glob, and it
+ * would do so silently — the new format's orphans would simply not be looked at.
+ * Reading the literal also pins the ROOT, so a glob repointed away from
+ * `src/data/blog` fails loudly instead of leaving this scanning a directory
+ * nothing imports from.
+ *
+ * A parse failure here is a BROKEN CHECK, not broken content, and is reported as
+ * one.
+ */
+function shippedImageExtensions() {
+	const source = readFileSync(IMAGES_MODULE, "utf8");
+	const glob = source.match(/"(\/[^"]*?)\/\*\*\/\*\.\{([^}]+)\}"/);
+	if (!glob) {
+		err(`FAIL: no blog image glob found in ${IMAGES_MODULE}`);
+		err("  This check reads the glob to learn which files ship. If the glob");
+		err("  moved or changed shape, update the pattern here to match it.");
+		process.exit(1);
+	}
+	const [, root, extensions] = glob;
+	if (root !== BLOG_IMAGE_ROOT) {
+		err(
+			`FAIL: ${IMAGES_MODULE} globs "${root}" but image-ref.ts resolves refs under "${BLOG_IMAGE_ROOT}"`,
+		);
+		err("  Stored refs would map to keys the glob never produced, so every");
+		err("  post image would silently fail to resolve.");
+		process.exit(1);
+	}
+	const exts = new Set(
+		extensions
+			.split(",")
+			.map((ext) => ext.trim().toLowerCase())
+			.filter(Boolean)
+			.map((ext) => `.${ext}`),
+	);
+	if (exts.size === 0) {
+		err(`FAIL: the image glob in ${IMAGES_MODULE} lists no extensions`);
+		process.exit(1);
+	}
+	return exts;
+}
+
+const SHIPPED_IMAGE_EXTENSIONS = shippedImageExtensions();
+
+/**
+ * Known refs with known destinations, so `blogImageKey` is exercised whatever
+ * the corpus contains.
+ *
+ * Same reasoning as the heading fixtures: all 17 posts use one ref form, so a
+ * resolver that handled only that form — or one that resolved nothing at all —
+ * would be indistinguishable from a working one if the corpus were the only
+ * evidence. A resolver returning `undefined` for everything is the dangerous
+ * mutant here: it would report every image an orphan, which is loud, but one
+ * returning a constant key would report zero orphans forever, which is not.
+ */
+const IMAGE_REF_FIXTURES = [
+	{
+		slug: "a-post",
+		ref: "./cover.png",
+		key: `${BLOG_IMAGE_ROOT}/a-post/cover.png`,
+	},
+	{
+		slug: "a-post",
+		ref: "cover.png",
+		key: `${BLOG_IMAGE_ROOT}/a-post/cover.png`,
+	},
+	{
+		slug: "a-post",
+		ref: "nested/shot.png",
+		key: `${BLOG_IMAGE_ROOT}/a-post/nested/shot.png`,
+	},
+	// Tina's media manager writes this form; the slug in the ref wins.
+	{
+		slug: "a-post",
+		ref: "/blog/other-post/cover.png",
+		key: `${BLOG_IMAGE_ROOT}/other-post/cover.png`,
+	},
+	{ slug: "a-post", ref: "https://example.com/cover.png", key: undefined },
+	{ slug: "a-post", ref: "/uploads/avatar.png", key: undefined },
+	{ slug: "a-post", ref: "", key: undefined },
+	{ slug: "a-post", ref: undefined, key: undefined },
+];
+
+// A fixture set where nothing resolves proves only that the resolver is a stub;
+// one where nothing is rejected proves it cannot tell a post image from a remote
+// URL. Both would pass this corpus.
+if (!IMAGE_REF_FIXTURES.some((fixture) => fixture.key !== undefined)) {
+	err(
+		"FAIL: no image-ref fixture expects a resolved key — the resolver is untested",
+	);
+	process.exit(1);
+}
+if (!IMAGE_REF_FIXTURES.some((fixture) => fixture.key === undefined)) {
+	err(
+		"FAIL: no image-ref fixture expects a non-post ref — the resolver is untested",
+	);
+	process.exit(1);
+}
+
+let imageRefFixtureRuns = 0;
+for (const fixture of IMAGE_REF_FIXTURES) {
+	const actual = blogImageKey(fixture.slug, fixture.ref);
+	if (actual !== fixture.key) {
+		err(
+			`FAIL: blogImageKey(${JSON.stringify(fixture.slug)}, ${JSON.stringify(fixture.ref)}) returned ${JSON.stringify(actual)}, expected ${JSON.stringify(fixture.key)}`,
+		);
+		process.exit(1);
+	}
+	imageRefFixtureRuns++;
+}
+if (imageRefFixtureRuns !== IMAGE_REF_FIXTURES.length) {
+	err(
+		`FAIL: ran ${imageRefFixtureRuns} of ${IMAGE_REF_FIXTURES.length} image-ref fixtures`,
+	);
+	process.exit(1);
+}
+
+/**
+ * Every field an editor can put an image ref in, derived rather than written as
+ * `["ogImage"]` — the same reason `richTextFieldsIn` below is a derivation. A
+ * second image field added to the collection would otherwise let its target go
+ * unreferenced-looking, and the check would report a real cover as an orphan.
+ */
+const imageFieldNames = blogCollection.fields
+	.filter((field) => field.type === "image")
+	.map((field) => field.name);
+
+if (imageFieldNames.length === 0) {
+	err(
+		`FAIL: the ${blogCollection.name} collection declares no image field — the orphan check cannot see cover images`,
+	);
+	process.exit(1);
+}
+
+/** Every `img` node's url in a parsed body, depth-first. */
+function collectImageRefs(node, into = []) {
+	if (node?.type === "img" && typeof node.url === "string") into.push(node.url);
+	for (const child of node?.children ?? []) collectImageRefs(child, into);
+	return into;
+}
+
+/** Every file under `dir`, recursively, as paths relative to it. */
+function filesUnder(dir, prefix = "") {
+	const found = [];
+	for (const entry of readdirSync(join(dir, prefix), { withFileTypes: true })) {
+		const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+		if (entry.isDirectory()) found.push(...filesUnder(dir, rel));
+		else found.push(rel);
+	}
+	return found;
+}
+
+/** Glob keys every post points at, filled in as bodies are parsed below. */
+const referencedImages = new Set();
 
 /**
  * Every rich-text field the blog collection can hold, including the ones inside
@@ -141,6 +313,7 @@ let failed = 0;
 let headingsSeen = 0;
 let bodiesHeadingScanned = 0;
 let headingFailures = 0;
+let postsScannedForImages = 0;
 
 for (const dir of dirs) {
 	const file = join(BASE, dir, "index.md");
@@ -194,6 +367,27 @@ for (const dir of dirs) {
 		);
 		err("  PostDetails.astro renders from frontmatter. Use ## for a section.");
 	}
+
+	// Which images this post points at. Both halves are taken from the PARSED
+	// document rather than from the file's text: the frontmatter through
+	// `gray-matter`, which is the parser `@tinacms/graphql` reads these documents
+	// with, and the body through the `img` nodes the renderer actually walks. A
+	// filename that appears only in prose, or in a comment, is not a reference.
+	const frontmatter = matter(raw).data;
+	for (const name of imageFieldNames) {
+		const value = frontmatter[name];
+		if (typeof value !== "string") continue;
+		const key = blogImageKey(dir, value);
+		if (key) referencedImages.add(key);
+	}
+	for (const url of collectImageRefs(ast)) {
+		// Resolved corpus-wide, not per-post: `/blog/<other>/<file>` is a real
+		// reference to another post's image, and marking it referenced here is
+		// what `resolveBlogImage` does at build time.
+		const key = blogImageKey(dir, url);
+		if (key) referencedImages.add(key);
+	}
+	postsScannedForImages++;
 }
 
 if (checked !== dirs.length) {
@@ -243,6 +437,95 @@ if (headingsSeen === 0) {
 	process.exit(1);
 }
 
+// Same reconciliation as the heading walk, for the same reason: "0 orphans" is
+// what a working scan prints AND what a scan that never ran prints. STRUCTURAL —
+// both numbers come from the one loop, so no post makes this fire.
+if (postsScannedForImages !== checked) {
+	err(
+		`FAIL: collected image refs from ${postsScannedForImages} of ${checked} posts`,
+	);
+	err("  Every parsed post must contribute its refs, or the images belonging");
+	err("  to the ones skipped are reported as orphans.");
+	process.exit(1);
+}
+
+/**
+ * The orphan scan.
+ *
+ * `images.ts` globs eagerly, so an unreferenced file in a post folder is emitted
+ * into `dist/` and served to nobody. This walks every post folder, keeps the
+ * files the glob would match, and requires each to be pointed at by some post's
+ * frontmatter or body.
+ */
+let imagesInspected = 0;
+let postFoldersWalked = 0;
+const orphans = [];
+
+for (const dir of dirs) {
+	postFoldersWalked++;
+	for (const rel of filesUnder(join(BASE, dir))) {
+		const dot = rel.lastIndexOf(".");
+		const ext = dot === -1 ? "" : rel.slice(dot).toLowerCase();
+		if (!SHIPPED_IMAGE_EXTENSIONS.has(ext)) continue;
+		imagesInspected++;
+		const key = `${BLOG_IMAGE_ROOT}/${dir}/${rel}`;
+		if (referencedImages.has(key)) continue;
+		orphans.push({
+			path: join(BASE, dir, rel),
+			bytes: statSync(join(BASE, dir, rel)).size,
+		});
+	}
+}
+
+if (postFoldersWalked !== dirs.length) {
+	err(`FAIL: walked ${postFoldersWalked} of ${dirs.length} post folders`);
+	process.exit(1);
+}
+
+// INPUT-DERIVED. The corpus holds 26 images; zero means the walk stopped finding
+// them — a mistyped extension set, a `filesUnder` that no longer recurses — not
+// a corpus that went imageless. Without this, deleting the walk prints "0
+// orphans" and passes.
+if (imagesInspected === 0) {
+	err(`FAIL: walked ${postFoldersWalked} post folders and found 0 images`);
+	err(
+		`  Extensions looked for: ${[...SHIPPED_IMAGE_EXTENSIONS].sort().join(" ")}`,
+	);
+	err("  A scan finding none is a broken scan, not an imageless corpus.");
+	process.exit(1);
+}
+
+// Likewise for the other side of the comparison: every post has a cover, so an
+// empty reference set means ref collection broke, and every image would be
+// reported as an orphan with a confident-looking total.
+if (referencedImages.size === 0) {
+	err(`FAIL: ${checked} posts yielded 0 image references`);
+	err("  Every post sets a cover, so this is the ref collection failing, not");
+	err("  a corpus that stopped using images.");
+	process.exit(1);
+}
+
+if (orphans.length > 0) {
+	const wasted = orphans.reduce((sum, orphan) => sum + orphan.bytes, 0);
+	err(
+		`\nFAIL: ${orphans.length} image(s) in post folders are referenced by no post`,
+	);
+	for (const orphan of orphans.sort((a, b) => b.bytes - a.bytes)) {
+		err(`  ${orphan.path} — ${orphan.bytes.toLocaleString("en-US")} B`);
+	}
+	err(
+		`  ${wasted.toLocaleString("en-US")} B total, all of which SHIPS: the glob in`,
+	);
+	err(
+		`  ${IMAGES_MODULE} is eager, so importing is emitting. Delete the file,`,
+	);
+	err("  or reference it from its post.");
+	process.exit(1);
+}
+
 out(
 	`OK: ${checked} posts parse cleanly; ${schemaFieldsChecked} rich-text field(s) restrict headings to ${[...ALLOWED_HEADING_LEVELS].join("/")}, ${fixtureRuns} heading-level fixture run(s) agree, and ${bodiesHeadingScanned} scanned body/bodies hold ${headingsSeen} conforming heading(s)`,
+);
+out(
+	`OK: ${imagesInspected} image(s) across ${postFoldersWalked} post folder(s) are all referenced; ${referencedImages.size} distinct ref(s) resolved, ${imageRefFixtureRuns} image-ref fixture run(s) agree`,
 );

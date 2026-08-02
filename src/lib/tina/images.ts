@@ -1,4 +1,5 @@
 import type { ImageMetadata } from "astro";
+import { blogImageKey } from "./image-ref";
 
 /**
  * Colocated post images live at `src/data/blog/{slug}/{file}`. Every existing
@@ -19,6 +20,17 @@ import type { ImageMetadata } from "astro";
  * to as well — they lived in `public/`, which Astro copies verbatim — and are
  * now handled by `resolveUploadImage` below for exactly the same reason blog
  * images are handled here.
+ *
+ * `eager` has a cost that is not obvious: an import is an emit, so EVERY file
+ * this pattern matches ships, referenced or not. Astro's old MDX pipeline
+ * imported only what a post linked to, so an orphaned image in a post folder was
+ * free before the migration and is not now — a leftover 5.23 MB GIF was being
+ * served to nobody. Keeping the glob eager is deliberate (it is what maps a
+ * stored ref back to `ImageMetadata` at all); `scripts/check-content.mjs` covers
+ * the cost by refusing to let an unreferenced image exist in the first place.
+ *
+ * The literal below is read by that check — both its root and its extension
+ * list — so keep it a plain string. Vite requires that anyway.
  */
 const blogImages = import.meta.glob<{ default: ImageMetadata }>(
 	"/src/data/blog/**/*.{png,PNG,jpg,JPG,jpeg,JPEG,webp,WEBP,gif,GIF,svg,SVG,avif,AVIF}",
@@ -31,24 +43,22 @@ export function resolveBlogImage(
 ): ImageMetadata | string | undefined {
 	if (!ref) return undefined;
 
-	const blogRef = ref.match(/^\/blog\/(.+\.\w+)$/);
-	if (blogRef) {
-		return blogImages[`/src/data/blog/${blogRef[1]}`]?.default ?? ref;
-	}
+	// Which file in which post folder — shared with the orphan check through
+	// `image-ref.ts`, so the two cannot disagree about what a ref points at.
+	const key = blogImageKey(slug, ref);
+	if (key) return blogImages[key]?.default ?? ref;
 
 	// Media-manager refs reach here from post and page BODIES — RichText hands
 	// every `img` node to BlogImage.astro, whatever its source. Before Task 3.3
 	// they were served straight out of `public/uploads`; now they are under
-	// `src/`, so falling through to the `startsWith("/")` bail below would emit
-	// an `<img>` pointing at a URL the build no longer writes. No committed body
-	// uses one today, which is why this is a hole and not a bug report.
+	// `src/`, so returning the ref unchanged below would emit an `<img>`
+	// pointing at a URL the build no longer writes. No committed body uses one
+	// today, which is why this is a hole and not a bug report.
 	if (ref.startsWith("/uploads/")) return resolveUploadImage(ref);
 
-	if (/^https?:\/\//i.test(ref) || ref.startsWith("/")) return ref;
-
-	// Legacy `./file.png` refs, resolved against the post's own folder.
-	const file = ref.replace(/^\.?\//, "");
-	return blogImages[`/src/data/blog/${slug}/${file}`]?.default ?? ref;
+	// Remote URLs and any other absolute path — served from `public/`, or not
+	// ours at all. Unchanged, as before.
+	return ref;
 }
 
 /**
