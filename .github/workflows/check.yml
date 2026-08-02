@@ -22,6 +22,12 @@ on:
   push:
   pull_request:
 
+# The repo default is already read-only, but that is a mutable setting and
+# refresh-security-txt.yml already declares its own. Stating it keeps the three
+# workflows consistent rather than one of them relying on a default.
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest

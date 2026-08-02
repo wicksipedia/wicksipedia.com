@@ -65,7 +65,9 @@ if (!ogImageUrl && SITE.dynamicOgImage) {
 	ogImageUrl = `${getPath(post.id, post.filePath)}/index.png`;
 }
 
-// Resolve OG image URL (or fallback to SITE.ogImage / default `og.png`)
+// Absolute, because crawlers do not resolve relative og:image. Left undefined
+// when the post has none, in which case Layout.astro supplies the site-wide
+// default and its derivative.
 const ogImage = ogImageUrl
 	? new URL(ogImageUrl, Astro.url.origin).href
 	: undefined;

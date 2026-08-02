@@ -56,7 +56,11 @@ const ERROR_MARKERS = [
 	"Could not import",
 	"vite-error-overlay",
 	"astro-error-overlay",
+	// Both spellings on purpose: the element was `astro-dev-overlay` in Astro 3
+	// and is `astro-dev-toolbar` now. Matching only the old name would have made
+	// the general-case half of this list quietly inert.
 	"astro-dev-overlay",
+	"astro-dev-toolbar",
 ];
 
 /** @type {Array<{path: string, status: number, why: string}>} */
@@ -135,7 +139,11 @@ async function shutdown() {
 		stop.on("error", resolve);
 	});
 	try {
-		if (server.pid) process.kill(-server.pid, "SIGTERM");
+		// `exitCode === null` means it has not been reaped, so the pid is still
+		// ours. Without it a recycled pid could in principle be signalled.
+		if (server.pid && server.exitCode === null) {
+			process.kill(-server.pid, "SIGTERM");
+		}
 	} catch {
 		// Already gone. Nothing to do.
 	}

@@ -16,6 +16,11 @@ on:
     paths:
       - 'src/data/blog/**/*.md'
 
+# `gh pr diff` needs to read the PR; nothing here writes.
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   vale:
     runs-on: ubuntu-latest
@@ -26,14 +31,26 @@ jobs:
         id: changed
         run: |
           set -euo pipefail
+          # `gh` failing must NOT look like "no posts changed". Piping it straight
+          # into `grep ... || true` discards its exit status, and the green
+          # "nothing to lint" path is exactly the confusion this workflow exists
+          # to remove — arriving through a different door.
+          if ! diff_output=$(gh pr diff "$PR_NUMBER" --name-only); then
+            echo "::error::gh pr diff failed for PR $PR_NUMBER — refusing to report 'nothing to lint'."
+            exit 1
+          fi
+          # `grep` exiting 1 on no match is legitimate here, unlike `gh` failing.
+          posts=$(printf '%s\n' "$diff_output" | grep '^src/data/blog/.*\.md$' || true)
+
           # `--name-only` also lists files the PR DELETED. Vale exits non-zero on
           # a path that is not there, so a PR that removes a post would fail this
-          # job for no reason. Keep only what still exists on disk.
+          # job for no reason. Keep only what still exists on disk — which is also
+          # what makes the count reconciliation below correct rather than off by
+          # the number of deletions.
           : > /tmp/changed-posts.txt
           while IFS= read -r file; do
             [ -n "$file" ] && [ -f "$file" ] && printf '%s\n' "$file" >> /tmp/changed-posts.txt
-          done < <(gh pr diff "${{ github.event.pull_request.number }}" --name-only \
-                     | grep '^src/data/blog/.*\.md$' || true)
+          done <<< "$posts"
 
           count=$(wc -l < /tmp/changed-posts.txt | tr -d ' ')
           echo "count=$count" >> "$GITHUB_OUTPUT"
@@ -52,6 +69,9 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Through the environment rather than `${{ }}` inside the script, so the
+          # value is data to the shell rather than text spliced into it.
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: Install Vale
         if: steps.changed.outputs.found == 'true'
@@ -63,9 +83,17 @@ jobs:
 
       - name: Lint changed posts
         if: steps.changed.outputs.found == 'true'
+        env:
+          EXPECTED: ${{ steps.changed.outputs.count }}
         run: |
+          # `set +e` FIRST and deliberately. GitHub runs this with `bash -e {0}`,
+          # and under errexit the `output=$(… vale …)` below aborts the step the
+          # moment Vale finds anything — so the findings would never be printed
+          # and the reconciliation would never run. This step handles failure
+          # itself, via $vale_status at the end.
+          set +e
           set -uo pipefail
-          expected='${{ steps.changed.outputs.count }}'
+          expected="$EXPECTED"
           # `-0` rather than `-d '\n'`: both BSD and GNU xargs support it, so this
           # line is testable on the machine posts are written on and not only in CI.
           output=$(tr '\n' '\0' < /tmp/changed-posts.txt | xargs -0 vale 2>&1)
@@ -89,5 +117,8 @@ jobs:
             echo "so a pass would be a pass over nothing. See the comment at the top of this file."
             exit 1
           fi
-          echo "OK: Vale linted all $expected changed post(s)."
-          exit $status
+          if [ "$vale_status" -ne 0 ]; then
+            echo "::error::Vale reported problems in $expected changed post(s) — see above."
+            exit "$vale_status"
+          fi
+          echo "OK: Vale linted all $expected changed post(s), clean."
