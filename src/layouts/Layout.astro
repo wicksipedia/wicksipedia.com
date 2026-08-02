@@ -2,7 +2,9 @@
 import { Font } from "astro:assets";
 import { PUBLIC_GOOGLE_SITE_VERIFICATION } from "astro:env/client";
 import { ClientRouter } from "astro:transitions";
+import defaultOgImage from "@/assets/images/astropaper-og.jpg";
 import { SITE } from "@/config";
+import { ogImageDerivative } from "@/lib/og-image";
 import "@/styles/global.css";
 import CommandPalette from "@/components/CommandPalette.astro";
 
@@ -26,7 +28,7 @@ const {
 	author = SITE.author,
 	profile = SITE.profile,
 	description = SITE.desc,
-	ogImage = SITE.ogImage ? `/${SITE.ogImage}` : "/og.png",
+	ogImage,
 	canonicalURL = new URL(Astro.url.pathname, Astro.url),
 	pubDatetime,
 	modDatetime,
@@ -36,7 +38,31 @@ const {
 	noindex = false,
 } = Astro.props;
 
-const socialImageURL = new URL(ogImage, Astro.url);
+/**
+ * The site-wide default `og:image`, for every page that passes none — `/`,
+ * `/about`, `/404`, `/archives`, `/search`, `/blog/2..5` and every `/tags/*`.
+ * 42 built pages, measured.
+ *
+ * It used to be `/astropaper-og.jpg` straight out of `public/`, which Astro
+ * copies VERBATIM: 148,774 B at 2455x1381, larger than 13 of the 17 optimised
+ * post covers and handed whole to every crawler. Task 3.3 fixed the per-post
+ * `og:image` and explicitly left this one, so it is the same defect one level up.
+ *
+ * The file had to move under `src/` to be optimisable at all — `getImage()`
+ * needs `ImageMetadata`, and nothing in `public/` has any. Same move, and same
+ * reason, as Tina's media root in fe1e412. The cost is that the old absolute URL
+ * `https://wicksipedia.com/astropaper-og.jpg` stops resolving; crawlers re-read
+ * the meta tag on their next crawl, and nothing on this site linked to that URL
+ * directly.
+ *
+ * `SITE.ogImage` is gone rather than left pointing at a path that no longer
+ * serves: it was a filename interpolated into a URL, which is exactly the second
+ * source of truth that would drift from this import.
+ */
+const socialImageURL = new URL(
+	ogImage ?? (await ogImageDerivative(defaultOgImage)),
+	Astro.url,
+);
 
 // Structured data: WebSite schema for homepage, BlogPosting for blog posts
 const structuredData = isHomepage

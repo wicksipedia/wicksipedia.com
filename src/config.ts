@@ -4,7 +4,6 @@ export const SITE = {
 	profile: "https://wicksipedia.com/",
 	desc: "Articles on CI/CD, DevOps, cloud-native architecture, and clean code by Matt Wicks, Solution Architect at SSW.",
 	title: "Wicksipedia",
-	ogImage: "astropaper-og.jpg",
 	lightAndDarkMode: true,
 	postPerIndex: 4,
 	postPerPage: 4,

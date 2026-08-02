@@ -148,7 +148,6 @@ export const SITE = {
   profile: "https://wicksipedia.com/",
   desc: "Site description for SEO",
   title: "Wicksipedia",
-  ogImage: "astropaper-og.jpg",
   lightAndDarkMode: true,         // Enable dark mode toggle
   postPerIndex: 4,                // Posts on home page
   postPerPage: 4,                 // Posts per pagination page
