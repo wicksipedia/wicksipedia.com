@@ -321,7 +321,9 @@ export default defineConfig({
 			provider: fontProviders.google(),
 			fallbacks: ["monospace"],
 			weights: [300, 400, 500, 600, 700],
-			styles: ["normal", "italic"],
+			// No italic: nothing outside `.app-prose` renders italic mono. Verified
+			// across the built site — 0 <em>/<i> outside a prose subtree.
+			styles: ["normal"],
 		},
 		{
 			name: "Source Serif 4",

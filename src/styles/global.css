@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@import "./typography.css";
+/* typography.css is NOT imported here. It is ~30% of the bundle and only
+   `.app-prose` regions use it, so it is imported by the three components that
+   render one, letting Astro keep it out of listing pages' render-blocking CSS. */
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 

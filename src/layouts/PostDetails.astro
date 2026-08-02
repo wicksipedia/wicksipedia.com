@@ -1,4 +1,5 @@
 ---
+import "@/styles/typography.css";
 import { getImage, Image } from "astro:assets";
 import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
@@ -74,14 +75,18 @@ const ogImage = ogImageUrl
 
 // One transform, used by both the <img> below and the <head> preload. Computing
 // them separately is how the two drift and the browser downloads twice.
-const HERO_WIDTHS = [640, 960, 1280, 1600, 1920];
+// Rungs are spaced so no common viewport/DPR pair has to round up more than
+// ~15%. The old 640/960 gap forced a 694px window to fetch 960w.
+const HERO_WIDTHS = [640, 768, 896, 1024, 1280, 1536, 1920];
 const HERO_SIZES = "100vw";
+const HERO_QUALITY = 65;
 const hero =
 	initOgImage && typeof initOgImage !== "string"
 		? await getImage({
 				src: initOgImage,
 				widths: HERO_WIDTHS,
 				sizes: HERO_SIZES,
+				quality: HERO_QUALITY,
 			})
 		: null;
 
