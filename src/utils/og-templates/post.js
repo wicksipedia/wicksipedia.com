@@ -1,5 +1,4 @@
 import satori from "satori";
-import { SITE } from "@/config";
 import loadGoogleFonts from "../loadGoogleFont";
 
 export default async (post) => {
@@ -147,9 +146,7 @@ export default async (post) => {
 			width: 1200,
 			height: 630,
 			embedFont: true,
-			fonts: await loadGoogleFonts(
-				`${title}${tags.join("")}wicksipedia.com`,
-			),
+			fonts: await loadGoogleFonts(`${title}${tags.join("")}wicksipedia.com`),
 		},
 	);
 };
