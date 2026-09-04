@@ -73,7 +73,7 @@ const heroDate = heroDatetime.format("D MMM YYYY");
   transition:name={slugifyStr(title.replaceAll(".", "-"))}
   data-tina-field={tinaField(post, "title")}
   class:list={[
-    "text-display mt-4 max-w-3xl text-3xl sm:text-4xl lg:text-[2.75rem]",
+    "text-display mt-4 text-3xl sm:text-4xl lg:text-[2.75rem]",
     titleColor,
   ]}
 >
@@ -82,7 +82,7 @@ const heroDate = heroDatetime.format("D MMM YYYY");
 
 <p
   data-tina-field={tinaField(post, "description")}
-  class:list={["mt-4 max-w-2xl font-prose text-lg leading-relaxed", descColor]}
+  class:list={["mt-4 font-prose text-lg leading-relaxed", descColor]}
 >
   {description}
 </p>
