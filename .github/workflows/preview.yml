@@ -64,6 +64,11 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=6144
           PUBLIC_TINA_CLIENT_ID: ${{ vars.PUBLIC_TINA_CLIENT_ID }}
           TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+          # tina/config.ts reads this to pick the branch Tina Cloud compares
+          # the schema against. Without it the build falls back to `main`, so
+          # any PR that adds a CMS field fails the cloud check against an
+          # index that cannot have the field yet.
+          GITHUB_BRANCH: ${{ github.head_ref }}
         run: |
           missing=""
           [ -z "$PUBLIC_TINA_CLIENT_ID" ] && missing="$missing PUBLIC_TINA_CLIENT_ID(repo variable)"
