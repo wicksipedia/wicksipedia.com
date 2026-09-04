@@ -31,7 +31,7 @@ const navLinks = [
   <div class="relative flex min-h-full items-start justify-center px-3 pt-16 sm:px-6 sm:pt-[15vh]">
     <div
       id="cmd-k-modal"
-      class="animate-cmd-in w-full max-w-2xl overflow-hidden rounded-xl border border-border/60 bg-background shadow-2xl"
+      class="animate-cmd-in w-full max-w-2xl overflow-hidden rounded-2xl border border-border/60 bg-background shadow-2xl"
     >
       <!-- Input row -->
       <div class="flex items-center border-b border-border/50 px-4">
@@ -47,7 +47,7 @@ const navLinks = [
           autocapitalize="off"
           spellcheck="false"
           placeholder="search wicksipedia_"
-          class="flex-1 bg-transparent py-4 font-mono text-sm text-foreground placeholder:text-foreground/30 outline-none"
+          class="flex-1 bg-transparent py-4 font-mono text-sm text-foreground placeholder:text-foreground/50 outline-none"
           aria-label="Search"
           aria-autocomplete="list"
           aria-controls="cmd-k-list"
@@ -66,7 +66,7 @@ const navLinks = [
       >
         <!-- Nav group (shown when input is empty) -->
         <div id="cmd-k-nav-group" class="py-2">
-          <div class="px-4 pb-1 pt-2 text-[0.65rem] font-semibold uppercase tracking-widest text-foreground/35">
+          <div class="px-4 pb-1 pt-2 text-xs font-medium text-foreground/55">
             Navigate
           </div>
           {navLinks.map((link, i) => (
@@ -79,10 +79,10 @@ const navLinks = [
               aria-selected="false"
             >
               <span class="flex items-center gap-2.5">
-                <span class="font-mono text-accent/50 group-[.is-active]:text-accent text-xs select-none" aria-hidden="true">→</span>
+                <span class="font-mono text-accent/80 group-[.is-active]:text-accent text-xs select-none" aria-hidden="true">→</span>
                 <span class="group-[.is-active]:text-accent">{link.label}</span>
               </span>
-              <span class="font-mono text-[0.65rem] text-foreground/30 group-[.is-active]:text-accent/50" aria-hidden="true">
+              <span class="font-mono text-[0.65rem] text-foreground/55 group-[.is-active]:text-accent" aria-hidden="true">
                 {link.hint}
               </span>
             </a>
@@ -92,8 +92,8 @@ const navLinks = [
         <!-- Search results group (shown when typing) -->
         <div id="cmd-k-results-group" class="hidden py-2">
           <div class="flex items-center justify-between px-4 pb-1 pt-2">
-            <span class="text-[0.65rem] font-semibold uppercase tracking-widest text-foreground/35">Results</span>
-            <span id="cmd-k-count" class="font-mono text-[0.6rem] text-foreground/25"></span>
+            <span class="text-xs font-medium text-foreground/55">Results</span>
+            <span id="cmd-k-count" class="font-mono text-[0.6rem] text-foreground/55"></span>
           </div>
           <div id="cmd-k-results"></div>
         </div>
@@ -118,7 +118,7 @@ const navLinks = [
       </div>
 
       <!-- Footer strip -->
-      <div class="flex items-center gap-4 border-t border-border/40 px-4 py-2.5 font-mono text-[0.65rem] text-foreground/30">
+      <div class="flex items-center gap-4 border-t border-border/40 px-4 py-2.5 font-mono text-[0.65rem] text-foreground/55">
         <span class="flex items-center gap-1">
           <kbd class="rounded border border-border/50 px-1 py-px text-[0.6rem]">↑</kbd>
           <kbd class="rounded border border-border/50 px-1 py-px text-[0.6rem]">↓</kbd>
@@ -379,15 +379,28 @@ const navLinks = [
     }
   }
 
+  // The trigger lives in the header, which every view transition replaces.
+  function bindTrigger() {
+    document
+      .getElementById("cmd-k-trigger")
+      ?.addEventListener("click", openPalette);
+  }
+
+  /**
+   * Bind the listeners that live on the palette element itself. Runs on load
+   * and after every view transition: `transition:persist` is meant to keep the
+   * node, but the router can still hand us a fresh copy, and a fresh copy has
+   * no listeners. `Esc` kept working through that because it is bound on
+   * `document`; backdrop click, typing and arrow keys did not. The flag stops
+   * a persisted node being bound twice.
+   */
   function initCommandPalette() {
     const backdrop = getBackdrop();
     const input = getInput();
-    const trigger = document.getElementById("cmd-k-trigger");
 
     if (!backdrop || !input) return;
-
-    // Open via trigger button
-    trigger?.addEventListener("click", openPalette);
+    if (backdrop.dataset.bound) return;
+    backdrop.dataset.bound = "true";
 
     // Close on click outside the modal
     backdrop?.addEventListener("click", e => {
@@ -465,14 +478,14 @@ const navLinks = [
 
   // Initialize
   initCommandPalette();
+  bindTrigger();
   document.addEventListener("keydown", handleGlobalKeydown);
 
   // Close palette before view transitions to avoid stale state
   document.addEventListener("astro:before-swap", closePalette);
 
-  // Re-attach trigger listener after view transitions (trigger button is in header, gets replaced)
   document.addEventListener("astro:after-swap", () => {
-    const trigger = document.getElementById("cmd-k-trigger");
-    trigger?.addEventListener("click", openPalette);
+    initCommandPalette();
+    bindTrigger();
   });
 </script>
