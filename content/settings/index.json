@@ -1,8 +1,26 @@
 {
+	"profile": {
+		"name": "Matt Wicks",
+		"tagline": "CI/CD, cloud-native, and clean code. Opinions held loosely, pipelines held tightly.",
+		"jobTitle": "Solution Architect",
+		"organization": "SSW",
+		"organizationUrl": "https://ssw.com.au/people/matt-wicks/",
+		"avatar": "/uploads/avatar.png",
+		"alt": ""
+	},
 	"nav": [
-		{ "title": "Blog", "href": "/blog" },
-		{ "title": "Tags", "href": "/tags" },
-		{ "title": "About", "href": "/about" }
+		{
+			"title": "Blog",
+			"href": "/blog"
+		},
+		{
+			"title": "Tags",
+			"href": "/tags"
+		},
+		{
+			"title": "About",
+			"href": "/about"
+		}
 	],
 	"socials": [
 		{

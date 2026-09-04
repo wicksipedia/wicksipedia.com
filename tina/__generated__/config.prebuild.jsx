@@ -338,6 +338,31 @@ var settingsCollection = {
   fields: [
     {
       type: "object",
+      name: "profile",
+      label: "Profile",
+      description: "Shown in the sidebar on every page.",
+      fields: [
+        { type: "string", name: "name", label: "Name", required: true },
+        {
+          type: "string",
+          name: "tagline",
+          label: "Tagline",
+          ui: { component: "textarea" }
+        },
+        { type: "string", name: "jobTitle", label: "Job Title" },
+        { type: "string", name: "organization", label: "Organisation" },
+        { type: "string", name: "organizationUrl", label: "Organisation URL" },
+        { type: "image", name: "avatar", label: "Avatar" },
+        {
+          type: "string",
+          name: "alt",
+          label: "Avatar Alt Text",
+          description: "Leave blank when the avatar is a portrait beside the name."
+        }
+      ]
+    },
+    {
+      type: "object",
       name: "nav",
       label: "Header Navigation",
       list: true,

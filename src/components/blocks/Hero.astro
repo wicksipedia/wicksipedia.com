@@ -10,10 +10,9 @@ import { normalizeUrl, safeHref } from "@/lib/tina/sanitize-html";
 import type { CmsSocial } from "@/lib/tina/settings";
 
 /**
- * The homepage masthead. Markup moved verbatim from `src/pages/index.astro`
- * (lines 55-121 before this task) — same `bg-hero-bg` band, same responsive
- * avatar swap, same `text-hero-*` tokens — with the hardcoded strings replaced
- * by block fields and each marked editable.
+ * The homepage masthead: name, tagline, role and socials on the left, the
+ * portrait in a tile on the right. Below `md` the tile gives way to a small
+ * round avatar above the name.
  *
  * This block owns the page's `<h1>` only when it is the page's FIRST block;
  * `PageBlocks.astro` suppresses the page-level heading in exactly that case, so
@@ -22,58 +21,31 @@ import type { CmsSocial } from "@/lib/tina/settings";
  * the blocks above it would otherwise precede the document's only `<h1>`. See
  * `primaryHeroIndex` in `src/lib/tina/pages.ts` for the whole rule.
  *
- * The avatar comes from Tina's media root so an editor can swap it. That media
- * root is `src/assets/uploads` since Task 3.3, NOT `public/uploads`, which is
- * what makes the two `<Image>`s below possible: `public/` is copied verbatim and
- * `<Image>` only processes imports from `src/`. `resolveUploadImage` maps the
- * stored `/uploads/<file>` ref back to its `ImageMetadata`.
+ * The avatar comes from Tina's media root (`src/assets/uploads`) so an editor
+ * can swap it, and `resolveUploadImage` maps the stored `/uploads/<file>` ref
+ * back to its `ImageMetadata` so `<Image>` can build real derivatives. A ref
+ * that does not resolve falls back to one `src` and no srcset through
+ * `sanitizeImageSrc`, the same fallback `BlogImage.astro` uses: at that point
+ * the value is an unvalidated URL from the content source.
  *
- * These used to be plain `<img>`s, deliberately, because `<Image>` with a
- * PUBLIC-path string emits a srcset describing widths that do not exist —
- * `/uploads/avatar.png 160w, /uploads/avatar.png 320w`, every descriptor
- * pointing at the same bytes. That argument dies with the file's location: the
- * candidates are now real derivatives at real widths. A ref that does not
- * resolve still gets the honest treatment, one `src` and no srcset, through
- * `sanitizeImageSrc` — the same fallback `BlogImage.astro` uses, and the same
- * reason: at that point the value is an unvalidated URL from the content source.
+ * BOTH instances carry the SAME `widths`, `sizes`, `width` and `height`, which
+ * is what preserves "one download whatever the viewport". They are
+ * breakpoint-gated, but `display:none` does not reliably stop an `<img>` from
+ * being fetched, so two different candidate lists would mean two downloads on
+ * every visit. `width`/`height` matter too: a 4:5 pair on the tile made Astro
+ * cut a cropped derivative set with its own hashes, and both sets were fetched.
+ * Both now declare the 640px source box; CSS sets the rendered size.
  *
- * `layout="none"` keeps the rest of the old reasoning intact. It suppresses the
- * `data-astro-image` attribute and its `:where()`-wrapped rules, every dimension
- * of which is already set by a Tailwind class here, so the emitted element is
- * the one that was there before plus a srcset.
+ * BOTH are eager AND high-priority. The preload scanner works in DOCUMENT
+ * ORDER, and the mobile instance comes first: a `fetchpriority="high"` on the
+ * element further down does not reliably upgrade a request that is already
+ * queued. Because the two resolve to ONE URL there is only ever one request.
  *
- * BOTH instances carry the SAME `widths` and the SAME `sizes`, which is what
- * preserves "one download whatever the viewport". They are breakpoint-gated, but
- * `display:none` does not reliably stop an `<img>` from being fetched, so two
- * different candidate lists would mean two downloads on every visit. Identical
- * lists resolve to the same URL for a given viewport and DPR. `sizes` names the
- * `md` breakpoint (768px) because that is where the gating swaps: below it the
- * mobile instance occupies 140-160 CSS px, above it the desktop one occupies
- * 320-480. `width`/`height` still differ, because they describe the two
- * elements' intrinsic boxes and keep the layout stable.
- *
- * BOTH are eager AND high-priority, which is not belt-and-braces. The preload
- * scanner works in DOCUMENT ORDER, and the mobile instance comes first: it used
- * to start the shared fetch at default priority, and a `fetchpriority="high"`
- * on the element 3.5 KB further down does not reliably upgrade a request that
- * is already queued. The desktop hint was therefore inert — the exact cost of
- * the shared-URL trick above, found in review. Because the two resolve to ONE
- * URL there is only ever one request, so marking both high prioritises that one
- * request rather than competing for bandwidth. The avatar is the LCP candidate
- * above 768px; below it the full-width featured cover usually is, and the hint
- * is harmless there because it names the same single fetch.
- *
- * The avatar's alt text DEFAULTS to `""`, and for this document that is the
- * right answer: the two `<img>`s are breakpoint-gated so only one renders, and
- * it is a portrait sitting directly beside the heading that names the person —
- * `alt="Matt Wicks"` would announce the name twice. But `alt` is a real field
- * now, because neither half of that reasoning is guaranteed to hold. `name` is
- * optional, and `primaryHeroIndex` deliberately supports a blank-name hero used
- * as a plain image band: that renders a column whose only content is an image
- * with `alt=""` and no adjacent text, invisible to assistive technology with
- * nothing an author could do about it. `avatar` is editor-swappable too, so a
- * logo or a product shot can end up here. The field description says when to
- * leave it blank.
+ * The avatar's alt text DEFAULTS to `""`: only one instance renders, and it is
+ * a portrait sitting beside the heading that names the person, so a name in
+ * the alt would announce it twice. `alt` is a real field because neither half
+ * of that reasoning is guaranteed to hold: `name` is optional, and `avatar` is
+ * editor-swappable. The field description says when to leave it blank.
  */
 interface Props {
 	data: HeroBlock;
@@ -117,12 +89,13 @@ const avatarSrc = avatarAsset
 		);
 /**
  * One candidate list for both instances, so whichever one the viewport shows,
- * the browser resolves the same URL. Capped at the 640px source: Astro would
- * otherwise be asked to upscale, and `sizes` is what decides which candidate is
- * picked, not this list's ceiling.
+ * the browser resolves the same URL. Capped at the 640px source. `sizes` names
+ * the `md` breakpoint because that is where the gating swaps: below it the
+ * round avatar is 112 CSS px, above it the tile is 224-256.
  */
-const avatarWidths = [160, 320, 500, 640];
-const avatarSizes = "(min-width: 768px) 500px, 160px";
+const avatarWidths = [224, 320, 448, 640];
+const avatarSizes =
+	"(min-width: 1024px) 256px, (min-width: 768px) 224px, 112px";
 
 // Trimmed, and the trimmed value is what renders. `primaryHeroIndex` decides
 // whether this hero owns the page's `<h1>` from the same helper, so an untrimmed
@@ -134,28 +107,29 @@ const alt = data.alt ?? "";
 // `sanitizeHref` for exactly this and it is imported nowhere; it also has the
 // backslash hole, so this uses ours.
 const organizationUrl = safeHref(data.organizationUrl);
+
+const mobileAvatar =
+	"block size-28 rounded-full bg-muted object-cover object-top md:hidden";
+const tileAvatar = "block h-full w-full object-cover object-top";
 ---
 
-<section
-  id={sectionId}
-  class="animate-reveal overflow-hidden bg-hero-bg transition-[background] duration-300"
->
+<section id={sectionId} class="overflow-hidden">
   <div class="app-layout">
     <div
-      class="flex flex-col items-center gap-6 py-8 sm:py-10 md:flex-row md:items-end md:justify-between md:gap-8 md:py-0"
+      class="grid gap-8 pt-10 pb-12 md:grid-cols-[1fr_auto] md:items-center md:gap-12 md:pt-14 md:pb-16"
     >
-      <div class="text-center md:flex-1 md:py-6 md:text-left lg:py-10 xl:py-16">
+      <div class="min-w-0">
         {
           avatarAsset ? (
             <Image
               src={avatarAsset}
               alt={alt}
-              width={160}
-              height={160}
+              width={640}
+              height={640}
               widths={avatarWidths}
               sizes={avatarSizes}
               layout="none"
-              class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
+              class={mobileAvatar}
               loading="eager"
               fetchpriority="high"
               decoding="async"
@@ -166,9 +140,9 @@ const organizationUrl = safeHref(data.organizationUrl);
               <img
                 src={avatarSrc}
                 alt={alt}
-                width="160"
-                height="160"
-                class="mx-auto block size-35 rounded-full object-cover object-top sm:size-40 md:hidden"
+                width="640"
+                height="640"
+                class={mobileAvatar}
                 loading="eager"
                 fetchpriority="high"
                 decoding="async"
@@ -180,7 +154,7 @@ const organizationUrl = safeHref(data.organizationUrl);
         {
           name && (
             <NameTag
-              class="mt-4 font-prose text-4xl font-bold italic tracking-tight text-hero-text sm:text-5xl lg:text-6xl xl:text-7xl md:mt-0"
+              class="text-display mt-6 text-4xl text-foreground sm:text-5xl md:mt-0"
               data-tina-field={tinaField(data, "name") || undefined}
             >
               {name}
@@ -188,16 +162,13 @@ const organizationUrl = safeHref(data.organizationUrl);
           )
         }
         <p
-          class="mx-auto mt-4 max-w-lg font-prose text-lg leading-relaxed italic text-hero-text-muted sm:text-xl md:mx-0"
+          class="mt-5 max-w-md font-prose text-lg leading-relaxed text-foreground/70"
           data-tina-field={tinaField(data, "tagline") || undefined}
         >
-          <span class="text-2xl leading-none text-accent/50">&ldquo;</span
-          >{data.tagline}<span class="text-2xl leading-none text-accent/50"
-            >&rdquo;</span
-          >
+          {data.tagline}
         </p>
         <p
-          class="mt-3 text-sm text-hero-accent"
+          class="mt-5 text-sm text-foreground/60"
           data-tina-field={tinaField(data, "jobTitle") || undefined}
         >
           {data.jobTitle} at{" "}
@@ -205,7 +176,7 @@ const organizationUrl = safeHref(data.organizationUrl);
             href={organizationUrl}
             target="_blank"
             rel="noopener noreferrer"
-            class="font-semibold underline decoration-dashed underline-offset-4 hover:decoration-solid"
+            class="font-semibold text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent"
             data-tina-field={tinaField(data, "organization") || undefined}
           >
             {data.organization}
@@ -213,26 +184,27 @@ const organizationUrl = safeHref(data.organizationUrl);
         </p>
         {
           socials.length > 0 && (
-            <div class="mt-5 flex justify-center md:justify-start [&_svg]:stroke-hero-social [&_svg]:hover:stroke-hero-accent">
+            <div class="mt-5 -ms-1 flex text-foreground/60 [&_a:hover]:text-accent">
               <Socials socials={socials} />
             </div>
           )
         }
       </div>
       <div
-        class="relative hidden md:block md:shrink-0 after:content-[''] after:absolute after:bottom-0 after:inset-x-0 after:h-[40%] after:pointer-events-none after:bg-gradient-to-t after:from-hero-bg after:to-transparent after:transition-[background] after:duration-300"
+        class="relative hidden aspect-4/5 w-56 overflow-hidden rounded-2xl bg-muted md:block lg:w-64"
       >
+        <span class="absolute top-4 left-4 z-10 size-2.5 rounded-full bg-accent" aria-hidden="true"></span>
         {
           avatarAsset ? (
             <Image
               src={avatarAsset}
               alt={alt}
-              width={500}
-              height={500}
+              width={640}
+              height={640}
               widths={avatarWidths}
               sizes={avatarSizes}
               layout="none"
-              class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
+              class={tileAvatar}
               loading="eager"
               fetchpriority="high"
               decoding="async"
@@ -243,9 +215,9 @@ const organizationUrl = safeHref(data.organizationUrl);
               <img
                 src={avatarSrc}
                 alt={alt}
-                width="500"
-                height="500"
-                class="block object-cover object-top size-35 rounded-full mx-auto min-[480px]:size-40 md:w-[320px] md:h-90 md:rounded-none md:mx-0 md:-mb-10 lg:w-[420px] lg:h-[460px] lg:-mb-[50px] xl:w-[480px] xl:h-[500px] xl:-mb-[60px]"
+                width="640"
+                height="640"
+                class={tileAvatar}
                 loading="eager"
                 fetchpriority="high"
                 decoding="async"

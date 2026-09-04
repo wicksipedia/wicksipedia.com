@@ -204,89 +204,94 @@ Defined in `src/styles/global.css` as CSS custom properties with light and dark 
 |---|---|---|---|
 | `--background` | `#faf9f6` (warm off-white) | `#0f1117` (deep navy) | Page background |
 | `--foreground` | `#1a1a1a` | `#e8e6e3` | Body text |
-| `--accent` | `#ae4508` (burnt orange) | `#ff7a1a` (bright orange) | **Primary accent — links, buttons, tags, hover states, active indicators** |
-| `--muted` | `#e8e5df` | `#1e2130` | Card backgrounds, subtle fills |
-| `--border` | `#d6d3cc` | `#2a2d3a` | Borders, dividers |
-| `--hero-*` | Various | Various | Hero section colors (theme-responsive) |
+| `--accent` | `#ae4508` (burnt orange) | `#ff7a1a` (bright orange) | **The one accent: links, active nav, the brand dot, hover states** |
+| `--muted` | `#e8e5df` | `#1e2130` | Image tiles, the avatar ring, kbd and hover fills |
+| `--border` | `#d6d3cc` | `#2a2d3a` | Hairlines |
+| `--overlay-ink` | `#faf9f6` | same | Text over a cover photo; does not flip with the theme |
+| `--scrim` | `#0f1117` | same | Cover gradient and modal backdrop; does not flip with the theme |
 
-Values verified against `src/styles/global.css`; the other rows already matched.
-The light `--accent` was documented as `#d4550a` long after it had been darkened
-to `#ae4508` for contrast — `#ae4508` on `#faf9f6` is 5.46:1 and passes AA,
-`#d4550a` was 3.91:1 and did not. A reviewer trusting this table over the
-stylesheet reported a contrast failure that does not exist, so keep it accurate.
+Values verified against `src/styles/global.css`. The light `--accent` is
+`#ae4508`, not the `#d4550a` an older version of this table claimed: `#ae4508`
+on `#faf9f6` is 5.46:1 and passes AA, `#d4550a` was 3.91:1 and did not. A
+reviewer trusting this table over the stylesheet once reported a contrast
+failure that does not exist, so keep it accurate.
 
 **Rules:**
-- **Orange is the accent.** Use `var(--accent)` / Tailwind `text-accent`, `bg-accent`, `border-accent` etc. for all interactive elements, highlights, hover states, and decorative flourishes.
-- `--accent-2` (green) exists in the variables but is **not used in the UI**. Do not introduce green accents.
-- For muted/secondary text, use `text-foreground/60` or `text-foreground/50` (opacity modifiers), never grey hex values.
-- For borders, prefer `border-border/50` or `border-border/60` for subtle lines.
+- **Orange is the only accent.** Use `text-accent`, `bg-accent`, `border-accent` for interactive elements and nothing else. No second colour, no green.
+- Secondary text is `text-foreground/70`, `/60` or `/50`. Never a grey hex.
+- Hairlines are `border-border/60`. Structure comes from rules and space, not boxes: **no cards, no borders around content, no drop shadows.**
+- Two radii only: `rounded-2xl` for media tiles (covers, the portrait, code blocks, images in prose) and `rounded-md` for small controls (kbd, buttons). Nothing is `rounded-xl` or `rounded-full` except the brand dot and the mobile avatar.
 
 ### Typography
 
-- **Font:** Google Sans Code (monospace), loaded via Astro `Font` component, set as `--font-app`.
-- **Headings:** `font-extrabold` or `font-bold`, tight tracking (`tracking-tight`).
-- **Body:** Default weight, `text-foreground` with opacity modifiers for hierarchy.
-- **Small labels:** `text-xs font-semibold uppercase tracking-widest` (used in nav, metadata, section labels).
+Two families, both loaded through Astro's `Font` component in `astro.config.ts`; the preloads live in `Layout.astro`.
+
+- **`--font-app` = Google Sans Code** (mono). Display headlines, UI, nav, meta, dates, tags, and headings inside prose.
+- **`--font-prose` = Geist** (sans). Reading copy only: article bodies, descriptions, the hero tagline. Google Fonts ships no italic for it; the browser synthesises one for the rare `<em>`.
+- **Display headlines** use the `text-display` utility (`font-extrabold tracking-[-0.04em] leading-[1.02]`). Scale is deliberately restrained: page titles `text-3xl sm:text-4xl`, the hero name `text-4xl sm:text-5xl`, post titles capped at `lg:text-[2.75rem]`. A first pass at `text-8xl` read as unbalanced; do not creep back up.
+- **Section labels** are `text-sm font-medium text-foreground/50` in sentence case. **No uppercase-tracked eyebrows anywhere.** They read as templated and were the site's biggest tell.
+- **Tags** are plain mono text `#tag` links at `text-xs text-foreground/50`, `hover:text-accent`. Not pills.
 
 ### Component Patterns
 
-#### Header (`src/components/Header.astro`)
-- Sticky, glass-morphism nav bar (`backdrop-blur-lg`, semi-transparent background via `color-mix`)
-- Site title "Wicksipedia" with a **bouncing orange dot** after it (CSS-only animation, squishes on hover)
-- Nav links: uppercase, `0.65` opacity at rest, full opacity + orange + tinted bg on hover
-- Active page: orange text + 2px underline bar
-- Utility icons (search, theme): contained in rounded squares with accent hover tint
-- Divider between nav and utility icons
+#### Header / sidebar (`src/components/Header.astro`)
+- **One element, two layouts.** Below `lg` it is a 64px sticky top bar with a hamburger. From `lg` it is a fixed left rail, `w-68` (17rem), full height, hairline right border, and `body` carries `lg:pl-68` (`global.css`) to clear it. Same DOM either way, so `#theme-btn`, `#cmd-k-trigger` and `#menu-items` stay unique
+- Rail order: wordmark + **brand dot**, then the **profile** from `settings.profile` (round `size-20` avatar, name, Geist tagline, role with the org link), nav, and pinned to the bottom (`mt-auto`, hairline above) one row of uniform `size-9` icon buttons: search, theme, RSS, socials. No `⌘K` chip in the rail; the palette shows its own shortcuts. Below `lg` the profile renders at the top of the hamburger dropdown instead. The homepage has no hero block; `PageBlocks.astro` keeps its `<h1>` `sr-only` there because the rail is the identity. The dot is static; it squishes (`dot-squish`) on hover of the link, never on a loop
+- Nav links: sentence case, `text-sm font-medium text-foreground/65`, `hover:text-foreground`. Active: `text-accent` with a small accent dot in front (`before:`), rail only
+- Search trigger shows a single `⌘K` kbd; theme toggle is a bare icon button with a `bg-muted` hover
+- The footer's social row is `lg:hidden` because the rail already shows it
+
+#### Hero block (`src/components/blocks/Hero.astro`)
+- Still a CMS block type, no longer on the home document. If placed: asymmetric split, name at `text-display text-4xl sm:text-5xl` (no bigger), portrait in a `w-56 lg:w-64 aspect-4/5 rounded-2xl bg-muted` tile
+- Below `md` the tile is replaced by a `size-28` round avatar above the name. Both `<Image>`s share `widths`, `sizes`, `width` and `height` so they resolve to one URL and one download; see the comment in the file before touching either
+- No load-in animation. The hero is the LCP candidate and an element that first paints at `opacity: 0` is excluded from LCP for good
+
+#### Post index (`src/components/PostIndex.astro` + `Card.astro`)
+- `PostIndex` groups an already-sorted list by year and draws a faded `text-display text-3xl text-foreground/25` year marker before each group. Used by the homepage feed, `/blog` and `/tags/*`
+- `Card` is one `<li>`: `grid sm:grid-cols-[5.5rem_1fr]`, date in the gutter (`withYear={false}` inside a year group), title + description + tags beside it, `border-t border-border/60` between rows. Also used bare by `/archives` and related posts
+- Whole row is the link (stretched `after:` pseudo); tags sit above it at `relative z-10`
+- Hover: title goes `text-accent`. No lift, no shadow
+
+#### Post feed (`src/components/blocks/PostFeed.astro`)
+- Lead post: `aspect-2/1 rounded-2xl` cover, then `text-display text-2xl sm:text-3xl` title, Geist description, mono meta row. Cover ladder is capped at 1024w on purpose; the slot is at most 992 CSS px and a wider file only warms a colder cache
+- Remaining posts render through `PostIndex`; the home document's `limit` is 8
+
+#### Post detail (`src/layouts/PostDetails.astro` + `islands/PostHero.astro`)
+- Back link, then the cover as a contained `rounded-2xl` block inside `app-layout` (`min-h` 26/30/34rem) with the meta row, `text-display` title (capped at `lg:text-[2.75rem]`) and description **overlaid** bottom-left in `text-overlay-ink` over a `from-scrim/95` gradient. Both tokens are theme-independent on purpose. A post with no cover renders the same `PostHero` as a plain header
+- Cover `HERO_WIDTHS` / `HERO_SIZES` in `PostDetails.astro` feed both the `<img>` and the `<head>` preload; change them together
+- Reading progress bar: 4px accent bar, `scaleX` driven by a CSS scroll timeline (`.progress-bar` in `global.css`). The scroll listener in the inline script runs only where `animation-timeline` is unsupported
+- Share/edit sit in one ruled row; prev/next are two ruled cells, not cards
 
 #### Footer (`src/components/Footer.astro`)
-- Muted background band (`color-mix` of `--muted` and `--background`)
-- Site title echo with accent dot (same motif as header)
-- Copyright + commit hash (monospace, accent-colored) on left, social icons on right
+- Hairline top border, no background band. Wordmark + dot, then `© year`, the tagline and the commit hash as separate flex items with `gap-x-5` (no `|` separators; they failed contrast). Socials right
 
-#### Cards (`src/components/Card.astro`)
-- Full card is clickable (stretched link via `after:absolute after:inset-0`)
-- `rounded-xl`, `border-border/60`, `bg-muted/20` at rest
-- Hover: lifts up 3px (`translateY(-3px)`), accent-tinted box-shadow, 3px orange left border fades in
-- Tags at bottom: orange pill badges (`border-accent/30 bg-accent/5 text-accent`), independently clickable (`relative z-10`)
-- Title highlights orange on hover (`group-hover:text-accent`)
+### Animation
 
-#### Post Detail (`src/layouts/PostDetails.astro`)
-- Full-bleed OG image hero banner (100vw, max-height 420px) with bottom gradient fade into background
-- Post title below in `font-extrabold`, up to `text-4xl` on large screens
-- Description shown as muted subtitle
-- Tags displayed inline below metadata
-- Progress bar at top of page (`z-50`, above sticky header)
-- Prev/next navigation: rounded card-style links with subtle hover lift
-
-### Animation Utilities
-
-Defined as `@utility` in `global.css`:
-- `animate-reveal` — fade-in-up on page load (0.5s, no delay)
-- `animate-reveal-delay-1` through `animate-reveal-delay-3` — staggered variants (0.1s–0.3s delay)
-
-Use these on homepage sections for orchestrated page-load reveals. Apply to the outermost section wrapper, not individual items.
+- **Reveals are below-the-fold only.** `animate-reveal` and `animate-reveal-delay-1..3` (0.4s fade-in-up) may go on the recent-posts list and the footer link, never on the hero, page title or lead post
+- The only other motion is the brand dot on hover, `group-hover:scale-[1.02]` on the lead cover, arrow nudges on links, and the scroll-driven progress bar
+- `@media (prefers-reduced-motion: reduce)` in `global.css` snaps everything to 0.01ms
 
 ### CSS Class Conventions
 
-Styling is composed inline via Tailwind utility classes on each component, not via centralised `.class` rules. Only a small set of reusable layers exists:
+Styling is composed inline via Tailwind utility classes on each component, not via centralised `.class` rules. The reusable layer is small:
 
-- `@utility max-w-app`, `@utility app-layout` (`src/styles/global.css`) — page-width containers.
-- `@utility animate-reveal` and `animate-reveal-delay-1..3` (`src/styles/global.css`) — page-load fade-in-up reveals.
-- `@utility animate-cmd-in` (`src/styles/global.css`) — cmd-K palette open animation.
-- `.app-prose` (`src/styles/typography.css`) — long-form article body overrides on top of `@tailwindcss/typography`.
-- `.heading-link` (`src/styles/global.css`) — runtime-injected `#` anchors on headings.
-- `body::before` (`src/styles/global.css`) — accent gradient line at the top of the viewport.
-- `@media (prefers-reduced-motion: reduce)` block (`src/styles/global.css`) — snaps every animation/transition to 0.01ms; honours OS preference.
+- `@utility max-w-app`, `@utility app-layout` (`global.css`) — page-width containers
+- `@utility text-display` (`global.css`) — the headline shape
+- `@utility animate-reveal` and `animate-reveal-delay-1..3`, `animate-cmd-in` (`global.css`)
+- `.brand-dot`, `.progress-bar` (`global.css`) — the two things that move
+- `.app-prose` (`typography.css`) — article body on top of `@tailwindcss/typography`; mono headings, Geist body, left-ruled blockquotes, `rounded-2xl` code blocks and images
+- `.heading-link` (`global.css`) — runtime-injected `#` anchors on headings
 
-Component-specific look (header, footer, card, post hero, etc.) lives inline in each `.astro` file as Tailwind class strings, not as named classes here. If you find yourself wanting a `.btn-glow` or `.section-heading` shortcut, write it as a Tailwind composition first and only promote to `@utility` if it repeats three or more times.
+If you find yourself wanting a `.section-heading` shortcut, write it as a Tailwind composition first and only promote to `@utility` if it repeats three or more times.
 
 ### Aesthetic Direction
 
-The overall vibe is **editorial-meets-developer**: clean layouts with bold orange accents, generous whitespace, monospace typography for a technical feel, and thoughtful micro-interactions (bouncing dot, card lifts, staggered reveals). It should feel confident and polished, not flashy. Depth comes from subtle shadows, glass effects, and layered transparencies rather than gradients or complex backgrounds.
+The vibe is **a senior engineer's notebook**: heavy tight mono headlines, a calm sans for reading, one orange, hairlines instead of boxes, and a lot of air. It should feel confident and typographic, not decorated. Depth comes from type scale and spacing, never from shadows, gradients or glass.
 
 When adding new components or pages:
-1. Use existing CSS custom properties — never introduce new hardcoded colors
-2. Follow the orange accent convention — interactive = orange
-3. Match existing border/background patterns: `rounded-xl`, `border-border/50`, `bg-muted/20`
-4. Use `color-mix(in srgb, ...)` for nuanced transparency over Tailwind opacity modifiers where you need to mix with a specific color
-5. Test in both light and dark themes
+1. Use existing CSS custom properties. Never introduce a hardcoded colour
+2. Interactive = orange. Everything else is `foreground` at some opacity
+3. Separate things with `border-t border-border/60` and space, not with cards
+4. Headlines get `text-display`; labels get `text-sm font-medium text-foreground/50`; nothing gets `uppercase tracking-*`
+5. Keep new above-the-fold content free of `animate-reveal`
+6. Test in both themes, at 390px, and at `lg` (1024px) where the rail first appears

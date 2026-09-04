@@ -7,13 +7,12 @@
     })
     return str
   }
-  export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
+  /** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+/** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+export type Maybe<T> = T | null;
+export type InputMaybe<T> = Maybe<T>;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string; }
@@ -396,6 +395,17 @@ export type PageConnection = Connection & {
   edges?: Maybe<Array<Maybe<PageConnectionEdges>>>;
 };
 
+export type SettingsProfile = {
+  __typename?: 'SettingsProfile';
+  name: Scalars['String']['output'];
+  tagline?: Maybe<Scalars['String']['output']>;
+  jobTitle?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  organizationUrl?: Maybe<Scalars['String']['output']>;
+  avatar?: Maybe<Scalars['String']['output']>;
+  alt?: Maybe<Scalars['String']['output']>;
+};
+
 export type SettingsNav = {
   __typename?: 'SettingsNav';
   title: Scalars['String']['output'];
@@ -411,11 +421,22 @@ export type SettingsSocials = {
 
 export type Settings = Node & Document & {
   __typename?: 'Settings';
+  profile?: Maybe<SettingsProfile>;
   nav?: Maybe<Array<Maybe<SettingsNav>>>;
   socials?: Maybe<Array<Maybe<SettingsSocials>>>;
   id: Scalars['ID']['output'];
   _sys: SystemInfo;
   _values: Scalars['JSON']['output'];
+};
+
+export type SettingsProfileFilter = {
+  name?: InputMaybe<StringFilter>;
+  tagline?: InputMaybe<StringFilter>;
+  jobTitle?: InputMaybe<StringFilter>;
+  organization?: InputMaybe<StringFilter>;
+  organizationUrl?: InputMaybe<StringFilter>;
+  avatar?: InputMaybe<ImageFilter>;
+  alt?: InputMaybe<StringFilter>;
 };
 
 export type SettingsNavFilter = {
@@ -430,6 +451,7 @@ export type SettingsSocialsFilter = {
 };
 
 export type SettingsFilter = {
+  profile?: InputMaybe<SettingsProfileFilter>;
   nav?: InputMaybe<SettingsNavFilter>;
   socials?: InputMaybe<SettingsSocialsFilter>;
 };
@@ -599,6 +621,16 @@ export type PageMutation = {
   blocks?: InputMaybe<Array<InputMaybe<PageBlocksMutation>>>;
 };
 
+export type SettingsProfileMutation = {
+  name?: InputMaybe<Scalars['String']['input']>;
+  tagline?: InputMaybe<Scalars['String']['input']>;
+  jobTitle?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  organizationUrl?: InputMaybe<Scalars['String']['input']>;
+  avatar?: InputMaybe<Scalars['String']['input']>;
+  alt?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type SettingsNavMutation = {
   title?: InputMaybe<Scalars['String']['input']>;
   href?: InputMaybe<Scalars['String']['input']>;
@@ -611,72 +643,222 @@ export type SettingsSocialsMutation = {
 };
 
 export type SettingsMutation = {
+  profile?: InputMaybe<SettingsProfileMutation>;
   nav?: InputMaybe<Array<InputMaybe<SettingsNavMutation>>>;
   socials?: InputMaybe<Array<InputMaybe<SettingsSocialsMutation>>>;
 };
 
-export type BlogPartsFragment = { __typename: 'Blog', title: string, description: string, pubDatetime: string, modDatetime?: string | null, author?: string | null, ogImage?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, draft?: boolean | null, canonicalURL?: string | null, hideEditPost?: boolean | null, timezone?: string | null, noindex?: boolean | null, body?: any | null };
+export type StringFilter = {
+  startsWith?: string | null | undefined;
+  eq?: string | null | undefined;
+  exists?: boolean | null | undefined;
+  in?: Array<string | null | undefined> | null | undefined;
+};
 
-export type PagePartsFragment = { __typename: 'Page', seoTitle: string, heading?: string | null, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null, alt?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null };
+export type DatetimeFilter = {
+  after?: string | null | undefined;
+  before?: string | null | undefined;
+  eq?: string | null | undefined;
+  exists?: boolean | null | undefined;
+  in?: Array<string | null | undefined> | null | undefined;
+};
 
-export type SettingsPartsFragment = { __typename: 'Settings', nav?: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials?: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null };
+export type ImageFilter = {
+  startsWith?: string | null | undefined;
+  eq?: string | null | undefined;
+  exists?: boolean | null | undefined;
+  in?: Array<string | null | undefined> | null | undefined;
+};
+
+export type BooleanFilter = {
+  eq?: boolean | null | undefined;
+  exists?: boolean | null | undefined;
+};
+
+export type BlogBodyYouTubeEmbedFilter = {
+  videoId?: StringFilter | null | undefined;
+  title?: StringFilter | null | undefined;
+};
+
+export type BlogBodyFilter = {
+  youTubeEmbed?: BlogBodyYouTubeEmbedFilter | null | undefined;
+};
+
+export type BlogFilter = {
+  title?: StringFilter | null | undefined;
+  description?: StringFilter | null | undefined;
+  pubDatetime?: DatetimeFilter | null | undefined;
+  modDatetime?: DatetimeFilter | null | undefined;
+  author?: StringFilter | null | undefined;
+  ogImage?: ImageFilter | null | undefined;
+  tags?: StringFilter | null | undefined;
+  featured?: BooleanFilter | null | undefined;
+  draft?: BooleanFilter | null | undefined;
+  canonicalURL?: StringFilter | null | undefined;
+  hideEditPost?: BooleanFilter | null | undefined;
+  timezone?: StringFilter | null | undefined;
+  noindex?: BooleanFilter | null | undefined;
+  body?: BlogBodyFilter | null | undefined;
+};
+
+export type PageBlocksHeroFilter = {
+  name?: StringFilter | null | undefined;
+  tagline?: StringFilter | null | undefined;
+  jobTitle?: StringFilter | null | undefined;
+  organization?: StringFilter | null | undefined;
+  organizationUrl?: StringFilter | null | undefined;
+  avatar?: ImageFilter | null | undefined;
+  alt?: StringFilter | null | undefined;
+};
+
+export type NumberFilter = {
+  lt?: number | null | undefined;
+  lte?: number | null | undefined;
+  gte?: number | null | undefined;
+  gt?: number | null | undefined;
+  eq?: number | null | undefined;
+  exists?: boolean | null | undefined;
+  in?: Array<number | null | undefined> | null | undefined;
+};
+
+export type PageBlocksPostFeedFilter = {
+  label?: StringFilter | null | undefined;
+  limit?: NumberFilter | null | undefined;
+  allPostsLabel?: StringFilter | null | undefined;
+  allPostsHref?: StringFilter | null | undefined;
+};
+
+export type RichTextFilter = {
+  startsWith?: string | null | undefined;
+  eq?: string | null | undefined;
+  exists?: boolean | null | undefined;
+};
+
+export type PageBlocksProseFilter = {
+  body?: RichTextFilter | null | undefined;
+};
+
+export type PageBlocksGithubStatsFilter = {
+  heading?: StringFilter | null | undefined;
+};
+
+export type PageBlocksFilter = {
+  hero?: PageBlocksHeroFilter | null | undefined;
+  postFeed?: PageBlocksPostFeedFilter | null | undefined;
+  prose?: PageBlocksProseFilter | null | undefined;
+  githubStats?: PageBlocksGithubStatsFilter | null | undefined;
+};
+
+export type PageFilter = {
+  seoTitle?: StringFilter | null | undefined;
+  heading?: StringFilter | null | undefined;
+  blocks?: PageBlocksFilter | null | undefined;
+};
+
+export type SettingsProfileFilter = {
+  name?: StringFilter | null | undefined;
+  tagline?: StringFilter | null | undefined;
+  jobTitle?: StringFilter | null | undefined;
+  organization?: StringFilter | null | undefined;
+  organizationUrl?: StringFilter | null | undefined;
+  avatar?: ImageFilter | null | undefined;
+  alt?: StringFilter | null | undefined;
+};
+
+export type SettingsNavFilter = {
+  title?: StringFilter | null | undefined;
+  href?: StringFilter | null | undefined;
+};
+
+export type SettingsSocialsFilter = {
+  name?: StringFilter | null | undefined;
+  href?: StringFilter | null | undefined;
+  icon?: StringFilter | null | undefined;
+};
+
+export type SettingsFilter = {
+  profile?: SettingsProfileFilter | null | undefined;
+  nav?: SettingsNavFilter | null | undefined;
+  socials?: SettingsSocialsFilter | null | undefined;
+};
+
+export type BlogPartsFragment = { __typename: 'Blog', title: string, description: string, pubDatetime: string, modDatetime: string | null, author: string | null, ogImage: string | null, tags: Array<string | null> | null, featured: boolean | null, draft: boolean | null, canonicalURL: string | null, hideEditPost: boolean | null, timezone: string | null, noindex: boolean | null, body: any };
+
+export type PagePartsFragment = { __typename: 'Page', seoTitle: string, heading: string | null, blocks: Array<
+    | { __typename: 'PageBlocksHero', name: string | null, tagline: string | null, jobTitle: string | null, organization: string | null, organizationUrl: string | null, avatar: string | null, alt: string | null }
+    | { __typename: 'PageBlocksPostFeed', label: string | null, limit: number | null, allPostsLabel: string | null, allPostsHref: string | null }
+    | { __typename: 'PageBlocksProse', body: any }
+    | { __typename: 'PageBlocksGithubStats', heading: string | null }
+   | null> | null };
+
+export type SettingsPartsFragment = { __typename: 'Settings', profile: { __typename: 'SettingsProfile', name: string, tagline: string | null, jobTitle: string | null, organization: string | null, organizationUrl: string | null, avatar: string | null, alt: string | null } | null, nav: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null };
 
 export type BlogQueryVariables = Exact<{
-  relativePath: Scalars['String']['input'];
+  relativePath: string;
 }>;
 
 
-export type BlogQuery = { __typename?: 'Query', blog: { __typename: 'Blog', id: string, title: string, description: string, pubDatetime: string, modDatetime?: string | null, author?: string | null, ogImage?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, draft?: boolean | null, canonicalURL?: string | null, hideEditPost?: boolean | null, timezone?: string | null, noindex?: boolean | null, body?: any | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string } } };
+export type BlogQuery = { blog: { __typename: 'Blog', id: string, title: string, description: string, pubDatetime: string, modDatetime: string | null, author: string | null, ogImage: string | null, tags: Array<string | null> | null, featured: boolean | null, draft: boolean | null, canonicalURL: string | null, hideEditPost: boolean | null, timezone: string | null, noindex: boolean | null, body: any, _sys: { filename: string, basename: string, hasReferences: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string } } };
 
 export type BlogConnectionQueryVariables = Exact<{
-  before?: InputMaybe<Scalars['String']['input']>;
-  after?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Float']['input']>;
-  last?: InputMaybe<Scalars['Float']['input']>;
-  sort?: InputMaybe<Scalars['String']['input']>;
-  filter?: InputMaybe<BlogFilter>;
+  before?: string | null | undefined;
+  after?: string | null | undefined;
+  first?: number | null | undefined;
+  last?: number | null | undefined;
+  sort?: string | null | undefined;
+  filter?: BlogFilter | null | undefined;
 }>;
 
 
-export type BlogConnectionQuery = { __typename?: 'Query', blogConnection: { __typename?: 'BlogConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'BlogConnectionEdges', cursor: string, node?: { __typename: 'Blog', id: string, title: string, description: string, pubDatetime: string, modDatetime?: string | null, author?: string | null, ogImage?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, draft?: boolean | null, canonicalURL?: string | null, hideEditPost?: boolean | null, timezone?: string | null, noindex?: boolean | null, body?: any | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string } } | null } | null> | null } };
+export type BlogConnectionQuery = { blogConnection: { totalCount: number, pageInfo: { hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges: Array<{ cursor: string, node: { __typename: 'Blog', id: string, title: string, description: string, pubDatetime: string, modDatetime: string | null, author: string | null, ogImage: string | null, tags: Array<string | null> | null, featured: boolean | null, draft: boolean | null, canonicalURL: string | null, hideEditPost: boolean | null, timezone: string | null, noindex: boolean | null, body: any, _sys: { filename: string, basename: string, hasReferences: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string } } | null } | null> | null } };
 
 export type PageQueryVariables = Exact<{
-  relativePath: Scalars['String']['input'];
+  relativePath: string;
 }>;
 
 
-export type PageQuery = { __typename?: 'Query', page: { __typename: 'Page', id: string, seoTitle: string, heading?: string | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null, alt?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null } };
+export type PageQuery = { page: { __typename: 'Page', id: string, seoTitle: string, heading: string | null, _sys: { filename: string, basename: string, hasReferences: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks: Array<
+      | { __typename: 'PageBlocksHero', name: string | null, tagline: string | null, jobTitle: string | null, organization: string | null, organizationUrl: string | null, avatar: string | null, alt: string | null }
+      | { __typename: 'PageBlocksPostFeed', label: string | null, limit: number | null, allPostsLabel: string | null, allPostsHref: string | null }
+      | { __typename: 'PageBlocksProse', body: any }
+      | { __typename: 'PageBlocksGithubStats', heading: string | null }
+     | null> | null } };
 
 export type PageConnectionQueryVariables = Exact<{
-  before?: InputMaybe<Scalars['String']['input']>;
-  after?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Float']['input']>;
-  last?: InputMaybe<Scalars['Float']['input']>;
-  sort?: InputMaybe<Scalars['String']['input']>;
-  filter?: InputMaybe<PageFilter>;
+  before?: string | null | undefined;
+  after?: string | null | undefined;
+  first?: number | null | undefined;
+  last?: number | null | undefined;
+  sort?: string | null | undefined;
+  filter?: PageFilter | null | undefined;
 }>;
 
 
-export type PageConnectionQuery = { __typename?: 'Query', pageConnection: { __typename?: 'PageConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'PageConnectionEdges', cursor: string, node?: { __typename: 'Page', id: string, seoTitle: string, heading?: string | null, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks?: Array<{ __typename: 'PageBlocksHero', name?: string | null, tagline?: string | null, jobTitle?: string | null, organization?: string | null, organizationUrl?: string | null, avatar?: string | null, alt?: string | null } | { __typename: 'PageBlocksPostFeed', label?: string | null, limit?: number | null, allPostsLabel?: string | null, allPostsHref?: string | null } | { __typename: 'PageBlocksProse', body?: any | null } | { __typename: 'PageBlocksGithubStats', heading?: string | null } | null> | null } | null } | null> | null } };
+export type PageConnectionQuery = { pageConnection: { totalCount: number, pageInfo: { hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges: Array<{ cursor: string, node: { __typename: 'Page', id: string, seoTitle: string, heading: string | null, _sys: { filename: string, basename: string, hasReferences: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, blocks: Array<
+          | { __typename: 'PageBlocksHero', name: string | null, tagline: string | null, jobTitle: string | null, organization: string | null, organizationUrl: string | null, avatar: string | null, alt: string | null }
+          | { __typename: 'PageBlocksPostFeed', label: string | null, limit: number | null, allPostsLabel: string | null, allPostsHref: string | null }
+          | { __typename: 'PageBlocksProse', body: any }
+          | { __typename: 'PageBlocksGithubStats', heading: string | null }
+         | null> | null } | null } | null> | null } };
 
 export type SettingsQueryVariables = Exact<{
-  relativePath: Scalars['String']['input'];
+  relativePath: string;
 }>;
 
 
-export type SettingsQuery = { __typename?: 'Query', settings: { __typename: 'Settings', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, nav?: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials?: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null } };
+export type SettingsQuery = { settings: { __typename: 'Settings', id: string, _sys: { filename: string, basename: string, hasReferences: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, profile: { __typename: 'SettingsProfile', name: string, tagline: string | null, jobTitle: string | null, organization: string | null, organizationUrl: string | null, avatar: string | null, alt: string | null } | null, nav: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null } };
 
 export type SettingsConnectionQueryVariables = Exact<{
-  before?: InputMaybe<Scalars['String']['input']>;
-  after?: InputMaybe<Scalars['String']['input']>;
-  first?: InputMaybe<Scalars['Float']['input']>;
-  last?: InputMaybe<Scalars['Float']['input']>;
-  sort?: InputMaybe<Scalars['String']['input']>;
-  filter?: InputMaybe<SettingsFilter>;
+  before?: string | null | undefined;
+  after?: string | null | undefined;
+  first?: number | null | undefined;
+  last?: number | null | undefined;
+  sort?: string | null | undefined;
+  filter?: SettingsFilter | null | undefined;
 }>;
 
 
-export type SettingsConnectionQuery = { __typename?: 'Query', settingsConnection: { __typename?: 'SettingsConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'SettingsConnectionEdges', cursor: string, node?: { __typename: 'Settings', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, nav?: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials?: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null } | null } | null> | null } };
+export type SettingsConnectionQuery = { settingsConnection: { totalCount: number, pageInfo: { hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges: Array<{ cursor: string, node: { __typename: 'Settings', id: string, _sys: { filename: string, basename: string, hasReferences: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, profile: { __typename: 'SettingsProfile', name: string, tagline: string | null, jobTitle: string | null, organization: string | null, organizationUrl: string | null, avatar: string | null, alt: string | null } | null, nav: Array<{ __typename: 'SettingsNav', title: string, href: string } | null> | null, socials: Array<{ __typename: 'SettingsSocials', name: string, href: string, icon: string } | null> | null } | null } | null> | null } };
 
 export const BlogPartsFragmentDoc = gql`
     fragment BlogParts on Blog {
@@ -731,6 +913,16 @@ export const PagePartsFragmentDoc = gql`
 export const SettingsPartsFragmentDoc = gql`
     fragment SettingsParts on Settings {
   __typename
+  profile {
+    __typename
+    name
+    tagline
+    jobTitle
+    organization
+    organizationUrl
+    avatar
+    alt
+  }
   nav {
     __typename
     title
@@ -995,5 +1187,7 @@ export const queries = (
   const requester = generateRequester(client)
   return getSdk(requester)
 }
+
+export type { Exact };
 
   

@@ -1,0 +1,40 @@
+---
+import type { PostEntry } from "@/lib/tina/posts";
+import Card from "./Card.astro";
+
+/**
+ * A post index grouped by year. Posts arrive already sorted; a year marker is
+ * emitted whenever the year changes, so the caller decides the order and this
+ * only draws the rules. Used by the homepage feed and the paginated listings.
+ */
+type Props = {
+	posts: PostEntry[];
+	variant?: "h2" | "h3";
+};
+
+const { posts, variant = "h2" } = Astro.props;
+
+const groups: { year: number; posts: PostEntry[] }[] = [];
+for (const post of posts) {
+	const year = new Date(post.data.pubDatetime).getFullYear();
+	const last = groups[groups.length - 1];
+	if (last && last.year === year) last.posts.push(post);
+	else groups.push({ year, posts: [post] });
+}
+---
+
+{
+  groups.map(({ year, posts }) => (
+    <section class="mt-10 first:mt-0">
+      <p class="text-display mb-3 text-3xl text-foreground/25 select-none" aria-hidden="true">
+        {year}
+      </p>
+      <h2 class="sr-only">{year}</h2>
+      <ol>
+        {posts.map((post) => (
+          <Card {...post} variant={variant} withYear={false} />
+        ))}
+      </ol>
+    </section>
+  ))
+}
