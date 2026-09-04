@@ -257,18 +257,19 @@ export default defineConfig({
 			// lives under src/ — dev only; see the function's own comment.
 			serveTinaUploadsInDev(),
 			{
-				// The Cloudflare adapter hardcodes rollupOptions.external = ["sharp"]
+				// The Cloudflare adapter hardcodes rolldownOptions.external = ["sharp"]
 				// and forces ssr.noExternal = true, so resvg's native `.node` binary
 				// would be parsed into the Worker bundle and break it. resvg only runs
 				// at build time (prerendered OG routes), so append it to the externals
-				// after the adapter has set its own.
+				// after the adapter has set its own. `rolldownOptions`, not the
+				// deprecated `rollupOptions` alias: Vite 8 bundles with Rolldown.
 				name: "externalize-resvg-for-worker",
 				enforce: "post",
 				config(cfg) {
 					cfg.build ??= {};
-					cfg.build.rollupOptions ??= {};
-					const ext = cfg.build.rollupOptions.external;
-					cfg.build.rollupOptions.external = Array.isArray(ext)
+					cfg.build.rolldownOptions ??= {};
+					const ext = cfg.build.rolldownOptions.external;
+					cfg.build.rolldownOptions.external = Array.isArray(ext)
 						? [...ext, "@resvg/resvg-js"]
 						: ["@resvg/resvg-js"];
 				},
