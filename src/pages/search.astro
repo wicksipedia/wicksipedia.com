@@ -9,7 +9,15 @@ import Main from "@/layouts/Main.astro";
 import { islands } from "@/lib/islands";
 import { getSettings } from "@/lib/tina/settings";
 
-const backUrl = SITE.showBackButton ? `${Astro.url.pathname}` : "/";
+/**
+ * Full-page search over the Pagefind index. The `⌘K` palette covers most
+ * searches; this page is the linkable, no-shortcut version, and the one the
+ * palette's own "Search" entry points at.
+ *
+ * The query lives in `?q=` so a search can be shared and survives a reload,
+ * and the post layout's "Go back" link returns here with the query intact.
+ */
+const backUrl = SITE.showBackButton ? Astro.url.pathname : "/";
 
 // Editable site chrome (header nav, footer socials).
 const settings = (await getSettings()).data.settings;
@@ -20,7 +28,7 @@ const settings = (await getSettings()).data.settings;
     <Header settings={settings} />
   </TinaIsland>
   <Main pageTitle="Search" pageDesc="Search the archive.">
-    <div id="pagefind-search" transition:persist data-backurl={backUrl}></div>
+    <div id="site-search" transition:persist data-back-url={backUrl}></div>
   </Main>
   <TinaIsland
     name="settings-footer"
@@ -31,89 +39,75 @@ const settings = (await getSettings()).data.settings;
 </Layout>
 
 <script>
-  function initSearch() {
-    const pageFindSearch: HTMLElement | null =
-      document.querySelector("#pagefind-search");
+  const QUERY_PARAM = "q";
 
-    if (!pageFindSearch) return;
-
-    const params = new URLSearchParams(window.location.search);
-
-    const onIdle = window.requestIdleCallback || (cb => setTimeout(cb, 1));
-
-    onIdle(async () => {
-      // @ts-expect-error — Missing types for @pagefind/default-ui package.
-      const { PagefindUI } = await import("@pagefind/default-ui");
-
-      // Display warning inn dev mode
-      if (import.meta.env.DEV) {
-        pageFindSearch.innerHTML = `
-            <div class="bg-muted/75 rounded p-4 space-y-4 mb-4">
-              <p><strong>DEV mode Warning! </strong>You need to build the project at least once to see the search results during development.</p>
-              <code class="block bg-foreground/85 text-background px-2 py-1 rounded">pnpm run build</code>
-            </div>
-          `;
-      }
-
-      // Init pagefind ui
-      const search = new PagefindUI({
-        element: "#pagefind-search",
-        showImages: false,
-        showSubResults: true,
-        processTerm: function (term: string) {
-          params.set("q", term); // Update the `q` parameter in the URL
-          history.replaceState(history.state, "", "?" + params.toString()); // Push the new URL without reloading
-
-          const backUrl = pageFindSearch?.dataset?.backurl;
-          sessionStorage.setItem("backUrl", backUrl + "?" + params.toString());
-
-          return term;
-        },
-      });
-
-      // If search param exists (eg: search?q=astro), trigger search
-      const query = params.get("q");
-      if (query) {
-        search.triggerSearch(query);
-      }
-
-      // Reset search param if search input is cleared
-      const searchInput = document.querySelector(".pagefind-ui__search-input");
-      const clearButton = document.querySelector(".pagefind-ui__search-clear");
-      searchInput?.addEventListener("input", resetSearchParam);
-      clearButton?.addEventListener("click", resetSearchParam);
-
-      function resetSearchParam(e: Event) {
-        if ((e.target as HTMLInputElement)?.value.trim() === "") {
-          history.replaceState(history.state, "", window.location.pathname);
-        }
-      }
-    });
+  function syncQueryToUrl(term: string, root: HTMLElement) {
+    const url = new URL(location.href);
+    if (term) url.searchParams.set(QUERY_PARAM, term);
+    else url.searchParams.delete(QUERY_PARAM);
+    history.replaceState(history.state, "", url);
+    // So "Go back" on a post returns to this search, not a blank page.
+    const back = root.dataset.backUrl ?? "/";
+    sessionStorage.setItem("backUrl", term ? `${back}${url.search}` : back);
   }
 
-  document.addEventListener("astro:after-swap", () => {
-    const pagefindSearch = document.querySelector("#pagefind-search");
+  async function mountSearch() {
+    const root = document.getElementById("site-search");
+    // `transition:persist` keeps the mounted UI across view transitions.
+    if (!root || root.querySelector("form")) return;
 
-    // if pagefind search form already exists, don't initialize search component
-    if (pagefindSearch && pagefindSearch.querySelector("form")) return;
+    if (import.meta.env.DEV) {
+      root.innerHTML = `
+        <p class="mb-6 rounded-md border border-border/60 bg-muted/40 px-4 py-3 text-sm text-foreground/70">
+          Search reads the Pagefind index from a build. Run
+          <code class="text-accent">bun run build:local</code> once to see results in dev.
+        </p>`;
+    }
 
-    initSearch();
-  });
-  initSearch();
+    // @ts-expect-error: @pagefind/default-ui ships no types.
+    const { PagefindUI } = await import("@pagefind/default-ui");
+    const ui = new PagefindUI({
+      element: root,
+      showImages: false,
+      showSubResults: true,
+      processTerm(term: string) {
+        syncQueryToUrl(term, root);
+        return term;
+      },
+    });
+
+    root
+      .querySelector<HTMLInputElement>(".pagefind-ui__search-input")
+      ?.addEventListener("input", (e) => {
+        if ((e.target as HTMLInputElement).value.trim() === "") {
+          syncQueryToUrl("", root);
+        }
+      });
+
+    const initial = new URLSearchParams(location.search).get(QUERY_PARAM);
+    if (initial) ui.triggerSearch(initial);
+  }
+
+  const onIdle =
+    window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1));
+  const schedule = () => onIdle(() => void mountSearch());
+
+  schedule();
+  document.addEventListener("astro:page-load", schedule);
 </script>
 
 <style is:global>
-  #pagefind-search {
+  /* Pagefind's UI, on the site's tokens. Controls take the small radius,
+     result titles read as ordinary links. */
+  #site-search {
     --pagefind-ui-font: var(--font-app);
     --pagefind-ui-text: var(--foreground);
     --pagefind-ui-background: var(--background);
     --pagefind-ui-border: var(--border);
     --pagefind-ui-primary: var(--accent);
     --pagefind-ui-tag: var(--background);
-    --pagefind-ui-border-radius: 0.75rem;
+    --pagefind-ui-border-radius: 0.375rem;
     --pagefind-ui-border-width: 1px;
-    --pagefind-ui-image-border-radius: 8px;
-    --pagefind-ui-image-box-ratio: 3 / 2;
 
     form::before {
       background-color: var(--foreground);
@@ -123,41 +117,57 @@ const settings = (await getSettings()).data.settings;
       font-weight: 400;
       border: 1px solid var(--border);
     }
-
     input:focus-visible {
-      outline: 1px solid var(--accent);
-    }
-
-    .pagefind-ui__result-title a {
-      color: var(--accent);
+      outline: 2px dashed var(--accent);
       outline-offset: 1px;
-      outline-color: var(--accent);
-      text-decoration-style: dashed;
-      text-underline-offset: 4px;
     }
 
-    .pagefind-ui__result-title a:focus-visible,
-    .pagefind-ui__search-clear:focus-visible {
-      text-decoration-line: none;
-      outline-width: 2px;
-      outline-style: dashed;
+    .pagefind-ui__result {
+      border-color: color-mix(in srgb, var(--border) 60%, transparent);
     }
-
     .pagefind-ui__result:last-of-type {
       border-bottom: 0;
     }
 
-    .pagefind-ui__result-nested .pagefind-ui__result-link:before {
+    .pagefind-ui__result-title a {
+      color: var(--foreground);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .pagefind-ui__result-title a:hover {
+      color: var(--accent);
+    }
+    .pagefind-ui__result-title a:focus-visible,
+    .pagefind-ui__search-clear:focus-visible {
+      outline: 2px dashed var(--accent);
+      outline-offset: 1px;
+    }
+
+    .pagefind-ui__result-excerpt {
+      font-family: var(--font-prose);
+      color: color-mix(in srgb, var(--foreground) 70%, transparent);
+    }
+    .pagefind-ui__result-nested .pagefind-ui__result-link::before {
       font-family: system-ui;
     }
 
-    /* Make the "no results" / count message legible instead of a faint
-       near-invisible line. */
     .pagefind-ui__message {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: color-mix(in srgb, var(--foreground) 80%, transparent);
       padding: 0.5rem 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    }
+
+    .pagefind-ui__button {
+      border-radius: 0.375rem;
+    }
+
+    /* Pagefind's default <mark> is browser yellow, which glares in dark mode. */
+    mark {
+      background: color-mix(in srgb, var(--accent) 22%, transparent);
+      color: inherit;
+      border-radius: 0.125rem;
+      padding-inline: 0.1em;
     }
   }
 </style>

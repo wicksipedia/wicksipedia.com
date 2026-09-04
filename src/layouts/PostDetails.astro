@@ -199,6 +199,7 @@ const nextPost =
     class="app-layout pb-12"
     data-pagefind-body
   >
+    <BackToTopButton />
     <article
       id="article"
       class="app-prose prose-lg mt-10 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
@@ -217,8 +218,6 @@ const nextPost =
       <ShareLinks />
       <EditPost {hideEditPost} {post} />
     </div>
-
-    <BackToTopButton />
 
     <RelatedPosts currentPost={post} posts={posts} />
 

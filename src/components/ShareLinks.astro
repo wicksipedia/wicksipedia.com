@@ -1,27 +1,67 @@
 ---
+import IconLink from "@/assets/icons/IconLink.svg";
 import { SHARE_LINKS } from "@/constants";
-import LinkButton from "./LinkButton.astro";
 
-const URL = Astro.url;
+/**
+ * Share row under a post: a label, one icon button per network in
+ * `SHARE_LINKS`, and a copy-link button. Buttons match the rail's `size-9`
+ * icon buttons. The page URL is encoded once here; the networks' share
+ * endpoints all take it as a query parameter.
+ */
+const url = encodeURIComponent(Astro.url.href);
+const btn =
+	"flex size-9 items-center justify-center rounded-md text-foreground/65 transition-colors duration-150 hover:bg-muted hover:text-foreground";
 ---
 
-{
-  SHARE_LINKS.length > 0 && (
-    <div class="flex flex-none flex-col items-center justify-center gap-1 md:items-start">
-      <span class="text-foreground/70">Share this post on:</span>
-      <div class="text-center">
-        {SHARE_LINKS.map(social => (
-          <LinkButton
-            href={`${social.href + URL}`}
-            class="scale-90 p-2 hover:rotate-6 sm:p-1"
-            title={social.linkTitle}
-            target="_blank"
-          >
-            <social.icon class="inline-block size-6 scale-125 fill-transparent stroke-current stroke-2 opacity-90 group-hover:fill-transparent sm:scale-110" />
-            <span class="sr-only">{social.linkTitle}</span>
-          </LinkButton>
-        ))}
-      </div>
-    </div>
-  )
-}
+<div class="flex items-center gap-3">
+  <span class="text-sm font-medium text-foreground/50">Share</span>
+  <div class="-ms-1 flex items-center gap-1">
+    {
+      SHARE_LINKS.map(({ href, linkTitle, icon: Icon }) => (
+        <a
+          href={`${href}${url}`}
+          class={btn}
+          title={linkTitle}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Icon class="size-5 fill-transparent stroke-current stroke-2" />
+          <span class="sr-only">{linkTitle}</span>
+        </a>
+      ))
+    }
+    <button
+      type="button"
+      data-copy-link
+      class:list={[btn, "relative"]}
+      title="Copy link"
+    >
+      <IconLink class="size-5" />
+      <span class="sr-only">Copy link</span>
+      <span
+        data-copied
+        aria-hidden="true"
+        class="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 rounded-md bg-foreground px-2 py-0.5 text-xs text-background opacity-0 transition-opacity duration-150 data-[show]:opacity-100"
+      >
+        Copied
+      </span>
+    </button>
+  </div>
+</div>
+
+<script>
+  function bindCopy() {
+    for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy-link]")) {
+      if (button.dataset.bound) continue;
+      button.dataset.bound = "true";
+      button.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(location.href);
+        const tip = button.querySelector("[data-copied]");
+        tip?.setAttribute("data-show", "");
+        setTimeout(() => tip?.removeAttribute("data-show"), 1200);
+      });
+    }
+  }
+  bindCopy();
+  document.addEventListener("astro:page-load", bindCopy);
+</script>

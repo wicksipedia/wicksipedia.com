@@ -1,88 +1,56 @@
 ---
 import IconArrowNarrowUp from "@/assets/icons/IconArrowNarrowUp.svg";
-import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
+
+/**
+ * Floating "back to top" control for long posts. It stays hidden until the
+ * top of the article has scrolled out of view, which an IntersectionObserver
+ * on the sentinel decides; there is no scroll listener. Render it as the
+ * first child of `<main>` so the sentinel sits at the article's top edge.
+ */
 ---
 
-<div
-  id="btt-btn-container"
+<span data-top-sentinel aria-hidden="true" class="block h-px w-px"></span>
+
+<button
+  data-back-to-top
+  type="button"
+  aria-label="Back to top"
+  title="Back to top"
   class:list={[
-    "fixed end-4 bottom-8 z-50",
-    "md:sticky md:end-auto md:float-end md:me-1",
-    "translate-y-14 opacity-0 transition duration-500",
+    "fixed end-4 bottom-6 z-30 flex size-10 items-center justify-center rounded-md",
+    "border border-border/60 bg-background/85 text-foreground/70 backdrop-blur-lg",
+    "transition-[opacity,transform,color] duration-300 hover:text-accent",
+    "translate-y-3 opacity-0 pointer-events-none",
+    "data-[visible]:translate-y-0 data-[visible]:opacity-100 data-[visible]:pointer-events-auto",
   ]}
 >
-  <button
-    data-button="back-to-top"
-    class:list={[
-      "group relative bg-background px-2 py-1",
-      "size-14 rounded-full shadow-xl",
-      "md:h-8 md:w-fit md:rounded-md md:shadow-none md:focus-visible:rounded-none",
-      "md:bg-background/35 md:bg-clip-padding md:backdrop-blur-lg",
-    ]}
-  >
-    <span
-      id="progress-indicator"
-      class="absolute inset-0 -z-10 block size-14 scale-110 rounded-full bg-transparent md:hidden md:h-8 md:rounded-md"
-    ></span>
-    <IconChevronLeft class="inline-block rotate-90 md:hidden" />
-    <span class="sr-only text-sm group-hover:text-accent md:not-sr-only">
-      <IconArrowNarrowUp class="inline-block size-4" />
-      Back To Top
-    </span>
-  </button>
-</div>
+  <IconArrowNarrowUp class="size-5" />
+</button>
 
-<script is:inline data-astro-rerun>
-  /** Scrolls the document to the top when
-   * the "Back to Top" button is clicked. */
-  function backToTop() {
-    const rootElement = document.documentElement;
-    const btnContainer = document.querySelector("#btt-btn-container");
-    const backToTopBtn = document.querySelector("[data-button='back-to-top']");
-    const progressIndicator = document.querySelector("#progress-indicator");
+<script>
+  let observer: IntersectionObserver | null = null;
 
-    if (!rootElement || !btnContainer || !backToTopBtn || !progressIndicator)
-      return;
+  function setup() {
+    observer?.disconnect();
+    const sentinel = document.querySelector("[data-top-sentinel]");
+    const button = document.querySelector<HTMLButtonElement>("[data-back-to-top]");
+    if (!sentinel || !button) return;
 
-    // Attach click event handler for back-to-top button
-    backToTopBtn.addEventListener("click", () => {
-      document.body.scrollTop = 0; // For Safari
-      document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    observer = new IntersectionObserver(([entry]) => {
+      // Visible once the sentinel is above the viewport, not merely offscreen
+      // below it on a short page.
+      const scrolledPast =
+        !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      button.toggleAttribute("data-visible", scrolledPast);
     });
+    observer.observe(sentinel);
 
-    // Handle button visibility according to scroll position
-    let lastVisible = null;
-    function handleScroll() {
-      const scrollTotal = rootElement.scrollHeight - rootElement.clientHeight;
-      const scrollTop = rootElement.scrollTop;
-      const scrollPercent = Math.floor((scrollTop / scrollTotal) * 100);
-
-      progressIndicator.style.setProperty(
-        "background-image",
-        `conic-gradient(var(--accent), var(--accent) ${scrollPercent}%, transparent ${scrollPercent}%)`
-      );
-
-      const isVisible = scrollTop / scrollTotal > 0.3;
-
-      if (isVisible !== lastVisible) {
-        btnContainer.classList.toggle("opacity-100", isVisible);
-        btnContainer.classList.toggle("translate-y-0", isVisible);
-        btnContainer.classList.toggle("opacity-0", !isVisible);
-        btnContainer.classList.toggle("translate-y-14", !isVisible);
-        lastVisible = isVisible;
-      }
-    }
-
-    let ticking = false;
-    document.addEventListener("scroll", () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
+    button.addEventListener("click", () => {
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
     });
   }
-  backToTop();
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
 </script>
