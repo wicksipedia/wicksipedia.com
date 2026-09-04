@@ -1,5 +1,5 @@
 /**
- * The `settings` singleton — the editable site chrome (header nav, socials).
+ * The `settings` singleton — the editable site chrome (profile, nav, socials).
  *
  * Split the same way as posts.ts: a raw query, a metadata-tagging wrapper that
  * must run inside the island route's forms-store scope, and a convenience
@@ -64,6 +64,7 @@ export async function getSettings() {
 export type CmsSettings = Awaited<
 	ReturnType<typeof getSettings>
 >["data"]["settings"];
+export type CmsProfile = NonNullable<CmsSettings["profile"]>;
 export type CmsNavItem = NonNullable<NonNullable<CmsSettings["nav"]>[number]>;
 export type CmsSocial = NonNullable<
 	NonNullable<CmsSettings["socials"]>[number]

@@ -12,11 +12,6 @@ html[data-theme="light"] {
   --accent: #ae4508;
   --muted: #e8e5df;
   --border: #d6d3cc;
-  --hero-bg: #dad9db;
-  --hero-text: #282728;
-  --hero-text-muted: rgba(40, 39, 40, 0.7);
-  --hero-accent: #a04008;
-  --hero-social: rgba(40, 39, 40, 0.75);
 }
 
 html[data-theme="dark"] {
@@ -25,16 +20,11 @@ html[data-theme="dark"] {
   --accent: #ff7a1a;
   --muted: #1e2130;
   --border: #2a2d3a;
-  --hero-bg: #1a1d2a;
-  --hero-text: #e8e6e3;
-  --hero-text-muted: rgba(232, 230, 227, 0.7);
-  --hero-accent: #ff7a1a;
-  --hero-social: rgba(232, 230, 227, 0.75);
 }
 
 /* Theme-independent tokens for content sitting over media. These must NOT
-   flip with the theme: text on a photo hero stays light in both themes,
-   and the modal scrim stays a deep dim in both themes. */
+   flip with the theme: text on a photo hero stays light in both themes, and
+   the scrim stays a deep dim in both themes. */
 :root {
   --overlay-ink: #faf9f6;
   --scrim: #0f1117;
@@ -42,17 +32,12 @@ html[data-theme="dark"] {
 
 @theme inline {
   --font-app: var(--font-google-sans-code);
-  --font-prose: var(--font-source-serif);
+  --font-prose: var(--font-geist);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
   --color-muted: var(--muted);
   --color-border: var(--border);
-  --color-hero-bg: var(--hero-bg);
-  --color-hero-text: var(--hero-text);
-  --color-hero-text-muted: var(--hero-text-muted);
-  --color-hero-accent: var(--hero-accent);
-  --color-hero-social: var(--hero-social);
   --color-overlay-ink: var(--overlay-ink);
   --color-scrim: var(--scrim);
 }
@@ -67,7 +52,7 @@ html[data-theme="dark"] {
     @apply overflow-y-scroll scroll-smooth;
   }
   body {
-    @apply flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/90 selection:text-background;
+    @apply flex min-h-svh flex-col bg-background font-app text-foreground selection:bg-accent/90 selection:text-background lg:pl-68;
   }
   a,
   button {
@@ -89,6 +74,12 @@ html[data-theme="dark"] {
   @apply mx-auto w-full max-w-app px-4;
 }
 
+/* Display headlines: heavy mono, pulled tight. One utility so every page
+   title, post title and hero name agrees on the shape. */
+@utility text-display {
+  @apply font-app font-extrabold tracking-[-0.04em] leading-[1.02];
+}
+
 /* Source: https://piccalil.li/blog/a-more-modern-css-reset/ */
 :target {
   scroll-margin-block: 1rem;
@@ -99,7 +90,7 @@ html[data-theme="dark"] {
 @keyframes fade-in-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -107,18 +98,8 @@ html[data-theme="dark"] {
   }
 }
 
-@keyframes dot-bounce {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-    animation-timing-function: cubic-bezier(0.35, 0, 0.65, 1);
-  }
-  50% {
-    transform: translateY(-6px) scale(1.1);
-    animation-timing-function: cubic-bezier(0.33, 0, 0.67, 1);
-  }
-}
-
+/* The brand dot. Runs on hover only: an infinite loop costs paint every frame
+   for the life of the page, and reads as decoration rather than a mark. */
 @keyframes dot-squish {
   0%,
   100% {
@@ -128,67 +109,46 @@ html[data-theme="dark"] {
     transform: translateY(0) scaleX(1.3) scaleY(0.7);
   }
   30% {
-    transform: translateY(-10px) scaleX(0.85) scaleY(1.15);
+    transform: translateY(-8px) scaleX(0.85) scaleY(1.15);
   }
   50% {
-    transform: translateY(-14px) scaleX(1) scaleY(1);
+    transform: translateY(-11px) scaleX(1) scaleY(1);
   }
   70% {
-    transform: translateY(-10px) scaleX(0.85) scaleY(1.15);
+    transform: translateY(-8px) scaleX(0.85) scaleY(1.15);
   }
   85% {
     transform: translateY(0) scaleX(1.25) scaleY(0.75);
   }
 }
 
-@keyframes dot-shadow {
-  0%,
-  100% {
-    transform: translateX(-50%) scaleX(1);
-    opacity: 0.3;
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
   }
-  50% {
-    transform: translateX(-50%) scaleX(0.5);
-    opacity: 0.1;
-  }
-}
-
-@keyframes dot-shadow-squish {
-  0%,
-  100% {
-    transform: translateX(-50%) scaleX(1);
-    opacity: 0.3;
-  }
-  15% {
-    transform: translateX(-50%) scaleX(1.4);
-    opacity: 0.35;
-  }
-  50% {
-    transform: translateX(-50%) scaleX(0.4);
-    opacity: 0.05;
-  }
-  85% {
-    transform: translateX(-50%) scaleX(1.4);
-    opacity: 0.35;
+  to {
+    transform: scaleX(1);
   }
 }
 
 /* ===== Animation Utilities ===== */
+/* Below-the-fold only. An element that first paints at opacity 0 is dropped
+   from LCP for good, so nothing in the initial viewport may carry these. */
 
 @utility animate-reveal {
-  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @utility animate-reveal-delay-1 {
-  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+  animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
 
 @utility animate-reveal-delay-2 {
-  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+  animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
 }
 
 @utility animate-reveal-delay-3 {
-  animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+  animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
 }
 
 @keyframes cmd-in {
@@ -204,6 +164,30 @@ html[data-theme="dark"] {
 
 @utility animate-cmd-in {
   animation: cmd-in 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ===== Brand dot ===== */
+.brand-dot {
+  will-change: transform;
+}
+.group:hover .brand-dot,
+.group:focus-visible .brand-dot {
+  animation: dot-squish 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== Reading progress (post pages) ===== */
+/* Driven by the scroll position with no script where the browser supports
+   scroll timelines. PostDetails.astro adds a scroll listener only when it
+   does not. */
+.progress-bar {
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+@supports (animation-timeline: scroll()) {
+  .progress-bar {
+    animation: grow-x linear both;
+    animation-timeline: scroll(root);
+  }
 }
 
 /* ===== Heading anchor links (added via JS at runtime) ===== */
@@ -225,16 +209,8 @@ html[data-theme="dark"] {
   }
 }
 
-/* ===== Accent line at top of viewport ===== */
-body::before {
-  content: "";
-  @apply fixed top-0 left-0 right-0 z-45 h-0.75 pointer-events-none;
-  background: linear-gradient(90deg, var(--accent), transparent);
-}
-
 /* ===== Reduced motion ===== */
-/* The bouncing dot runs an infinite keyframe; honour user OS preference.
-   Snaps every animation/transition to its resting state in 0.01ms. */
+/* Snaps every animation/transition to its resting state in 0.01ms. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -245,4 +221,3 @@ body::before {
     scroll-behavior: auto !important;
   }
 }
-

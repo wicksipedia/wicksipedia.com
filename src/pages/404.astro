@@ -24,7 +24,7 @@ const settings = (await getSettings()).data.settings;
     class="app-layout flex flex-1 items-center justify-center"
   >
     <div class="mb-14 flex flex-col items-center justify-center text-center">
-      <h1 class="text-accent text-9xl font-bold">404</h1>
+      <h1 class="text-display text-7xl text-accent sm:text-8xl">404</h1>
       <span aria-hidden="true" class="mt-2 text-2xl text-accent">¯\_(ツ)_/¯</span>
       <p class="mt-4 text-2xl text-foreground/70 sm:text-3xl">No route to that one.</p>
       <p class="mt-3 text-sm text-foreground/55">
@@ -34,7 +34,7 @@ const settings = (await getSettings()).data.settings;
       </p>
       <LinkButton
         href="/"
-        class="my-6 rounded-xl border border-accent/40 px-6 py-3 font-medium text-accent transition-all duration-150 hover:border-accent hover:bg-accent/10"
+        class="my-6 rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-background transition-transform duration-150 hover:-translate-y-px active:scale-[0.98]"
       >
         Back to home
       </LinkButton>

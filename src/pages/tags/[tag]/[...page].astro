@@ -1,7 +1,7 @@
 ---
 import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import type { GetStaticPathsOptions } from "astro";
-import Card from "@/components/Card.astro";
+import PostIndex from "@/components/PostIndex.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import Pagination from "@/components/Pagination.astro";
@@ -47,9 +47,7 @@ const settings = (await getSettings()).data.settings;
     pageDesc={`All the articles with the tag "${tagName}".`}
   >
     <h1 slot="title" transition:name={tag}>{`Tag:${tag}`}</h1>
-    <ul>
-      {page.data.map(data => <Card {...data} />)}
-    </ul>
+    <PostIndex posts={page.data} />
   </Main>
 
   <Pagination {page} />

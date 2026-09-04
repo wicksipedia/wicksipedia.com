@@ -320,18 +320,18 @@ export default defineConfig({
 			cssVariable: "--font-google-sans-code",
 			provider: fontProviders.google(),
 			fallbacks: ["monospace"],
-			weights: [300, 400, 500, 600, 700],
-			// No italic: nothing outside `.app-prose` renders italic mono. Verified
-			// across the built site — 0 <em>/<i> outside a prose subtree.
+			weights: [400, 500, 600, 700, 800],
 			styles: ["normal"],
 		},
 		{
-			name: "Source Serif 4",
-			cssVariable: "--font-source-serif",
+			// Reading face for article bodies only. Google Fonts ships no italic
+			// for Geist; the browser synthesises one for the rare <em>.
+			name: "Geist",
+			cssVariable: "--font-geist",
 			provider: fontProviders.google(),
-			fallbacks: ["Georgia", "serif"],
-			weights: [400, 600, 700],
-			styles: ["normal", "italic"],
+			fallbacks: ["system-ui", "sans-serif"],
+			weights: [400, 500, 600, 700],
+			styles: ["normal"],
 		},
 	],
 });

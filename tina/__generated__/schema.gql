@@ -278,6 +278,16 @@ type PageConnection implements Connection {
   edges: [PageConnectionEdges]
 }
 
+type SettingsProfile {
+  name: String!
+  tagline: String
+  jobTitle: String
+  organization: String
+  organizationUrl: String
+  avatar: String
+  alt: String
+}
+
 type SettingsNav {
   title: String!
   href: String!
@@ -290,11 +300,22 @@ type SettingsSocials {
 }
 
 type Settings implements Node & Document {
+  profile: SettingsProfile
   nav: [SettingsNav]
   socials: [SettingsSocials]
   id: ID!
   _sys: SystemInfo!
   _values: JSON!
+}
+
+input SettingsProfileFilter {
+  name: StringFilter
+  tagline: StringFilter
+  jobTitle: StringFilter
+  organization: StringFilter
+  organizationUrl: StringFilter
+  avatar: ImageFilter
+  alt: StringFilter
 }
 
 input SettingsNavFilter {
@@ -309,6 +330,7 @@ input SettingsSocialsFilter {
 }
 
 input SettingsFilter {
+  profile: SettingsProfileFilter
   nav: SettingsNavFilter
   socials: SettingsSocialsFilter
 }
@@ -406,6 +428,16 @@ input PageMutation {
   blocks: [PageBlocksMutation]
 }
 
+input SettingsProfileMutation {
+  name: String
+  tagline: String
+  jobTitle: String
+  organization: String
+  organizationUrl: String
+  avatar: String
+  alt: String
+}
+
 input SettingsNavMutation {
   title: String
   href: String
@@ -418,6 +450,7 @@ input SettingsSocialsMutation {
 }
 
 input SettingsMutation {
+  profile: SettingsProfileMutation
   nav: [SettingsNavMutation]
   socials: [SettingsSocialsMutation]
 }

@@ -1,7 +1,7 @@
 ---
 import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import type { GetStaticPaths } from "astro";
-import Card from "@/components/Card.astro";
+import PostIndex from "@/components/PostIndex.astro";
 import Footer from "@/components/Footer.astro";
 import Header from "@/components/Header.astro";
 import Pagination from "@/components/Pagination.astro";
@@ -31,9 +31,7 @@ const settings = (await getSettings()).data.settings;
     <Header settings={settings} />
   </TinaIsland>
   <Main pageTitle="Posts" pageDesc="All the articles I've posted.">
-    <ul>
-      {page.data.map(data => <Card {...data} />)}
-    </ul>
+    <PostIndex posts={page.data} />
   </Main>
 
   <Pagination {page} />

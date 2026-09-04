@@ -1,6 +1,6 @@
 ---
 import "@/styles/typography.css";
-import { getImage, Image } from "astro:assets";
+import { getImage } from "astro:assets";
 import TinaIsland from "@tinacms/astro/TinaIsland.astro";
 import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
 import IconChevronRight from "@/assets/icons/IconChevronRight.svg";
@@ -75,10 +75,12 @@ const ogImage = ogImageUrl
 
 // One transform, used by both the <img> below and the <head> preload. Computing
 // them separately is how the two drift and the browser downloads twice.
-// Rungs are spaced so no common viewport/DPR pair has to round up more than
-// ~15%. The old 640/960 gap forced a 694px window to fetch 960w.
-const HERO_WIDTHS = [640, 768, 896, 1024, 1280, 1536, 1920];
-const HERO_SIZES = "100vw";
+// The cover sits inside `app-layout`, so the slot is at most 992 CSS px. The
+// ladder stops at 1536 so a 2x desktop gets a sharp file and a 2.6x phone
+// rounds a 380px slot up to 1024w rather than 1280w.
+const HERO_WIDTHS = [480, 640, 768, 1024, 1536];
+const HERO_SIZES =
+	"(min-width: 1280px) 992px, (min-width: 928px) 864px, calc(100vw - 2rem)";
 const HERO_QUALITY = 65;
 const hero =
 	initOgImage && typeof initOgImage !== "string"
@@ -129,42 +131,40 @@ const nextPost =
   <TinaIsland name="settings" wrapper={islands.settings.wrapper}>
     <Header settings={settings} />
   </TinaIsland>
-  {/* Full-bleed hero with metadata overlay */}
+  <BackButton />
+  {/* Cover with the title, description and meta overlaid. The scrim is a
+      fixed dark gradient in both themes so the light text keeps AA contrast
+      whatever the photo; the no-cover branch is a plain header. */}
   {
     initOgImage ? (
-      <div class="relative w-full min-h-[50vh] max-h-[75vh] overflow-hidden bg-muted">
-        {/* Full-bleed image */}
-        {typeof initOgImage === "string" ? (
-          <img
-            src={initOgImage}
-            alt={title}
-            loading="eager"
-            decoding="async"
-            class="absolute inset-0 h-full w-full object-cover object-center"
-          />
-        ) : (
-          hero && (
+      <div class="app-layout mt-4">
+        <div class="relative min-h-[26rem] overflow-hidden rounded-2xl bg-scrim sm:min-h-[30rem] lg:min-h-[34rem]">
+          {typeof initOgImage === "string" ? (
             <img
-              src={hero.src}
-              srcset={hero.srcSet.attribute}
-              sizes={HERO_SIZES}
-              width={hero.attributes.width}
-              height={hero.attributes.height}
+              src={initOgImage}
               alt={title}
               loading="eager"
-              fetchpriority="high"
               decoding="async"
               class="absolute inset-0 h-full w-full object-cover object-center"
             />
-          )
-        )}
-
-        {/* Dramatic gradient overlay — strong enough for WCAG AA text contrast */}
-        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
-
-        {/* Metadata overlaid on image */}
-        <div class="relative z-10 flex h-full min-h-[50vh] max-h-[75vh] flex-col justify-end">
-          <div class="app-layout pb-8 sm:pb-10 lg:pb-12">
+          ) : (
+            hero && (
+              <img
+                src={hero.src}
+                srcset={hero.srcSet.attribute}
+                sizes={HERO_SIZES}
+                width={hero.attributes.width}
+                height={hero.attributes.height}
+                alt={title}
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+                class="absolute inset-0 h-full w-full object-cover object-center"
+              />
+            )
+          )}
+          <div class="absolute inset-0 bg-linear-to-t from-scrim/95 via-scrim/55 to-scrim/15" />
+          <header class="relative z-10 flex min-h-[26rem] flex-col justify-end p-6 sm:min-h-[30rem] sm:p-8 lg:min-h-[34rem] lg:p-10">
             <TinaIsland
               name="blogHero"
               wrapper={islands.blogHero.wrapper}
@@ -172,26 +172,21 @@ const nextPost =
             >
               <PostHero post={tinaPost} />
             </TinaIsland>
-          </div>
+          </header>
         </div>
       </div>
     ) : (
-      /* No OG image — dramatic accent-tinted hero */
-      <div class="relative w-full overflow-hidden bg-muted">
-        <div class="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-accent/5"></div>
-        <div class="relative z-10 app-layout py-12 sm:py-16 lg:py-20">
-          <TinaIsland
-            name="blogHero"
-            wrapper={islands.blogHero.wrapper}
-            params={{ slug: post.slug }}
-          >
-            <PostHero post={tinaPost} />
-          </TinaIsland>
-        </div>
-      </div>
+      <header class="app-layout pt-4 sm:pt-6">
+        <TinaIsland
+          name="blogHero"
+          wrapper={islands.blogHero.wrapper}
+          params={{ slug: post.slug }}
+        >
+          <PostHero post={tinaPost} />
+        </TinaIsland>
+      </header>
     )
   }
-  <BackButton />
   {/* `tabindex="-1"` makes this focusable by the skip link. Safari does not
       set the sequential-focus starting point on a fragment navigation, so
       without it "Skip to content" scrolls and the NEXT Tab goes back to the
@@ -206,7 +201,7 @@ const nextPost =
   >
     <article
       id="article"
-      class="animate-reveal-delay-1 app-prose mt-8 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
+      class="app-prose prose-lg mt-10 w-full max-w-app prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)"
     >
       <TinaIsland
         name="blog"
@@ -218,38 +213,34 @@ const nextPost =
       </TinaIsland>
     </article>
 
-    <div class="border-0 border-t border-border/40 my-8"></div>
-
-    <EditPost class="sm:hidden" {hideEditPost} {post} />
+    <div class="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-border/60 pt-6">
+      <ShareLinks />
+      <EditPost {hideEditPost} {post} />
+    </div>
 
     <BackToTopButton />
 
-    <ShareLinks />
-
     <RelatedPosts currentPost={post} posts={posts} />
 
-    <!-- Editorial divider before comments -->
-    <div class="flex items-center gap-4 my-8">
-      <span class="text-xs font-bold uppercase tracking-[0.2em] text-accent whitespace-nowrap" style="font-variant: small-caps;">Discussion</span>
-      <span class="flex-1 h-px bg-border/60"></span>
-    </div>
-
-    <Comments />
+    <section class="mt-16">
+      <h2 class="mb-6 text-sm font-medium text-foreground/50">Discussion</h2>
+      <Comments />
+    </section>
 
     <h2 class="sr-only">More posts</h2>
 
     <!-- Previous/Next Post Buttons -->
-    <div data-pagefind-ignore class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <nav data-pagefind-ignore class="mt-16 grid grid-cols-1 border-t border-border/60 sm:grid-cols-2" aria-label="Adjacent posts">
       {
         prevPost && (
           <a
             href={getPath(prevPost.id, prevPost.filePath)}
-            class="group flex w-full gap-3 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5"
+            class="group flex gap-3 py-6 no-underline sm:pr-6"
           >
-            <IconChevronLeft class="mt-1 inline-block flex-none text-accent/50 transition-colors group-hover:text-accent rtl:rotate-180" />
+            <IconChevronLeft class="mt-0.5 inline-block size-5 flex-none text-foreground/40 transition-colors group-hover:text-accent rtl:rotate-180" />
             <div>
-              <span class="text-xs text-foreground/55">Previous</span>
-              <div class="font-prose text-sm font-bold leading-snug text-foreground/80 transition-colors group-hover:text-accent">{prevPost.title}</div>
+              <span class="text-xs text-foreground/50">Previous</span>
+              <div class="mt-1 text-sm font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-accent">{prevPost.title}</div>
             </div>
           </a>
         )
@@ -258,17 +249,17 @@ const nextPost =
         nextPost && (
           <a
             href={getPath(nextPost.id, nextPost.filePath)}
-            class="group flex w-full justify-end gap-3 text-end sm:col-start-2 rounded-xl border border-border/40 bg-muted/20 p-5 transition-all duration-300 hover:bg-muted/40 hover:border-border/70 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5"
+            class="group flex justify-end gap-3 py-6 text-end no-underline sm:col-start-2 sm:border-l sm:border-border/60 sm:pl-6"
           >
             <div>
-              <span class="text-xs text-foreground/55">Next</span>
-              <div class="font-prose text-sm font-bold leading-snug text-foreground/80 transition-colors group-hover:text-accent">{nextPost.title}</div>
+              <span class="text-xs text-foreground/50">Next</span>
+              <div class="mt-1 text-sm font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-accent">{nextPost.title}</div>
             </div>
-            <IconChevronRight class="mt-1 inline-block flex-none text-accent/50 transition-colors group-hover:text-accent rtl:rotate-180" />
+            <IconChevronRight class="mt-0.5 inline-block size-5 flex-none text-foreground/40 transition-colors group-hover:text-accent rtl:rotate-180" />
           </a>
         )
       }
-    </div>
+    </nav>
   </main>
   <TinaIsland
     name="settings-footer"
@@ -288,9 +279,11 @@ const nextPost =
     progressContainer.className =
       "progress-container fixed top-0 z-50 h-1 w-full";
 
-    // Create the progress bar div
+    // Create the progress bar div. Width is full; global.css scales it with
+    // a scroll timeline, and the listener below only runs where that is
+    // unsupported.
     const progressBar = document.createElement("div");
-    progressBar.className = "progress-bar h-1 w-0 bg-accent";
+    progressBar.className = "progress-bar h-1 w-full bg-accent";
     progressBar.id = "myBar";
 
     // Append the progress bar to the progress container
@@ -301,23 +294,20 @@ const nextPost =
   }
   createProgressBar();
 
-  /** Update the progress bar
-   *  when user scrolls */
+  /** Fallback for browsers without scroll-driven animations. */
   function updateScrollProgress() {
+    if (CSS.supports("animation-timeline: scroll()")) return;
     document.addEventListener("scroll", () => {
       const winScroll =
         document.body.scrollTop || document.documentElement.scrollTop;
       const height =
         document.documentElement.scrollHeight -
         document.documentElement.clientHeight;
-      const scrolled = (winScroll / height) * 100;
-      if (document) {
-        const myBar = document.getElementById("myBar");
-        if (myBar) {
-          myBar.style.width = scrolled + "%";
-        }
+      const myBar = document.getElementById("myBar");
+      if (myBar) {
+        myBar.style.transform = `scaleX(${winScroll / height})`;
       }
-    });
+    }, { passive: true });
   }
   updateScrollProgress();
 

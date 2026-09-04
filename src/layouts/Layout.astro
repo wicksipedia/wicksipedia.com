@@ -191,19 +191,16 @@ const breadcrumbData = breadcrumbs
     {/*
       No `weight` in these filters. Every weight of a family resolves to one
       variable file, and Astro records the preload under whichever weight it
-      saw first — 300 here, not 400 — so a weight filter silently matched
-      nothing and emitted no link at all.
+      saw first, so a weight filter silently matched nothing and emitted no
+      link at all.
     */}
     <Font
       cssVariable="--font-google-sans-code"
       preload={[{ subset: "latin", style: "normal" }]}
     />
     <Font
-      cssVariable="--font-source-serif"
-      preload={[
-        { subset: "latin", style: "normal" },
-        { subset: "latin", style: "italic" },
-      ]}
+      cssVariable="--font-geist"
+      preload={[{ subset: "latin", style: "normal" }]}
     />
 
     <!-- General Meta Tags -->

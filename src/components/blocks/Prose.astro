@@ -45,7 +45,7 @@ const { data, slugger } = Astro.props;
 
 <div class="app-layout">
   <section
-    class="animate-reveal-delay-1 app-prose mt-8 max-w-app font-prose prose-img:border-0 prose-img:rounded-lg prose-img:shadow-sm"
+    class="app-prose mt-4 max-w-app prose-lg prose-img:rounded-2xl"
     data-tina-field={tinaField(data, "body") || undefined}
   >
     <RichText content={data.body} slug="" slugger={slugger} />

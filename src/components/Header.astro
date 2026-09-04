@@ -1,20 +1,38 @@
 ---
 /**
- * Site header. The nav is editorial and comes from the Tina `settings`
+ * Site chrome. Below `lg` it is a sticky top bar; from `lg` up the same
+ * element becomes a fixed left rail (wordmark, profile, nav, search, theme,
+ * socials) and `body` gains `lg:pl-68` in global.css to clear it. One DOM,
+ * two layouts, so `#theme-btn`, `#cmd-k-trigger` and `#menu-items` stay unique.
+ * Below `lg` the profile sits at the top of the hamburger dropdown.
+ *
+ * Profile, nav and socials are editorial and come from the Tina `settings`
  * document — rendered statically inside <TinaIsland name="settings"> and on
- * demand by /tina-island/settings, so labels and URLs live-update in the admin
- * preview. Everything else here (brand mark, search, theme toggle) is chrome,
- * not content, and stays in code.
+ * demand by /tina-island/settings, so they live-update in the admin preview.
+ * Everything else here is chrome, not content, and stays in code.
+ *
+ * The avatar comes from Tina's media root (`src/assets/uploads`), and
+ * `resolveUploadImage` maps the stored `/uploads/<file>` ref back to its
+ * `ImageMetadata` so `<Image>` can build real derivatives. A ref that does not
+ * resolve falls back to one `src` and no srcset through `sanitizeImageSrc`,
+ * the same fallback `BlogImage.astro` uses: at that point the value is an
+ * unvalidated URL from the content source. `normalizeUrl` runs first because
+ * the library's `sanitizeImageSrc` never folds `\` to `/`.
  */
+import { Image } from "astro:assets";
+import { sanitizeImageSrc } from "@tinacms/astro/sanitize";
 import { tinaField } from "@tinacms/astro/tina-field";
 import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
 import IconMoon from "@/assets/icons/IconMoon.svg";
+import IconRss from "@/assets/icons/IconRss.svg";
 import IconSearch from "@/assets/icons/IconSearch.svg";
 import IconSunHigh from "@/assets/icons/IconSunHigh.svg";
 import IconX from "@/assets/icons/IconX.svg";
 import { SITE } from "@/config";
-import { safeHref } from "@/lib/tina/sanitize-html";
-import type { CmsNavItem, CmsSettings } from "@/lib/tina/settings";
+import { resolveUploadImage } from "@/lib/tina/images";
+import { normalizeUrl, safeHref } from "@/lib/tina/sanitize-html";
+import type { CmsNavItem, CmsSettings, CmsSocial } from "@/lib/tina/settings";
+import Socials from "./Socials.astro";
 
 interface Props {
 	settings: CmsSettings | null;
@@ -24,6 +42,26 @@ const { settings } = Astro.props;
 const nav: CmsNavItem[] = (settings?.nav ?? []).filter(
 	(item): item is CmsNavItem => Boolean(item),
 );
+const socials: CmsSocial[] = (settings?.socials ?? []).filter(
+	(social): social is CmsSocial => Boolean(social),
+);
+const profile = settings?.profile ?? null;
+
+const avatarRef = profile?.avatar ?? "";
+const resolvedAvatar = resolveUploadImage(avatarRef);
+const avatarAsset =
+	resolvedAvatar && typeof resolvedAvatar !== "string"
+		? resolvedAvatar
+		: undefined;
+const avatarSrc = avatarAsset
+	? ""
+	: sanitizeImageSrc(
+			normalizeUrl(
+				typeof resolvedAvatar === "string" ? resolvedAvatar : avatarRef,
+			),
+		);
+const avatarAlt = profile?.alt ?? "";
+const organizationUrl = safeHref(profile?.organizationUrl);
 
 const { pathname } = Astro.url;
 
@@ -39,46 +77,47 @@ const isActive = (path: string) => {
 };
 
 const navLink =
-	"block px-3 py-2 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-foreground/75 rounded-lg transition-all duration-150 hover:text-accent hover:bg-accent/8 max-sm:text-center max-sm:py-3";
-const navActive =
-	"text-accent after:content-[''] after:block after:h-0.5 after:mt-0.5 after:rounded-full after:bg-accent";
+	"flex items-center gap-2.5 py-2 text-sm font-medium text-foreground/65 transition-colors duration-150 hover:text-foreground max-lg:px-1 max-sm:py-3 max-sm:text-base " +
+	"before:size-1.5 before:rounded-full before:bg-transparent before:transition-colors before:content-[''] max-lg:before:hidden";
+const navActive = "text-accent hover:text-accent lg:before:bg-accent";
 const iconBtn =
-	"flex items-center justify-center size-9 rounded-lg text-foreground/75 transition-all duration-150 hover:text-accent hover:bg-accent/10";
+	"flex size-9 items-center justify-center rounded-md text-foreground/65 transition-colors duration-150 hover:bg-muted hover:text-foreground";
+const avatarClass =
+	"block size-16 rounded-full bg-muted object-cover object-top lg:size-20";
 ---
 
 <a
   id="skip-to-content"
   href="#main-content"
-  class="absolute start-16 -top-full z-50 bg-background px-3 py-2 text-accent backdrop-blur-lg transition-all focus:top-4"
+  class="absolute start-16 -top-full z-50 rounded-md bg-background px-3 py-2 text-accent transition-all focus:top-4"
 >
   Skip to content
 </a>
 
-<header class="sticky top-0 z-40 bg-background/82 backdrop-blur-lg backdrop-saturate-[1.8] border-b border-border/50 transition-[background,border-color] duration-300">
-  <div class="app-layout">
+<header
+  class:list={[
+    "z-40 border-border/60 bg-background/85 backdrop-blur-lg backdrop-saturate-[1.6]",
+    "sticky top-0 border-b",
+    "lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-68 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-b-0 lg:bg-background lg:px-8 lg:py-8",
+  ]}
+>
+  <div class="app-layout lg:contents">
     <div
       id="top-nav-wrap"
-      class="flex items-center justify-between py-4 sm:py-5"
+      class="flex h-16 items-center justify-between lg:contents"
     >
       <a
         href="/"
-        class="group relative flex items-baseline gap-1.5 whitespace-nowrap"
+        class="group flex items-center gap-1.5 whitespace-nowrap text-lg font-extrabold tracking-[-0.04em] text-foreground"
       >
-        <span class="font-prose text-xl font-bold italic tracking-tight text-foreground sm:text-2xl">
-          {SITE.title}
-        </span>
-        <span
-          class:list={[
-            "relative inline-block size-2 rounded-full bg-accent mb-0.5 will-change-transform animate-[dot-squish_0.8s_infinite]",
-            "after:content-[''] after:absolute after:-bottom-0.75 after:left-1/2 after:w-1.5 after:h-0.5 after:rounded-full after:bg-foreground/15 after:-translate-x-1/2 after:animate-[dot-shadow-squish_0.8s_infinite]",
-          ]}
-        ></span>
+        {SITE.title}
+        <span class="brand-dot mt-1 inline-block size-2 rounded-full bg-accent" aria-hidden="true"></span>
       </a>
 
-      <nav id="nav-menu" class="flex items-center">
+      <nav id="nav-menu" class="flex items-center lg:mt-10 lg:flex lg:flex-1 lg:flex-col">
         <button
           id="menu-btn"
-          class="focus-outline p-2 sm:hidden"
+          class="focus-outline p-2 lg:hidden"
           aria-label="Open Menu"
           aria-expanded="false"
           aria-controls="menu-items"
@@ -89,11 +128,89 @@ const iconBtn =
         <ul
           id="menu-items"
           class:list={[
-            "max-sm:hidden",
-            "max-sm:absolute max-sm:top-full max-sm:inset-x-0 max-sm:z-50 max-sm:grid max-sm:grid-cols-1 max-sm:gap-1 max-sm:px-4 max-sm:py-3 max-sm:bg-background/95 max-sm:backdrop-blur-[16px] max-sm:backdrop-saturate-[1.8] max-sm:border-b max-sm:border-border/50",
-            "sm:flex sm:items-center sm:gap-1",
+            "max-lg:hidden",
+            "max-lg:absolute max-lg:top-full max-lg:inset-x-0 max-lg:z-50 max-lg:grid max-lg:grid-cols-1 max-lg:px-4 max-lg:py-4 max-lg:bg-background/95 max-lg:backdrop-blur-lg max-lg:border-b max-lg:border-border/60",
+            "lg:flex lg:flex-1 lg:flex-col",
           ]}
         >
+          {
+            profile && (
+              <li class="mb-4 max-lg:flex max-lg:items-center max-lg:gap-4 max-lg:border-b max-lg:border-border/60 max-lg:pb-4 lg:mb-10">
+                {
+                  avatarAsset ? (
+                    <Image
+                      src={avatarAsset}
+                      alt={avatarAlt}
+                      width={640}
+                      height={640}
+                      widths={[160, 240, 320]}
+                      sizes="(min-width: 1024px) 80px, 64px"
+                      layout="none"
+                      class={avatarClass}
+                      loading="eager"
+                      decoding="async"
+                      data-tina-field={tinaField(profile, "avatar") || undefined}
+                    />
+                  ) : (
+                    avatarSrc && (
+                      <img
+                        src={avatarSrc}
+                        alt={avatarAlt}
+                        width="640"
+                        height="640"
+                        class={avatarClass}
+                        loading="eager"
+                        decoding="async"
+                        data-tina-field={tinaField(profile, "avatar") || undefined}
+                      />
+                    )
+                  )
+                }
+                <div class="min-w-0 lg:mt-5">
+                  <p
+                    class="text-base font-bold tracking-tight text-foreground"
+                    data-tina-field={tinaField(profile, "name") || undefined}
+                  >
+                    {profile.name}
+                  </p>
+                  {
+                    profile.tagline && (
+                      <p
+                        class="mt-1.5 font-prose text-sm leading-relaxed text-foreground/65 max-lg:hidden"
+                        data-tina-field={tinaField(profile, "tagline") || undefined}
+                      >
+                        {profile.tagline}
+                      </p>
+                    )
+                  }
+                  {
+                    (profile.jobTitle || profile.organization) && (
+                      <p
+                        class="mt-1 text-xs leading-relaxed text-foreground/60 lg:mt-3"
+                        data-tina-field={tinaField(profile, "jobTitle") || undefined}
+                      >
+                        {profile.jobTitle}
+                        {profile.organization && (
+                          <>
+                            {profile.jobTitle && " at "}
+                            <a
+                              href={organizationUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="font-semibold text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent"
+                              data-tina-field={tinaField(profile, "organization") || undefined}
+                            >
+                              {profile.organization}
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    )
+                  }
+                </div>
+              </li>
+            )
+          }
           {
             nav.map(item => {
               // Sanitised ONCE, and the sanitised value is what BOTH the href
@@ -101,7 +218,7 @@ const iconBtn =
               // passing item.href to isActive() would be the same
               // validate-one-string-emit-another shape this branch has already
               // fixed three times in src/lib/tina/sanitize-html.ts — here it
-              // would decide the active-page underline from a string the page
+              // would decide the active-page marker from a string the page
               // never links to.
               const href = safeHref(item.href);
               return (
@@ -117,25 +234,18 @@ const iconBtn =
               );
             })
           }
-          <li class="hidden h-5 w-px bg-border/60 sm:block mx-1" aria-hidden="true"></li>
-          <li class="flex items-center justify-center">
+          <li class="flex flex-wrap items-center gap-1 max-lg:mt-2 max-lg:border-t max-lg:border-border/60 max-lg:pt-3 lg:-ms-2 lg:mt-auto lg:border-t lg:border-border/60 lg:pt-5">
             <button
               id="cmd-k-trigger"
-              class="group flex h-9 items-center gap-1 rounded-lg px-2 text-foreground/75 transition-all duration-150 hover:bg-accent/10 hover:text-accent"
+              class={iconBtn}
               title="Search (⌘K)"
               aria-label="Search"
               aria-keyshortcuts="Meta+k Control+k"
             >
-              <IconSearch class="size-4 shrink-0" />
-              <span class="hidden sm:flex items-center gap-px">
-                <kbd class="rounded border border-border/60 px-1 py-px font-mono text-[0.6rem] text-foreground/35 transition-colors group-hover:border-accent/30 group-hover:text-accent/60">⌘</kbd>
-                <kbd class="rounded border border-border/60 px-1 py-px font-mono text-[0.6rem] text-foreground/35 transition-colors group-hover:border-accent/30 group-hover:text-accent/60">K</kbd>
-              </span>
+              <IconSearch class="size-5" />
             </button>
-          </li>
-          {
-            SITE.lightAndDarkMode && (
-              <li class="flex items-center justify-center">
+            {
+              SITE.lightAndDarkMode && (
                 <button
                   id="theme-btn"
                   class:list={[iconBtn, "relative"]}
@@ -146,9 +256,20 @@ const iconBtn =
                   <IconMoon class="absolute top-[50%] left-[50%] -translate-[50%] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
                   <IconSunHigh class="absolute top-[50%] left-[50%] -translate-[50%] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
                 </button>
-              </li>
-            )
-          }
+              )
+            }
+            <a href="/rss.xml" class={iconBtn} title="RSS feed" target="_blank">
+              <IconRss class="size-5 fill-transparent stroke-current stroke-2" />
+              <span class="sr-only">RSS feed</span>
+            </a>
+            {
+              socials.length > 0 && (
+                <div class="text-foreground/65 [&_a:hover]:text-foreground">
+                  <Socials socials={socials} />
+                </div>
+              )
+            }
+          </li>
         </ul>
       </nav>
     </div>
@@ -172,7 +293,7 @@ const iconBtn =
 
     menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
     menuBtn.setAttribute("aria-label", open ? "Close Menu" : "Open Menu");
-    menuItems.classList.toggle("max-sm:hidden", !open);
+    menuItems.classList.toggle("max-lg:hidden", !open);
     menuIcon.classList.toggle("hidden", open);
     closeIcon.classList.toggle("hidden", !open);
   }

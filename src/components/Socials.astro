@@ -4,6 +4,9 @@
  * document; only the icon components are code (SOCIAL_ICONS). `linkTitle` is
  * derived here rather than stored so the CMS never has to repeat the site name.
  *
+ * Every link is a `size-9` icon button so the row lines up with the search and
+ * theme buttons it sits beside in the rail.
+ *
  * `tinaField()` returns "" when the object carries no Tina metadata, so the
  * `|| undefined` is what keeps an empty attribute out of the markup rather than
  * emitting `data-tina-field=""`.
@@ -34,11 +37,11 @@ const { socials } = Astro.props;
       return Icon ? (
         <LinkButton
           href={safeHref(social.href)}
-          class="p-2 hover:rotate-6 sm:p-1"
+          class="size-9 justify-center rounded-md transition-colors duration-150 hover:bg-muted"
           title={linkTitle}
           data-tina-field={tinaField(social, "href") || undefined}
         >
-          <Icon class="inline-block size-6 scale-125 fill-transparent stroke-current stroke-2 opacity-90 group-hover:fill-transparent sm:scale-110" />
+          <Icon class="size-5 fill-transparent stroke-current stroke-2" />
           <span class="sr-only">{linkTitle}</span>
         </LinkButton>
       ) : null;

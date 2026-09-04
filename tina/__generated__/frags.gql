@@ -48,6 +48,16 @@ fragment PageParts on Page {
 
 fragment SettingsParts on Settings {
   __typename
+  profile {
+    __typename
+    name
+    tagline
+    jobTitle
+    organization
+    organizationUrl
+    avatar
+    alt
+  }
   nav {
     __typename
     title

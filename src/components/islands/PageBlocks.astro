@@ -88,6 +88,8 @@ const heading = heroOwnsHeading
  * where `propsFromData` supplies only `data`.
  */
 const isHome = data?._sys?.filename === "home";
+// On the homepage the sidebar already shows who this is, so the page-level
+// heading exists for the document outline and screen readers only.
 ---
 
 <main
@@ -97,16 +99,23 @@ const isHome = data?._sys?.filename === "home";
   data-layout={isHome ? "index" : undefined}
 >
   {
-    heading && (
+    heading && isHome && (
+      <h1 class="sr-only" data-tina-field={tinaField(data, "heading") || undefined}>
+        {heading}
+      </h1>
+    )
+  }
+  {
+    heading && !isHome && (
       <div class="app-layout">
-        <div class="animate-reveal pt-8 pb-6 mb-2 border-b border-border/50">
+        <div class="pt-8 pb-6">
           {/*
             The field is `heading` even when the text came from `seoTitle`.
             Clicking the heading in the admin should open the override an author
             means to change, not the SEO title that happens to be supplying it.
           */}
           <h1
-            class="font-prose text-3xl font-bold italic tracking-tight text-foreground sm:text-4xl lg:text-5xl"
+            class="text-display text-3xl text-foreground sm:text-4xl"
             data-tina-field={tinaField(data, "heading") || undefined}
           >
             {heading}
