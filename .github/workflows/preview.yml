@@ -50,7 +50,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache generated image derivatives
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           # Same key as deploy.yml so a PR restores the derivatives main already
           # built and only re-encodes what the PR actually changed.
